@@ -58,6 +58,26 @@ filtered_df = df[
     (df[x_metric] <= x_range[1])
 ]
 
+size_metric = st.sidebar.selectbox(
+    "Tamaño (opcional)",
+    [None] + available_metrics
+)
+
+color_metric = st.sidebar.selectbox(
+    "Color (opcional)",
+    [None] + available_metrics
+)
+
+
+fig = px.scatter(
+    filtered_df,
+    x=x_metric,
+    y=y_metric,
+    size=size_metric if size_metric else None,
+    color=color_metric if color_metric else None,
+    hover_data=["id"] if "id" in df.columns else None,
+)
+
 
 
 # --------------------------------------------
