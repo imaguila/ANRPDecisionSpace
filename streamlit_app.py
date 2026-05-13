@@ -101,7 +101,7 @@ for m in metrics_to_check:
 # PLOT
 # --------------------------------------------
 fig = px.scatter(
-    plot_df,
+    filtered_df,
     x=x_metric,
     y=y_metric,
     size=size_metric if size_metric else None,
