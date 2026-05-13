@@ -76,14 +76,25 @@ filtered_df = df[
 ]
 
 # --------------------------------------------
-# PREPARAR DATOS (PORCENTAJES)
+# DETECTAR MÉTRICAS PORCENTUALES (ANTES)
 # --------------------------------------------
-plot_df = filtered_df.copy()
+is_percent = {}
 
 metrics_to_check = [x_metric, y_metric, size_metric, color_metric]
 
 for m in metrics_to_check:
-    if m and plot_df[m].min() >= 0 and plot_df[m].max() <= 1:
+    if m and df[m].min() >= 0 and df[m].max() <= 1:
+        is_percent[m] = True
+    else:
+        is_percent[m] = False
+
+# --------------------------------------------
+# PREPARAR DATOS (CONVERSIÓN)
+# --------------------------------------------
+plot_df = filtered_df.copy()
+
+for m in metrics_to_check:
+    if m and is_percent[m]:
         plot_df[m] = plot_df[m] * 100
 
 # --------------------------------------------
@@ -99,63 +110,59 @@ fig = px.scatter(
 )
 
 # --------------------------------------------
-# ETIQUETAS
+# ETIQUETAS (solo X e Y)
 # --------------------------------------------
-if filtered_df[x_metric].max() <= 1:
+if is_percent.get(x_metric, False):
     fig.update_xaxes(title=f"{x_metric} (%)")
 else:
     fig.update_xaxes(title=x_metric)
 
-if filtered_df[y_metric].max() <= 1:
+if is_percent.get(y_metric, False):
     fig.update_yaxes(title=f"{y_metric} (%)")
 else:
     fig.update_yaxes(title=y_metric)
 
 # --------------------------------------------
-# FORMATO EJES
+# FORMATO EJES (solo X e Y)
 # --------------------------------------------
-if filtered_df[x_metric].max() <= 1:
+if is_percent.get(x_metric, False):
     fig.update_xaxes(tickformat=".1f", ticksuffix="%")
 
-if filtered_df[y_metric].max() <= 1:
+if is_percent.get(y_metric, False):
     fig.update_yaxes(tickformat=".1f", ticksuffix="%")
 
 # --------------------------------------------
-# HOVER FORMAT
-# --------------------------------------------
-# --------------------------------------------
-# HOVER FORMAT (completo)
+# HOVER FORMAT (completo y consistente)
 # --------------------------------------------
 hover_parts = []
 
 # X
-if filtered_df[x_metric].max() <= 1:
+if is_percent.get(x_metric, False):
     hover_parts.append(f"{x_metric}: %{{x:.1f}}%")
 else:
     hover_parts.append(f"{x_metric}: %{{x:.2f}}")
 
 # Y
-if filtered_df[y_metric].max() <= 1:
+if is_percent.get(y_metric, False):
     hover_parts.append(f"{y_metric}: %{{y:.1f}}%")
 else:
     hover_parts.append(f"{y_metric}: %{{y:.2f}}")
 
 # SIZE
 if size_metric:
-    if filtered_df[size_metric].max() <= 1:
+    if is_percent.get(size_metric, False):
         hover_parts.append(f"{size_metric}: %{{marker.size:.1f}}%")
     else:
         hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
 
 # COLOR
 if color_metric:
-    if filtered_df[color_metric].max() <= 1:
+    if is_percent.get(color_metric, False):
         hover_parts.append(f"{color_metric}: %{{marker.color:.1f}}%")
     else:
         hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
 
 fig.update_traces(hovertemplate="<br>".join(hover_parts))
-
 
 # --------------------------------------------
 # SHOW
