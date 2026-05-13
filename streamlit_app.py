@@ -82,7 +82,7 @@ for m in available_metrics:
         ]
 
 # --------------------------------------------
-# SELECTION MODE (MULTI QUALITY)
+# SELECTION MODE (MULTI QUALITY + MIN/MAX)
 # --------------------------------------------
 st.sidebar.markdown("### Selection")
 
@@ -95,13 +95,20 @@ if use_selection:
     if len(available_quality_metrics) == 0:
         st.sidebar.warning("No quality metrics available")
     else:
-        # seleccionar múltiples métricas
-        selected_metrics = st.sidebar.multiselect(
-            "Quality metrics",
-            available_quality_metrics
+        # selección separada
+        metrics_max = st.sidebar.multiselect(
+            "Metrics to maximize",
+            available_quality_metrics,
+            key="max_metrics"
         )
 
-        if len(selected_metrics) > 0:
+        metrics_min = st.sidebar.multiselect(
+            "Metrics to minimize",
+            [m for m in available_quality_metrics if m not in metrics_max],
+            key="min_metrics"
+        )
+
+        if len(metrics_max) + len(metrics_min) > 0:
 
             n_top = st.sidebar.slider(
                 "Number of solutions",
@@ -110,17 +117,12 @@ if use_selection:
                 10
             )
 
-            goal = st.sidebar.selectbox(
-                "Objective",
-                ["Maximize", "Minimize"]
-            )
-
             temp_df = filtered_df.copy()
 
             # --------------------------------------------
-            # NORMALIZACIÓN SIMPLE (0-1)
+            # NORMALIZACIÓN
             # --------------------------------------------
-            for m in selected_metrics:
+            for m in metrics_max + metrics_min:
                 min_val = temp_df[m].min()
                 max_val = temp_df[m].max()
 
@@ -130,19 +132,20 @@ if use_selection:
                     temp_df[m + "_norm"] = 0
 
             # --------------------------------------------
-            # SCORE (media de métricas)
+            # SCORE
             # --------------------------------------------
-            norm_cols = [m + "_norm" for m in selected_metrics]
+            score = 0
 
-            temp_df["score"] = temp_df[norm_cols].mean(axis=1)
+            if len(metrics_max) > 0:
+                score += temp_df[[m + "_norm" for m in metrics_max]].mean(axis=1)
 
-            # --------------------------------------------
-            # SELECCIÓN
-            # --------------------------------------------
-            if goal == "Maximize":
-                selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
-            else:
-                selected_df = temp_df.sort_values("score", ascending=True).head(n_top)
+            if len(metrics_min) > 0:
+                score -= temp_df[[m + "_norm" for m in metrics_min]].mean(axis=1)
+
+            temp_df["score"] = score
+
+            # seleccionar mejores (siempre max score)
+            selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
 
             st.sidebar.success(f"{len(selected_df)} solutions selected")
 
