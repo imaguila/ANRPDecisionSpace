@@ -16,7 +16,7 @@ def load_csv(path):
     return pd.read_csv(path)
 
 # datasets
-files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and f != "metrics.csv"]
+files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
 
 if not files:
     st.error("No datasets found")
@@ -25,29 +25,20 @@ if not files:
 selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-
 # --------------------------------------------
-# METRICS CATALOG (2 FILES - SIMPLE & ROBUST)
+# METRICS CATALOG (2 FILES)
 # --------------------------------------------
-
-# optimization metrics
 opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
 optimization_metrics = opt_df.columns.tolist()
 
-# quality metrics
 qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
 quality_metrics = qual_df.columns.tolist()
 
 # --------------------------------------------
 # AVAILABLE METRICS
 # --------------------------------------------
-available_optimization_metrics = [
-    m for m in optimization_metrics if m in df.columns
-]
-
-available_quality_metrics = [
-    m for m in quality_metrics if m in df.columns
-]
+available_optimization_metrics = [m for m in optimization_metrics if m in df.columns]
+available_quality_metrics = [m for m in quality_metrics if m in df.columns]
 
 available_metrics = available_optimization_metrics + available_quality_metrics
 
@@ -66,7 +57,7 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# FILTERS (GLOBAL)
+# FILTERS
 # --------------------------------------------
 st.sidebar.markdown("### Filters")
 
@@ -91,6 +82,44 @@ for m in available_metrics:
         ]
 
 # --------------------------------------------
+# SELECTION MODE (QUALITY)
+# --------------------------------------------
+st.sidebar.markdown("### Selection")
+
+use_selection = st.sidebar.checkbox("Activate selection mode")
+
+selected_df = filtered_df.copy()
+
+if use_selection:
+
+    if len(available_quality_metrics) == 0:
+        st.sidebar.warning("No quality metrics available")
+    else:
+        metric_sel = st.sidebar.selectbox(
+            "Quality metric",
+            available_quality_metrics
+        )
+
+        n_top = st.sidebar.slider(
+            "Number of solutions",
+            1,
+            min(50, len(filtered_df)),
+            10
+        )
+
+        goal = st.sidebar.selectbox(
+            "Objective",
+            ["Maximize", "Minimize"]
+        )
+
+        if goal == "Maximize":
+            selected_df = filtered_df.sort_values(metric_sel, ascending=False).head(n_top)
+        else:
+            selected_df = filtered_df.sort_values(metric_sel, ascending=True).head(n_top)
+
+        st.sidebar.success(f"{len(selected_df)} solutions selected")
+
+# --------------------------------------------
 # ADD GRAPH BUTTON
 # --------------------------------------------
 used_metrics = [m for g in st.session_state.groups for m in g if m]
@@ -109,7 +138,6 @@ for i, group in enumerate(st.session_state.groups):
 
     st.subheader(f"Graph {i+1}")
 
-    # recalcular métricas disponibles
     used_metrics = [
         m for idx, g in enumerate(st.session_state.groups)
         if idx != i for m in g if m
@@ -128,16 +156,15 @@ for i, group in enumerate(st.session_state.groups):
 
     with col3:
         size_options = [None] + [m for m in available if m not in [x, y]]
-        size = st.selectbox(f"Size {i} (optional)", size_options, key=f"size_{i}")
+        size = st.selectbox(f"Size {i}", size_options, key=f"size_{i}")
 
-    # guardar selección
     st.session_state.groups[i] = [x, y, size]
 
     # --------------------------------------------
     # PLOT
     # --------------------------------------------
     fig = px.scatter(
-        filtered_df,
+        selected_df,
         x=x,
         y=y,
         size=size if size else None,
@@ -147,10 +174,9 @@ for i, group in enumerate(st.session_state.groups):
     fig.update_xaxes(title=x, tickformat=".2f")
     fig.update_yaxes(title=y, tickformat=".2f")
 
-    # hover limpio
     hover_parts = [
         f"{x}: %{{x:.2f}}",
-        f"{y}: %{{y:.2f}}",
+        f"{y}: %{{y:.2f}}"
     ]
 
     if size:
@@ -164,4 +190,5 @@ for i, group in enumerate(st.session_state.groups):
 # DATA PREVIEW
 # --------------------------------------------
 with st.expander("Data preview"):
-    st.dataframe(filtered_df.head(100))
+    st.write(f"Showing {len(selected_df)} solutions")
+    st.dataframe(selected_df.head(100))
