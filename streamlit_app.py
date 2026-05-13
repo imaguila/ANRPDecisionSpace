@@ -75,17 +75,16 @@ filtered_df = df[
     (df[x_metric] <= x_range[1])
 ]
 
-
+# --------------------------------------------
+# PREPARAR DATOS (PORCENTAJES)
+# --------------------------------------------
 plot_df = filtered_df.copy()
 
-# detectar métricas en [0,1] y convertir a %
 metrics_to_check = [x_metric, y_metric, size_metric, color_metric]
 
 for m in metrics_to_check:
-    if m and plot_df[m].max() <= 1:
+    if m and plot_df[m].min() >= 0 and plot_df[m].max() <= 1:
         plot_df[m] = plot_df[m] * 100
-
-
 
 # --------------------------------------------
 # PLOT
@@ -99,30 +98,50 @@ fig = px.scatter(
     hover_data=["id"] if "id" in df.columns else None,
 )
 
-labels = {}
-
-for m in [x_metric, y_metric, size_metric, color_metric]:
-    if m and filtered_df[m].max() <= 1:
-        labels[m] = f"{m} (%)"
-
-fig.update_layout(xaxis_title=labels.get(x_metric, x_metric),
-                  yaxis_title=labels.get(y_metric, y_metric))
-
-# añadir símbolo % si procede
+# --------------------------------------------
+# ETIQUETAS
+# --------------------------------------------
 if filtered_df[x_metric].max() <= 1:
-    fig.update_xaxes(ticksuffix="%")
+    fig.update_xaxes(title=f"{x_metric} (%)")
+else:
+    fig.update_xaxes(title=x_metric)
 
 if filtered_df[y_metric].max() <= 1:
-    fig.update_yaxes(ticksuffix="%")
-    
-# formato de porcentajes
-for axis in ["xaxis", "yaxis"]:
-    fig.update_layout(**{
-        axis: dict(tickformat=".1f")  # 1 decimal
-    })
+    fig.update_yaxes(title=f"{y_metric} (%)")
+else:
+    fig.update_yaxes(title=y_metric)
 
+# --------------------------------------------
+# FORMATO EJES
+# --------------------------------------------
+if filtered_df[x_metric].max() <= 1:
+    fig.update_xaxes(tickformat=".1f", ticksuffix="%")
 
+if filtered_df[y_metric].max() <= 1:
+    fig.update_yaxes(tickformat=".1f", ticksuffix="%")
 
+# --------------------------------------------
+# HOVER FORMAT
+# --------------------------------------------
+hover_parts = []
+
+# X
+if filtered_df[x_metric].max() <= 1:
+    hover_parts.append(f"{x_metric}: %{{x:.1f}}%")
+else:
+    hover_parts.append(f"{x_metric}: %{{x:.2f}}")
+
+# Y
+if filtered_df[y_metric].max() <= 1:
+    hover_parts.append(f"{y_metric}: %{{y:.1f}}%")
+else:
+    hover_parts.append(f"{y_metric}: %{{y:.2f}}")
+
+fig.update_traces(hovertemplate="<br>".join(hover_parts))
+
+# --------------------------------------------
+# SHOW
+# --------------------------------------------
 st.plotly_chart(fig, use_container_width=True)
 
 # --------------------------------------------
