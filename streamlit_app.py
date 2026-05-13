@@ -95,7 +95,7 @@ if use_selection:
     if len(available_quality_metrics) == 0:
         st.sidebar.warning("No quality metrics available")
     else:
-        # selección separada
+        # Separated selection
         metrics_max = st.sidebar.multiselect(
             "Metrics to maximize",
             available_quality_metrics,
