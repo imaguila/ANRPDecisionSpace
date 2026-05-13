@@ -21,17 +21,17 @@ selected_file = st.sidebar.selectbox("Dataset", files)
 
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-# mÃ©tricas posibles (catÃ¡logo)
+# métricas posibles (catálogo)
 metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
 all_metrics = metrics_df.columns.tolist()
 
 # --------------------------------------------
-# DETECTAR MÃ‰TRICAS DISPONIBLES
+# DETECTAR MÉTRICAS DISPONIBLES
 # --------------------------------------------
 available_metrics = [m for m in all_metrics if m in df.columns]
 
 if len(available_metrics) < 2:
-    st.error("No hay suficientes mÃ©tricas en el dataset")
+    st.error("No hay suficientes métricas en el dataset")
     st.stop()
 
 # --------------------------------------------
@@ -47,7 +47,7 @@ y_metric = st.sidebar.selectbox("Eje Y", y_options)
 
 # SIZE
 size_options = [None] + [m for m in available_metrics if m not in [x_metric, y_metric]]
-size_metric = st.sidebar.selectbox("TamaÃ±o (opcional)", size_options)
+size_metric = st.sidebar.selectbox("Tamaño (opcional)", size_options)
 
 # COLOR
 excluded = [x_metric, y_metric]
@@ -75,12 +75,33 @@ filtered_df = df[
     (df[x_metric] <= x_range[1])
 ]
 
+# --------------------------------------------
+# DETECTAR MÉTRICAS PORCENTUALES (ANTES)
+# --------------------------------------------
+is_percent = {}
+
+metrics_to_check = [x_metric, y_metric, size_metric, color_metric]
+
+for m in metrics_to_check:
+    if m and df[m].min() >= 0 and df[m].max() <= 1:
+        is_percent[m] = True
+    else:
+        is_percent[m] = False
+
+# --------------------------------------------
+# PREPARAR DATOS (CONVERSIÓN)
+# --------------------------------------------
+plot_df = filtered_df.copy()
+
+for m in metrics_to_check:
+    if m and is_percent[m]:
+        plot_df[m] = plot_df[m] * 100
 
 # --------------------------------------------
 # PLOT
 # --------------------------------------------
 fig = px.scatter(
-    filtered_df,
+    plot_df,
     x=x_metric,
     y=y_metric,
     size=size_metric if size_metric else None,
@@ -89,31 +110,73 @@ fig = px.scatter(
 )
 
 # --------------------------------------------
-# ETIQUETAS
+# ETIQUETAS (solo X e Y)
 # --------------------------------------------
-fig.update_xaxes(title=x_metric)
-fig.update_yaxes(title=y_metric)
+if is_percent.get(x_metric, False):
+    fig.update_xaxes(title=f"{x_metric} (%)")
+else:
+    fig.update_xaxes(title=x_metric)
+
+if is_percent.get(y_metric, False):
+    fig.update_yaxes(title=f"{y_metric} (%)")
+else:
+    fig.update_yaxes(title=y_metric)
 
 # --------------------------------------------
-# FORMATO EJES (2 decimales)
+# FORMATO EJES (solo X e Y)
 # --------------------------------------------
-fig.update_xaxes(tickformat=".2f")
-fig.update_yaxes(tickformat=".2f")
+if is_percent.get(x_metric, False):
+    fig.update_xaxes(tickformat=".1f", ticksuffix="%")
+
+if is_percent.get(y_metric, False):
+    fig.update_yaxes(tickformat=".1f", ticksuffix="%")
 
 # --------------------------------------------
-# HOVER FORMAT (2 decimales en todo)
+# HOVER FORMAT (completo y consistente)
 # --------------------------------------------
-hover_parts = [
-    f"{x_metric}: %{{x:.2f}}",
-    f"{y_metric}: %{{y:.2f}}",
-]
+hover_parts = []
+
+# X
+if is_percent.get(x_metric, False):
+    hover_parts.append(f"{x_metric}: %{{x:.1f}}%")
+else:
+    hover_parts.append(f"{x_metric}: %{{x:.2f}}")
+
+# Y
+if is_percent.get(y_metric, False):
+    hover_parts.append(f"{y_metric}: %{{y:.1f}}%")
+else:
+    hover_parts.append(f"{y_metric}: %{{y:.2f}}")
 
 # SIZE
 if size_metric:
-    hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
+    if is_percent.get(size_metric, False):
+        hover_parts.append(f"{size_metric}: %{{marker.size:.1f}}%")
+    else:
+        hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
 
 # COLOR
 if color_metric:
-    hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
+    if is_percent.get(color_metric, False):
+        hover_parts.append(f"{color_metric}: %{{marker.color:.1f}}%")
+    else:
+        hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
 
 fig.update_traces(hovertemplate="<br>".join(hover_parts))
+
+# --------------------------------------------
+# SHOW
+# --------------------------------------------
+st.plotly_chart(fig, use_container_width=True)
+
+# --------------------------------------------
+# PREVIEW
+# --------------------------------------------
+with st.expander("Datos"):
+    cols = [x_metric, y_metric]
+    if size_metric:
+        cols.append(size_metric)
+    if color_metric:
+        cols.append(color_metric)
+
+    st.dataframe(filtered_df[cols].head(50))
