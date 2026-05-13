@@ -75,27 +75,6 @@ filtered_df = df[
     (df[x_metric] <= x_range[1])
 ]
 
-# --------------------------------------------
-# DETECTAR MÉTRICAS PORCENTUALES (ANTES)
-# --------------------------------------------
-is_percent = {}
-
-metrics_to_check = [x_metric, y_metric, size_metric, color_metric]
-
-for m in metrics_to_check:
-    if m and df[m].min() >= 0 and df[m].max() <= 1:
-        is_percent[m] = True
-    else:
-        is_percent[m] = False
-
-# --------------------------------------------
-# PREPARAR DATOS (CONVERSIÓN)
-# --------------------------------------------
-plot_df = filtered_df.copy()
-
-for m in metrics_to_check:
-    if m and is_percent[m]:
-        plot_df[m] = plot_df[m] * 100
 
 # --------------------------------------------
 # PLOT
@@ -112,24 +91,9 @@ fig = px.scatter(
 # --------------------------------------------
 # ETIQUETAS (solo X e Y)
 # --------------------------------------------
-if is_percent.get(x_metric, False):
-    fig.update_xaxes(title=f"{x_metric} (%)")
-else:
-    fig.update_xaxes(title=x_metric)
+fig.update_xaxes(title=x_metric)
 
-if is_percent.get(y_metric, False):
-    fig.update_yaxes(title=f"{y_metric} (%)")
-else:
-    fig.update_yaxes(title=y_metric)
-
-# --------------------------------------------
-# FORMATO EJES (solo X e Y)
-# --------------------------------------------
-if is_percent.get(x_metric, False):
-    fig.update_xaxes(tickformat=".1f", ticksuffix="%")
-
-if is_percent.get(y_metric, False):
-    fig.update_yaxes(tickformat=".1f", ticksuffix="%")
+fig.update_yaxes(title=y_metric)
 
 # --------------------------------------------
 # HOVER FORMAT (completo y consistente)
@@ -137,30 +101,16 @@ if is_percent.get(y_metric, False):
 hover_parts = []
 
 # X
-if is_percent.get(x_metric, False):
-    hover_parts.append(f"{x_metric}: %{{x:.1f}}%")
-else:
-    hover_parts.append(f"{x_metric}: %{{x:.2f}}")
+hover_parts.append(f"{x_metric}: %{{x:.2f}}")
 
 # Y
-if is_percent.get(y_metric, False):
-    hover_parts.append(f"{y_metric}: %{{y:.1f}}%")
-else:
-    hover_parts.append(f"{y_metric}: %{{y:.2f}}")
+hover_parts.append(f"{y_metric}: %{{y:.2f}}")
 
 # SIZE
-if size_metric:
-    if is_percent.get(size_metric, False):
-        hover_parts.append(f"{size_metric}: %{{marker.size:.1f}}%")
-    else:
-        hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
+hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
 
 # COLOR
-if color_metric:
-    if is_percent.get(color_metric, False):
-        hover_parts.append(f"{color_metric}: %{{marker.color:.1f}}%")
-    else:
-        hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
+hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
 
 fig.update_traces(hovertemplate="<br>".join(hover_parts))
 
@@ -172,7 +122,7 @@ st.plotly_chart(fig, use_container_width=True)
 # --------------------------------------------
 # PREVIEW
 # --------------------------------------------
-with st.expander("Datos"):
+with st.expander("Data"):
     cols = [x_metric, y_metric]
     if size_metric:
         cols.append(size_metric)
