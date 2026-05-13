@@ -4,7 +4,7 @@ import plotly.express as px
 import os
 
 st.set_page_config(layout="wide")
-st.title("Metrics Dashboard")
+st.title("Assisted NRP")
 
 DATA_PATH = "data"
 
@@ -15,7 +15,7 @@ DATA_PATH = "data"
 def load_csv(path):
     return pd.read_csv(path)
 
-# datasets disponibles
+# problems
 files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and f != "metrics.csv"]
 selected_file = st.sidebar.selectbox("Dataset", files)
 
@@ -26,28 +26,28 @@ metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
 all_metrics = metrics_df.columns.tolist()
 
 # --------------------------------------------
-# DETECTAR MÉTRICAS DISPONIBLES
+# METRICS DETECTION
 # --------------------------------------------
 available_metrics = [m for m in all_metrics if m in df.columns]
 
 if len(available_metrics) < 2:
-    st.error("No hay suficientes métricas en el dataset")
+    st.error("There are not enough metrics")
     st.stop()
 
 # --------------------------------------------
-# SELECTORES SIN DUPLICADOS
+# SELECTORS No  duplicated
 # --------------------------------------------
 
 # X
-x_metric = st.sidebar.selectbox("Eje X", available_metrics)
+x_metric = st.sidebar.selectbox("X", available_metrics)
 
 # Y
 y_options = [m for m in available_metrics if m != x_metric]
-y_metric = st.sidebar.selectbox("Eje Y", y_options)
+y_metric = st.sidebar.selectbox("Y", y_options)
 
 # SIZE
 size_options = [None] + [m for m in available_metrics if m not in [x_metric, y_metric]]
-size_metric = st.sidebar.selectbox("Tamaño (opcional)", size_options)
+size_metric = st.sidebar.selectbox("Dot size (optional)", size_options)
 
 # COLOR
 excluded = [x_metric, y_metric]
@@ -55,7 +55,7 @@ if size_metric:
     excluded.append(size_metric)
 
 color_options = [None] + [m for m in available_metrics if m not in excluded]
-color_metric = st.sidebar.selectbox("Color (opcional)", color_options)
+color_metric = st.sidebar.selectbox("Color (optional)", color_options)
 
 # --------------------------------------------
 # FILTRO EN X
@@ -64,7 +64,7 @@ min_val = float(df[x_metric].min())
 max_val = float(df[x_metric].max())
 
 x_range = st.sidebar.slider(
-    f"Rango {x_metric}",
+    f"Range {x_metric}",
     min_val,
     max_val,
     (min_val, max_val)
@@ -89,14 +89,13 @@ fig = px.scatter(
 )
 
 # --------------------------------------------
-# ETIQUETAS (solo X e Y)
+# LABELS ( X & Y)
 # --------------------------------------------
 fig.update_xaxes(title=x_metric)
-
 fig.update_yaxes(title=y_metric)
 
 # --------------------------------------------
-# HOVER FORMAT (completo y consistente)
+# HOVER FORMAT 
 # --------------------------------------------
 hover_parts = []
 
