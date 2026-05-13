@@ -35,10 +35,27 @@ if len(available_metrics) < 2:
     st.stop()
 
 # --------------------------------------------
-# SELECTORES
+# SELECTORES SIN DUPLICADOS
 # --------------------------------------------
-x_metric = st.sidebar.selectbox("Eje X", available_metrics, index=0)
-y_metric = st.sidebar.selectbox("Eje Y", available_metrics, index=1)
+
+# X
+x_metric = st.sidebar.selectbox("Eje X", available_metrics)
+
+# Y
+y_options = [m for m in available_metrics if m != x_metric]
+y_metric = st.sidebar.selectbox("Eje Y", y_options)
+
+# SIZE
+size_options = [None] + [m for m in available_metrics if m not in [x_metric, y_metric]]
+size_metric = st.sidebar.selectbox("Tamaño (opcional)", size_options)
+
+# COLOR
+excluded = [x_metric, y_metric]
+if size_metric:
+    excluded.append(size_metric)
+
+color_options = [None] + [m for m in available_metrics if m not in excluded]
+color_metric = st.sidebar.selectbox("Color (opcional)", color_options)
 
 # --------------------------------------------
 # FILTRO EN X
@@ -58,17 +75,9 @@ filtered_df = df[
     (df[x_metric] <= x_range[1])
 ]
 
-size_metric = st.sidebar.selectbox(
-    "Tamaño (opcional)",
-    [None] + available_metrics
-)
-
-color_metric = st.sidebar.selectbox(
-    "Color (opcional)",
-    [None] + available_metrics
-)
-
-
+# --------------------------------------------
+# PLOT
+# --------------------------------------------
 fig = px.scatter(
     filtered_df,
     x=x_metric,
@@ -78,22 +87,16 @@ fig = px.scatter(
     hover_data=["id"] if "id" in df.columns else None,
 )
 
-
-
-# --------------------------------------------
-# PLOT
-# --------------------------------------------
-fig = px.scatter(
-    filtered_df,
-    x=x_metric,
-    y=y_metric,
-    hover_data=["id"] if "id" in df.columns else None,
-)
-
 st.plotly_chart(fig, use_container_width=True)
 
 # --------------------------------------------
 # PREVIEW
 # --------------------------------------------
 with st.expander("Datos"):
-    st.dataframe(filtered_df[[x_metric, y_metric]].head(50))
+    cols = [x_metric, y_metric]
+    if size_metric:
+        cols.append(size_metric)
+    if color_metric:
+        cols.append(color_metric)
+
+    st.dataframe(filtered_df[cols].head(50))
