@@ -27,12 +27,16 @@ df = load_csv(os.path.join(DATA_PATH, selected_file))
 
 
 # --------------------------------------------
-# METRICS CATALOG 
+# METRICS CATALOG (2 FILES - SIMPLE & ROBUST)
 # --------------------------------------------
-metrics_df = pd.read_csv(os.path.join(DATA_PATH, "metrics.csv"), header=None)
 
-optimization_metrics = metrics_df.iloc[0].dropna().tolist()
-quality_metrics = metrics_df.iloc[1].dropna().tolist()
+# optimization metrics
+opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
+optimization_metrics = opt_df.columns.tolist()
+
+# quality metrics
+qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
+quality_metrics = qual_df.columns.tolist()
 
 # --------------------------------------------
 # AVAILABLE METRICS
