@@ -75,17 +75,39 @@ filtered_df = df[
     (df[x_metric] <= x_range[1])
 ]
 
+
+plot_df = filtered_df.copy()
+
+# detectar métricas en [0,1] y convertir a %
+metrics_to_check = [x_metric, y_metric, size_metric, color_metric]
+
+for m in metrics_to_check:
+    if m and plot_df[m].max() <= 1:
+        plot_df[m] = plot_df[m] * 100
+
+
+
 # --------------------------------------------
 # PLOT
 # --------------------------------------------
 fig = px.scatter(
-    filtered_df,
+    plot_df,
     x=x_metric,
     y=y_metric,
     size=size_metric if size_metric else None,
     color=color_metric if color_metric else None,
     hover_data=["id"] if "id" in df.columns else None,
 )
+
+labels = {}
+
+for m in [x_metric, y_metric, size_metric, color_metric]:
+    if m and filtered_df[m].max() <= 1:
+        labels[m] = f"{m} (%)"
+
+fig.update_layout(xaxis_title=labels.get(x_metric, x_metric),
+                  yaxis_title=labels.get(y_metric, y_metric))
+
 
 st.plotly_chart(fig, use_container_width=True)
 
