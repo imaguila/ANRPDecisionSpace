@@ -25,15 +25,32 @@ if not files:
 selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-# metrics catalog
+
+# --------------------------------------------
+# METRICS CATALOG (separado)
+# --------------------------------------------
 metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
-all_metrics = metrics_df.columns.tolist()
+
+# 2 types of metrics
+optimization_metrics = metrics_df.iloc[0].dropna().tolist()
+quality_metrics = metrics_df.iloc[1].dropna().tolist()
 
 # --------------------------------------------
-# AVAILABLE METRICS
+# AVAILABLE METRICS 
 # --------------------------------------------
-available_metrics = [m for m in all_metrics if m in df.columns]
+available_optimization_metrics = [
+    m for m in optimization_metrics if m in df.columns
+]
 
+available_quality_metrics = [
+    m for m in quality_metrics if m in df.columns
+]
+
+# full set of metrics
+all_metrics = optimization_metrics + quality_metrics
+available_metrics = available_optimization_metrics + available_quality_metrics
+
+# validation
 if len(available_metrics) < 2:
     st.error("There are not enough metrics")
     st.stop()
