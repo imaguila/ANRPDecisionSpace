@@ -41,10 +41,30 @@ x_metric = st.sidebar.selectbox("Eje X", available_metrics, index=0)
 y_metric = st.sidebar.selectbox("Eje Y", available_metrics, index=1)
 
 # --------------------------------------------
+# FILTRO EN X
+# --------------------------------------------
+min_val = float(df[x_metric].min())
+max_val = float(df[x_metric].max())
+
+x_range = st.sidebar.slider(
+    f"Rango {x_metric}",
+    min_val,
+    max_val,
+    (min_val, max_val)
+)
+
+filtered_df = df[
+    (df[x_metric] >= x_range[0]) &
+    (df[x_metric] <= x_range[1])
+]
+
+
+
+# --------------------------------------------
 # PLOT
 # --------------------------------------------
 fig = px.scatter(
-    df,
+    filtered_df,
     x=x_metric,
     y=y_metric,
     hover_data=["id"] if "id" in df.columns else None,
@@ -56,4 +76,4 @@ st.plotly_chart(fig, use_container_width=True)
 # PREVIEW
 # --------------------------------------------
 with st.expander("Datos"):
-    st.dataframe(df[[x_metric, y_metric]].head(50))
+    st.dataframe(filtered_df[[x_metric, y_metric]].head(50))
