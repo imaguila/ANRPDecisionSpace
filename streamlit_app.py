@@ -123,6 +123,9 @@ if filtered_df[y_metric].max() <= 1:
 # --------------------------------------------
 # HOVER FORMAT
 # --------------------------------------------
+# --------------------------------------------
+# HOVER FORMAT (completo)
+# --------------------------------------------
 hover_parts = []
 
 # X
@@ -137,7 +140,22 @@ if filtered_df[y_metric].max() <= 1:
 else:
     hover_parts.append(f"{y_metric}: %{{y:.2f}}")
 
+# SIZE
+if size_metric:
+    if filtered_df[size_metric].max() <= 1:
+        hover_parts.append(f"{size_metric}: %{{marker.size:.1f}}%")
+    else:
+        hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
+
+# COLOR
+if color_metric:
+    if filtered_df[color_metric].max() <= 1:
+        hover_parts.append(f"{color_metric}: %{{marker.color:.1f}}%")
+    else:
+        hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
+
 fig.update_traces(hovertemplate="<br>".join(hover_parts))
+
 
 # --------------------------------------------
 # SHOW
