@@ -109,6 +109,19 @@ fig.update_layout(xaxis_title=labels.get(x_metric, x_metric),
                   yaxis_title=labels.get(y_metric, y_metric))
 
 
+# formato de porcentajes
+for axis in ["xaxis", "yaxis"]:
+    fig.update_layout(**{
+        axis: dict(tickformat=".1f")  # 1 decimal
+    })
+
+# añadir símbolo % si procede
+if filtered_df[x_metric].max() <= 1:
+    fig.update_xaxes(ticksuffix="%")
+
+if filtered_df[y_metric].max() <= 1:
+    fig.update_yaxes(ticksuffix="%"
+
 st.plotly_chart(fig, use_container_width=True)
 
 # --------------------------------------------
