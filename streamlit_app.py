@@ -21,17 +21,17 @@ selected_file = st.sidebar.selectbox("Dataset", files)
 
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-# métricas posibles (catálogo)
+# mÃ©tricas posibles (catÃ¡logo)
 metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
 all_metrics = metrics_df.columns.tolist()
 
 # --------------------------------------------
-# DETECTAR MÉTRICAS DISPONIBLES
+# DETECTAR MÃ‰TRICAS DISPONIBLES
 # --------------------------------------------
 available_metrics = [m for m in all_metrics if m in df.columns]
 
 if len(available_metrics) < 2:
-    st.error("No hay suficientes métricas en el dataset")
+    st.error("No hay suficientes mÃ©tricas en el dataset")
     st.stop()
 
 # --------------------------------------------
@@ -47,7 +47,7 @@ y_metric = st.sidebar.selectbox("Eje Y", y_options)
 
 # SIZE
 size_options = [None] + [m for m in available_metrics if m not in [x_metric, y_metric]]
-size_metric = st.sidebar.selectbox("Tamaño (opcional)", size_options)
+size_metric = st.sidebar.selectbox("TamaÃ±o (opcional)", size_options)
 
 # COLOR
 excluded = [x_metric, y_metric]
