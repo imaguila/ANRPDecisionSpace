@@ -25,16 +25,17 @@ if not files:
 selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
+
 # --------------------------------------------
-# METRICS CATALOG (SEPARATED)
+# METRICS CATALOG 
 # --------------------------------------------
-metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
+metrics_df = pd.read_csv(os.path.join(DATA_PATH, "metrics.csv"), header=None)
 
 optimization_metrics = metrics_df.iloc[0].dropna().tolist()
 quality_metrics = metrics_df.iloc[1].dropna().tolist()
 
 # --------------------------------------------
-# AVAILABLE METRICS (SEPARATED + GLOBAL)
+# AVAILABLE METRICS
 # --------------------------------------------
 available_optimization_metrics = [
     m for m in optimization_metrics if m in df.columns
