@@ -120,7 +120,7 @@ if filtered_df[x_metric].max() <= 1:
     fig.update_xaxes(ticksuffix="%")
 
 if filtered_df[y_metric].max() <= 1:
-    fig.update_yaxes(ticksuffix="%"
+    fig.update_yaxes(ticksuffix="%")
 
 st.plotly_chart(fig, use_container_width=True)
 
