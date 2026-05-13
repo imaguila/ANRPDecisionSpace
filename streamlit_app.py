@@ -15,18 +15,22 @@ DATA_PATH = "data"
 def load_csv(path):
     return pd.read_csv(path)
 
-# problems
+# datasets
 files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and f != "metrics.csv"]
-selected_file = st.sidebar.selectbox("Dataset", files)
 
+if not files:
+    st.error("No datasets found")
+    st.stop()
+
+selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-# métricas posibles (catálogo)
+# metrics catalog
 metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
 all_metrics = metrics_df.columns.tolist()
 
 # --------------------------------------------
-# METRICS DETECTION
+# AVAILABLE METRICS
 # --------------------------------------------
 available_metrics = [m for m in all_metrics if m in df.columns]
 
@@ -35,135 +39,108 @@ if len(available_metrics) < 2:
     st.stop()
 
 # --------------------------------------------
-# SELECTORS No  duplicated
+# SESSION STATE (graphs)
 # --------------------------------------------
+if "groups" not in st.session_state:
+    st.session_state.groups = []
 
-# X
-x_metric = st.sidebar.selectbox("X", available_metrics)
+# reset button
+if st.sidebar.button("Reset graphs"):
+    st.session_state.groups = []
 
-# Y
-y_options = [m for m in available_metrics if m != x_metric]
-y_metric = st.sidebar.selectbox("Y", y_options)
-
-# SIZE
-size_options = [None] + [m for m in available_metrics if m not in [x_metric, y_metric]]
-size_metric = st.sidebar.selectbox("Dot size (optional)", size_options)
-
-# COLOR
-excluded = [x_metric, y_metric]
-if size_metric:
-    excluded.append(size_metric)
-
-color_options = [None] + [m for m in available_metrics if m not in excluded]
-color_metric = st.sidebar.selectbox("Color (optional)", color_options)
 # --------------------------------------------
-# FILTERS (todas las dimensiones)
+# FILTERS (global filters)
 # --------------------------------------------
 st.sidebar.markdown("### Filters")
 
 filtered_df = df.copy()
 
-# X
-x_range = st.sidebar.slider(
-    f"Range {x_metric}",
-    float(df[x_metric].min()),
-    float(df[x_metric].max()),
-    (float(df[x_metric].min()), float(df[x_metric].max()))
-)
+for m in available_metrics:
+    min_val = float(df[m].min())
+    max_val = float(df[m].max())
 
-filtered_df = filtered_df[
-    (filtered_df[x_metric] >= x_range[0]) &
-    (filtered_df[x_metric] <= x_range[1])
-]
+    if min_val != max_val:  # evitar sliders inútiles
+        val_range = st.sidebar.slider(
+            f"{m}",
+            min_val,
+            max_val,
+            (min_val, max_val),
+            key=f"filter_{m}"
+        )
 
-# Y
-y_range = st.sidebar.slider(
-    f"Range {y_metric}",
-    float(df[y_metric].min()),
-    float(df[y_metric].max()),
-    (float(df[y_metric].min()), float(df[y_metric].max()))
-)
+        filtered_df = filtered_df[
+            (filtered_df[m] >= val_range[0]) &
+            (filtered_df[m] <= val_range[1])
+        ]
 
-filtered_df = filtered_df[
-    (filtered_df[y_metric] >= y_range[0]) &
-    (filtered_df[y_metric] <= y_range[1])
-]
+# --------------------------------------------
+# ADD GRAPH BUTTON
+# --------------------------------------------
+used_metrics = [m for g in st.session_state.groups for m in g if m]
+remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 
-# SIZE
-if size_metric:
-    size_range = st.sidebar.slider(
-        f"Range {size_metric}",
-        float(df[size_metric].min()),
-        float(df[size_metric].max()),
-        (float(df[size_metric].min()), float(df[size_metric].max()))
+st.sidebar.markdown("### Visualizations")
+
+if len(remaining_metrics) >= 2:
+    if st.sidebar.button("Add graph"):
+        st.session_state.groups.append([None, None, None])
+
+# --------------------------------------------
+# DRAW GRAPHS
+# --------------------------------------------
+for i, group in enumerate(st.session_state.groups):
+
+    st.subheader(f"Graph {i+1}")
+
+    # recalcular métricas disponibles para este gráfico
+    used_metrics = [m for idx, g in enumerate(st.session_state.groups) if idx != i for m in g if m]
+    available = [m for m in available_metrics if m not in used_metrics]
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        x = st.selectbox(f"X {i}", available, key=f"x_{i}")
+
+    with col2:
+        y_options = [m for m in available if m != x]
+        y = st.selectbox(f"Y {i}", y_options, key=f"y_{i}")
+
+    with col3:
+        size_options = [None] + [m for m in available if m not in [x, y]]
+        size = st.selectbox(f"Size {i} (optional)", size_options, key=f"size_{i}")
+
+    # guardar selección
+    st.session_state.groups[i] = [x, y, size]
+
+    # --------------------------------------------
+    # PLOT
+    # --------------------------------------------
+    fig = px.scatter(
+        filtered_df,
+        x=x,
+        y=y,
+        size=size if size else None,
+        hover_data=["id"] if "id" in df.columns else None,
     )
 
-    filtered_df = filtered_df[
-        (filtered_df[size_metric] >= size_range[0]) &
-        (filtered_df[size_metric] <= size_range[1])
+    fig.update_xaxes(title=x, tickformat=".2f")
+    fig.update_yaxes(title=y, tickformat=".2f")
+
+    # hover limpio
+    hover_parts = [
+        f"{x}: %{{x:.2f}}",
+        f"{y}: %{{y:.2f}}",
     ]
 
-# COLOR
-if color_metric:
-    color_range = st.sidebar.slider(
-        f"Range {color_metric}",
-        float(df[color_metric].min()),
-        float(df[color_metric].max()),
-        (float(df[color_metric].min()), float(df[color_metric].max()))
-    )
+    if size:
+        hover_parts.append(f"{size}: %{{marker.size:.2f}}")
 
-    filtered_df = filtered_df[
-        (filtered_df[color_metric] >= color_range[0]) &
-        (filtered_df[color_metric] <= color_range[1])
-    ]
+    fig.update_traces(hovertemplate="<br>".join(hover_parts))
+
+    st.plotly_chart(fig, use_container_width=True)
 
 # --------------------------------------------
-# PLOT
+# DATA PREVIEW
 # --------------------------------------------
-fig = px.scatter(
-    filtered_df,
-    x=x_metric,
-    y=y_metric,
-    size=size_metric if size_metric else None,
-    color=color_metric if color_metric else None,
-    hover_data=["id"] if "id" in df.columns else None,
-)
-
-fig.update_xaxes(title=x_metric)
-fig.update_yaxes(title=y_metric)
-
-# --------------------------------------------
-# HOVER FORMAT (2 decimales, sin errores)
-# --------------------------------------------
-hover_parts = [
-    f"{x_metric}: %{{x:.2f}}",
-    f"{y_metric}: %{{y:.2f}}",
-]
-
-# SIZE
-if size_metric:
-    hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
-
-# COLOR
-if color_metric:
-    hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
-
-fig.update_traces(hovertemplate="<br>".join(hover_parts))
-
-# --------------------------------------------
-# SHOW
-# --------------------------------------------
-st.plotly_chart(fig, use_container_width=True)
-
-
-# --------------------------------------------
-# PREVIEW
-# --------------------------------------------
-with st.expander("Data"):
-    cols = [x_metric, y_metric]
-    if size_metric:
-        cols.append(size_metric)
-    if color_metric:
-        cols.append(color_metric)
-
-    st.dataframe(filtered_df[cols].head(50))
+with st.expander("Data preview"):
+    st.dataframe(filtered_df.head(100))
