@@ -82,7 +82,7 @@ for m in available_metrics:
         ]
 
 # --------------------------------------------
-# SELECTION MODE (QUALITY)
+# SELECTION MODE (MULTI QUALITY)
 # --------------------------------------------
 st.sidebar.markdown("### Selection")
 
@@ -95,29 +95,57 @@ if use_selection:
     if len(available_quality_metrics) == 0:
         st.sidebar.warning("No quality metrics available")
     else:
-        metric_sel = st.sidebar.selectbox(
-            "Quality metric",
+        # seleccionar múltiples métricas
+        selected_metrics = st.sidebar.multiselect(
+            "Quality metrics",
             available_quality_metrics
         )
 
-        n_top = st.sidebar.slider(
-            "Number of solutions",
-            1,
-            min(50, len(filtered_df)),
-            10
-        )
+        if len(selected_metrics) > 0:
 
-        goal = st.sidebar.selectbox(
-            "Objective",
-            ["Maximize", "Minimize"]
-        )
+            n_top = st.sidebar.slider(
+                "Number of solutions",
+                1,
+                min(50, len(filtered_df)),
+                10
+            )
 
-        if goal == "Maximize":
-            selected_df = filtered_df.sort_values(metric_sel, ascending=False).head(n_top)
-        else:
-            selected_df = filtered_df.sort_values(metric_sel, ascending=True).head(n_top)
+            goal = st.sidebar.selectbox(
+                "Objective",
+                ["Maximize", "Minimize"]
+            )
 
-        st.sidebar.success(f"{len(selected_df)} solutions selected")
+            temp_df = filtered_df.copy()
+
+            # --------------------------------------------
+            # NORMALIZACIÓN SIMPLE (0-1)
+            # --------------------------------------------
+            for m in selected_metrics:
+                min_val = temp_df[m].min()
+                max_val = temp_df[m].max()
+
+                if max_val > min_val:
+                    temp_df[m + "_norm"] = (temp_df[m] - min_val) / (max_val - min_val)
+                else:
+                    temp_df[m + "_norm"] = 0
+
+            # --------------------------------------------
+            # SCORE (media de métricas)
+            # --------------------------------------------
+            norm_cols = [m + "_norm" for m in selected_metrics]
+
+            temp_df["score"] = temp_df[norm_cols].mean(axis=1)
+
+            # --------------------------------------------
+            # SELECCIÓN
+            # --------------------------------------------
+            if goal == "Maximize":
+                selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
+            else:
+                selected_df = temp_df.sort_values("score", ascending=True).head(n_top)
+
+            st.sidebar.success(f"{len(selected_df)} solutions selected")
+
 
 # --------------------------------------------
 # ADD GRAPH BUTTON
