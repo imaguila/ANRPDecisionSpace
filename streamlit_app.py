@@ -4,97 +4,56 @@ import plotly.express as px
 import os
 
 st.set_page_config(layout="wide")
-st.title("Multiobjective Optimization Dashboard")
+st.title("Metrics Dashboard")
 
-# --------------------------------------------
-# CONFIG
-# --------------------------------------------
 DATA_PATH = "data"
 
 # --------------------------------------------
 # LOAD DATA
 # --------------------------------------------
 @st.cache_data
-def load_data(path):
+def load_csv(path):
     return pd.read_csv(path)
 
-files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv")]
+# datasets disponibles
+files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and f != "metrics.csv"]
+selected_file = st.sidebar.selectbox("Dataset", files)
 
-if not files:
-    st.error("No hay datasets en la carpeta data/")
+df = load_csv(os.path.join(DATA_PATH, selected_file))
+
+# métricas posibles (catálogo)
+metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
+all_metrics = metrics_df.columns.tolist()
+
+# --------------------------------------------
+# DETECTAR MÉTRICAS DISPONIBLES
+# --------------------------------------------
+available_metrics = [m for m in all_metrics if m in df.columns]
+
+if len(available_metrics) < 2:
+    st.error("No hay suficientes métricas en el dataset")
     st.stop()
 
-selected_file = st.sidebar.selectbox("Selecciona dataset", files)
-
-df = load_data(os.path.join(DATA_PATH, selected_file))
-
 # --------------------------------------------
-# VALIDATION
+# SELECTORES
 # --------------------------------------------
-coverage_cols = [c for c in df.columns if c.startswith("stcov")]
-
-if len(coverage_cols) == 0:
-    st.error("El dataset no tiene columnas stcov_*")
-    st.stop()
+x_metric = st.sidebar.selectbox("Eje X", available_metrics, index=0)
+y_metric = st.sidebar.selectbox("Eje Y", available_metrics, index=1)
 
 # --------------------------------------------
-# FEATURES
+# PLOT
 # --------------------------------------------
-df["mean_coverage"] = df[coverage_cols].mean(axis=1)
-
-# --------------------------------------------
-# SIDEBAR
-# --------------------------------------------
-st.sidebar.markdown("### Filtros")
-
-max_effort = st.sidebar.slider(
-    "Max effort",
-    float(df["effort"].min()),
-    float(df["effort"].max()),
-    float(df["effort"].max())
+fig = px.scatter(
+    df,
+    x=x_metric,
+    y=y_metric,
+    hover_data=["id"] if "id" in df.columns else None,
 )
 
-filtered = df[df["effort"] <= max_effort]
-
-st.sidebar.markdown("### Info dataset")
-st.sidebar.write("Filas:", df.shape[0])
-st.sidebar.write("Columnas:", df.shape[1])
+st.plotly_chart(fig, use_container_width=True)
 
 # --------------------------------------------
-# MAIN LAYOUT
+# PREVIEW
 # --------------------------------------------
-col1, col2 = st.columns([2, 1])
-
-# --------------------------------------------
-# SCATTER
-# --------------------------------------------
-with col1:
-    st.subheader("Effort vs Satisfaction")
-
-    fig = px.scatter(
-        filtered,
-        x="effort",
-        y="satisfaction",
-        size="mean_coverage",
-        color="squandering",
-        hover_data=["id"],
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# --------------------------------------------
-# COVERAGE
-# --------------------------------------------
-with col2:
-    st.subheader("Coverage")
-
-    coverage_fig = px.line(
-        filtered,
-        x="id",
-        y=coverage_cols,
-    )
-
-    st.plotly_chart(coverage_fig, use_container_width=True)
-
-# --------------------------------------------
-# DATA PREVIEW
+with st.expander("Datos"):
+    st.dataframe(df[[x_metric, y_metric]].head(50))
