@@ -56,25 +56,66 @@ if size_metric:
 
 color_options = [None] + [m for m in available_metrics if m not in excluded]
 color_metric = st.sidebar.selectbox("Color (optional)", color_options)
-
 # --------------------------------------------
-# FILTRO EN X
+# FILTERS (todas las dimensiones)
 # --------------------------------------------
-min_val = float(df[x_metric].min())
-max_val = float(df[x_metric].max())
+st.sidebar.markdown("### Filters")
 
+filtered_df = df.copy()
+
+# X
 x_range = st.sidebar.slider(
     f"Range {x_metric}",
-    min_val,
-    max_val,
-    (min_val, max_val)
+    float(df[x_metric].min()),
+    float(df[x_metric].max()),
+    (float(df[x_metric].min()), float(df[x_metric].max()))
 )
 
-filtered_df = df[
-    (df[x_metric] >= x_range[0]) &
-    (df[x_metric] <= x_range[1])
+filtered_df = filtered_df[
+    (filtered_df[x_metric] >= x_range[0]) &
+    (filtered_df[x_metric] <= x_range[1])
 ]
 
+# Y
+y_range = st.sidebar.slider(
+    f"Range {y_metric}",
+    float(df[y_metric].min()),
+    float(df[y_metric].max()),
+    (float(df[y_metric].min()), float(df[y_metric].max()))
+)
+
+filtered_df = filtered_df[
+    (filtered_df[y_metric] >= y_range[0]) &
+    (filtered_df[y_metric] <= y_range[1])
+]
+
+# SIZE
+if size_metric:
+    size_range = st.sidebar.slider(
+        f"Range {size_metric}",
+        float(df[size_metric].min()),
+        float(df[size_metric].max()),
+        (float(df[size_metric].min()), float(df[size_metric].max()))
+    )
+
+    filtered_df = filtered_df[
+        (filtered_df[size_metric] >= size_range[0]) &
+        (filtered_df[size_metric] <= size_range[1])
+    ]
+
+# COLOR
+if color_metric:
+    color_range = st.sidebar.slider(
+        f"Range {color_metric}",
+        float(df[color_metric].min()),
+        float(df[color_metric].max()),
+        (float(df[color_metric].min()), float(df[color_metric].max()))
+    )
+
+    filtered_df = filtered_df[
+        (filtered_df[color_metric] >= color_range[0]) &
+        (filtered_df[color_metric] <= color_range[1])
+    ]
 
 # --------------------------------------------
 # PLOT
@@ -88,28 +129,24 @@ fig = px.scatter(
     hover_data=["id"] if "id" in df.columns else None,
 )
 
-# --------------------------------------------
-# LABELS ( X & Y)
-# --------------------------------------------
 fig.update_xaxes(title=x_metric)
 fig.update_yaxes(title=y_metric)
 
 # --------------------------------------------
-# HOVER FORMAT 
+# HOVER FORMAT (2 decimales, sin errores)
 # --------------------------------------------
-hover_parts = []
-
-# X
-hover_parts.append(f"{x_metric}: %{{x:.2f}}")
-
-# Y
-hover_parts.append(f"{y_metric}: %{{y:.2f}}")
+hover_parts = [
+    f"{x_metric}: %{{x:.2f}}",
+    f"{y_metric}: %{{y:.2f}}",
+]
 
 # SIZE
-hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
+if size_metric:
+    hover_parts.append(f"{size_metric}: %{{marker.size:.2f}}")
 
 # COLOR
-hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
+if color_metric:
+    hover_parts.append(f"{color_metric}: %{{marker.color:.2f}}")
 
 fig.update_traces(hovertemplate="<br>".join(hover_parts))
 
@@ -117,15 +154,3 @@ fig.update_traces(hovertemplate="<br>".join(hover_parts))
 # SHOW
 # --------------------------------------------
 st.plotly_chart(fig, use_container_width=True)
-
-# --------------------------------------------
-# PREVIEW
-# --------------------------------------------
-with st.expander("Data"):
-    cols = [x_metric, y_metric]
-    if size_metric:
-        cols.append(size_metric)
-    if color_metric:
-        cols.append(color_metric)
-
-    st.dataframe(filtered_df[cols].head(50))
