@@ -25,26 +25,14 @@ if not files:
 selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-# --------------------------------------------
-# METRICS CATALOG (SEPARATED)
-# --------------------------------------------
+# metrics catalog
 metrics_df = load_csv(os.path.join(DATA_PATH, "metrics.csv"))
-
-optimization_metrics = metrics_df.iloc[0].dropna().tolist()
-quality_metrics = metrics_df.iloc[1].dropna().tolist()
+all_metrics = metrics_df.columns.tolist()
 
 # --------------------------------------------
-# AVAILABLE METRICS (SEPARATED + GLOBAL)
+# AVAILABLE METRICS
 # --------------------------------------------
-available_optimization_metrics = [
-    m for m in optimization_metrics if m in df.columns
-]
-
-available_quality_metrics = [
-    m for m in quality_metrics if m in df.columns
-]
-
-available_metrics = available_optimization_metrics + available_quality_metrics
+available_metrics = [m for m in all_metrics if m in df.columns]
 
 if len(available_metrics) < 2:
     st.error("There are not enough metrics")
@@ -56,12 +44,12 @@ if len(available_metrics) < 2:
 if "groups" not in st.session_state:
     st.session_state.groups = []
 
-# reset
+# reset button
 if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# FILTERS (GLOBAL)
+# FILTERS (global filters)
 # --------------------------------------------
 st.sidebar.markdown("### Filters")
 
@@ -71,7 +59,7 @@ for m in available_metrics:
     min_val = float(df[m].min())
     max_val = float(df[m].max())
 
-    if min_val != max_val:
+    if min_val != max_val:  # evitar sliders inútiles
         val_range = st.sidebar.slider(
             f"{m}",
             min_val,
@@ -104,12 +92,8 @@ for i, group in enumerate(st.session_state.groups):
 
     st.subheader(f"Graph {i+1}")
 
-    # recalcular métricas disponibles
-    used_metrics = [
-        m for idx, g in enumerate(st.session_state.groups)
-        if idx != i for m in g if m
-    ]
-
+    # recalcular métricas disponibles para este gráfico
+    used_metrics = [m for idx, g in enumerate(st.session_state.groups) if idx != i for m in g if m]
     available = [m for m in available_metrics if m not in used_metrics]
 
     col1, col2, col3 = st.columns(3)
