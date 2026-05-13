@@ -155,15 +155,3 @@ fig.update_traces(hovertemplate="<br>".join(hover_parts))
 # --------------------------------------------
 st.plotly_chart(fig, use_container_width=True)
 
-
-# --------------------------------------------
-# PREVIEW
-# --------------------------------------------
-with st.expander("Data"):
-    cols = [x_metric, y_metric]
-    if size_metric:
-        cols.append(size_metric)
-    if color_metric:
-        cols.append(color_metric)
-
-    st.dataframe(filtered_df[cols].head(50))
