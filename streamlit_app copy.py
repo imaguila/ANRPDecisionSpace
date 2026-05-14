@@ -15,6 +15,7 @@ DATA_PATH = "data"
 def load_csv(path):
     return pd.read_csv(path)
 
+# datasets
 files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
 
 if not files:
@@ -25,7 +26,7 @@ selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
 # --------------------------------------------
-# METRICS
+# METRICS CATALOG (2 FILES)
 # --------------------------------------------
 opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
 optimization_metrics = opt_df.columns.tolist()
@@ -33,6 +34,9 @@ optimization_metrics = opt_df.columns.tolist()
 qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
 quality_metrics = qual_df.columns.tolist()
 
+# --------------------------------------------
+# AVAILABLE METRICS
+# --------------------------------------------
 available_optimization_metrics = [m for m in optimization_metrics if m in df.columns]
 available_quality_metrics = [m for m in quality_metrics if m in df.columns]
 
@@ -43,20 +47,34 @@ if len(available_metrics) < 2:
     st.stop()
 
 # --------------------------------------------
-# SESSION STATE
+# SESSION STATE (graphs)
 # --------------------------------------------
 if "groups" not in st.session_state:
     st.session_state.groups = []
 
+# reset
 if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
+
 # --------------------------------------------
-# FULL DATA
+# ADD GRAPH BUTTON
 # --------------------------------------------
+used_metrics = [m for g in st.session_state.groups for m in g if m]
+remaining_metrics = [m for m in available_metrics if m not in used_metrics]
+
+# st.sidebar.markdown("### Visualizations")
+
+if len(remaining_metrics) >= 2:
+    if st.sidebar.button("Add graph"):
+        st.session_state.groups.append([None, None, None])
+
+
+# Se muestran todos los datos en cabecera
 with st.expander("Full preview"):
     st.write(f"Showing all {len(df)} solutions")
     st.dataframe(df, use_container_width=True)
+
 
 # --------------------------------------------
 # FILTERS
@@ -84,122 +102,75 @@ for m in available_metrics:
         ]
 
 # --------------------------------------------
-# SELECTION MODE
+# SELECTION MODE (MULTI QUALITY + MIN/MAX)
 # --------------------------------------------
 st.sidebar.markdown("### Selection")
 
-mode = st.sidebar.selectbox(
-    "Selection mode",
-    ["Score-based", "Ranking-based"]
-)
+use_selection = st.sidebar.checkbox("Activate selection mode")
 
 selected_df = filtered_df.copy()
 
-# --------------------------------------------
-# MODE 1: SCORE
-# --------------------------------------------
-if mode == "Score-based":
+if use_selection:
 
-    metrics_max = st.sidebar.multiselect(
-        "Metrics to maximize",
-        available_quality_metrics,
-        key="max_metrics"
-    )
-
-    metrics_min = st.sidebar.multiselect(
-        "Metrics to minimize",
-        [m for m in available_quality_metrics if m not in metrics_max],
-        key="min_metrics"
-    )
-
-    if len(metrics_max) + len(metrics_min) > 0:
-
-        n_top = st.sidebar.slider(
-            "Number of solutions",
-            1,
-            min(50, len(filtered_df)),
-            10
+    if len(available_quality_metrics) == 0:
+        st.sidebar.warning("No quality metrics available")
+    else:
+        # Separated selection
+        metrics_max = st.sidebar.multiselect(
+            "Metrics to maximize",
+            available_quality_metrics,
+            key="max_metrics"
         )
 
-        temp_df = filtered_df.copy()
+        metrics_min = st.sidebar.multiselect(
+            "Metrics to minimize",
+            [m for m in available_quality_metrics if m not in metrics_max],
+            key="min_metrics"
+        )
 
-        for m in metrics_max + metrics_min:
-            min_val = temp_df[m].min()
-            max_val = temp_df[m].max()
+        if len(metrics_max) + len(metrics_min) > 0:
 
-            if max_val > min_val:
-                temp_df[m + "_norm"] = (temp_df[m] - min_val) / (max_val - min_val)
-            else:
-                temp_df[m + "_norm"] = 0
+            n_top = st.sidebar.slider(
+                "Number of solutions",
+                1,
+                min(50, len(filtered_df)),
+                10
+            )
 
-        score = 0
+            temp_df = filtered_df.copy()
 
-        if metrics_max:
-            score += temp_df[[m + "_norm" for m in metrics_max]].mean(axis=1)
+            # --------------------------------------------
+            # NORMALIZACIÓN
+            # --------------------------------------------
+            for m in metrics_max + metrics_min:
+                min_val = temp_df[m].min()
+                max_val = temp_df[m].max()
 
-        if metrics_min:
-            score -= temp_df[[m + "_norm" for m in metrics_min]].mean(axis=1)
+                if max_val > min_val:
+                    temp_df[m + "_norm"] = (temp_df[m] - min_val) / (max_val - min_val)
+                else:
+                    temp_df[m + "_norm"] = 0
 
-        temp_df["score"] = score
+            # --------------------------------------------
+            # SCORE
+            # --------------------------------------------
+            score = 0
 
-        selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
+            if len(metrics_max) > 0:
+                score += temp_df[[m + "_norm" for m in metrics_max]].mean(axis=1)
 
-        st.sidebar.success(f"{len(selected_df)} solutions selected")
+            if len(metrics_min) > 0:
+                score -= temp_df[[m + "_norm" for m in metrics_min]].mean(axis=1)
 
-# --------------------------------------------
-# MODE 2: RANKING
-# --------------------------------------------
-elif mode == "Ranking-based":
+            temp_df["score"] = score
 
-    selected_metrics = st.sidebar.multiselect(
-        "Quality metrics",
-        available_quality_metrics
-    )
+            # seleccionar mejores (siempre max score)
+            selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
 
-    n_top = st.sidebar.slider(
-        "Top N per metric",
-        1,
-        min(50, len(filtered_df)),
-        10
-    )
+            st.sidebar.success(f"{len(selected_df)} solutions selected")
 
-    goal = st.sidebar.selectbox(
-        "Objective",
-        ["Maximize", "Minimize"]
-    )
 
-    if selected_metrics:
 
-        ranking_lists = []
-
-        for m in selected_metrics:
-
-            if goal == "Maximize":
-                top_df = filtered_df.sort_values(m, ascending=False).head(n_top)
-            else:
-                top_df = filtered_df.sort_values(m, ascending=True).head(n_top)
-
-            ranking_lists.append(top_df)
-
-        combined_df = pd.concat(ranking_lists)
-
-        counts = combined_df.groupby("id").size().reset_index(name="count")
-
-        selected_df = filtered_df.merge(counts, on="id", how="inner")
-
-        selected_df = selected_df.sort_values("count", ascending=False)
-
-        st.sidebar.success(f"{len(selected_df)} candidate solutions")
-
-# --------------------------------------------
-# ADD GRAPH
-# --------------------------------------------
-used_metrics = [m for g in st.session_state.groups for m in g if m]
-remaining_metrics = [m for m in available_metrics if m not in used_metrics]
-
-if len(remaining_metrics) >= 2:
-    if st.sidebar.button("Add graph"):
-        st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -230,15 +201,14 @@ for i, group in enumerate(st.session_state.groups):
 
     st.session_state.groups[i] = [x, y, size]
 
-    # COLOR SOLO PARA RANKING
-    color_col = "count" if (mode == "Ranking-based" and "count" in selected_df.columns) else None
-
+    # --------------------------------------------
+    # PLOT
+    # --------------------------------------------
     fig = px.scatter(
         selected_df,
         x=x,
         y=y,
         size=size if size else None,
-        color=color_col,
         hover_data=["id"] if "id" in df.columns else None,
     )
 
@@ -252,9 +222,6 @@ for i, group in enumerate(st.session_state.groups):
 
     if size:
         hover_parts.append(f"{size}: %{{marker.size:.2f}}")
-
-    if color_col:
-        hover_parts.append("count: %{marker.color}")
 
     fig.update_traces(hovertemplate="<br>".join(hover_parts))
 
