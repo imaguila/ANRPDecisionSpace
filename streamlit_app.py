@@ -168,17 +168,7 @@ if use_selection:
             st.sidebar.success(f"{len(selected_df)} solutions selected")
 
 
-# --------------------------------------------
-# ADD GRAPH BUTTON
-# --------------------------------------------
-used_metrics = [m for g in st.session_state.groups for m in g if m]
-remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 
-st.sidebar.markdown("### Visualizations")
-
-if len(remaining_metrics) >= 2:
-    if st.sidebar.button("Add graph"):
-        st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
 # DRAW GRAPHS
