@@ -52,7 +52,7 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# ADD GRAPH (NO TOCADO)
+# ADD GRAPH (SIN TOCAR)
 # --------------------------------------------
 used_metrics = [m for g in st.session_state.groups for m in g if m]
 remaining_metrics = [m for m in available_metrics if m not in used_metrics]
@@ -62,7 +62,7 @@ if len(remaining_metrics) >= 2:
         st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
-# PREVIEW
+# PREVIEW COMPLETO
 # --------------------------------------------
 with st.expander("Full preview"):
     st.write(f"Showing all {len(df)} solutions")
@@ -204,7 +204,7 @@ elif mode == "Ranking-based":
         selected_df = selected_df.sort_values("count", ascending=False)
 
 # --------------------------------------------
-# HIGHLIGHT (NUEVO)
+# HIGHLIGHT SELECTION
 # --------------------------------------------
 selected_id = None
 
@@ -217,6 +217,10 @@ if "id" in selected_df.columns:
     )
 
     selected_df["highlight"] = selected_df["id"] == selected_id
+
+    # mostrar fila seleccionada
+    st.markdown("### Selected solution")
+    st.dataframe(selected_df[selected_df["id"] == selected_id])
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -261,7 +265,7 @@ for i, group in enumerate(st.session_state.groups):
             color=color_col,
             symbol="highlight" if "highlight" in selected_df.columns else None,
             symbol_map={True: "x", False: "circle"},
-            hover_data=["id"] if "id" in df.columns else None,
+            hover_data=["id"],
             color_continuous_scale="Viridis"
         )
 
@@ -281,7 +285,7 @@ for i, group in enumerate(st.session_state.groups):
                 color=color_col,
                 symbol="highlight" if "highlight" in selected_df.columns else None,
                 symbol_map={True: "x", False: "circle"},
-                hover_data=["id"] if "id" in df.columns else None,
+                hover_data=["id"],
                 color_continuous_scale="Viridis"
             )
 
@@ -293,8 +297,17 @@ for i, group in enumerate(st.session_state.groups):
             st.info("Add a third dimension to see linked view")
 
 # --------------------------------------------
-# DATA PREVIEW
+# DATA PREVIEW (LIMPIO)
 # --------------------------------------------
 with st.expander("Data preview"):
     st.write(f"Showing {len(selected_df)} solutions")
-    st.dataframe(selected_df.head(100))
+
+    # quitar columna highlight de visualización
+    cols_show = [c for c in selected_df.columns if c != "highlight"]
+
+    styled_df = selected_df[cols_show].style.apply(
+        lambda row: ['background-color: lightyellow' if row.get("id") == selected_id else '' for _ in row],
+        axis=1
+    )
+
+    st.dataframe(styled_df.head(100))
