@@ -52,7 +52,7 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# ADD GRAPH (NO TOCADO)
+# ADD GRAPH
 # --------------------------------------------
 used_metrics = [m for g in st.session_state.groups for m in g if m]
 remaining_metrics = [m for m in available_metrics if m not in used_metrics]
@@ -154,8 +154,10 @@ if mode == "Score-based":
 
         selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
 
+        st.sidebar.success(f"{len(selected_df)} solutions selected")
+
 # --------------------------------------------
-# MODE 2: RANKING
+# MODE 2: RANKING (MIN/MAX POR MÉTRICA)
 # --------------------------------------------
 elif mode == "Ranking-based":
 
@@ -185,6 +187,7 @@ elif mode == "Ranking-based":
         ranking_lists = []
 
         for m in selected_metrics:
+
             goal = metric_goals[m]
 
             if goal == "Maximize":
@@ -203,20 +206,8 @@ elif mode == "Ranking-based":
 
         selected_df = selected_df.sort_values("count", ascending=False)
 
-# --------------------------------------------
-# HIGHLIGHT (NUEVO)
-# --------------------------------------------
-selected_id = None
+        st.sidebar.success("Ranking computed")
 
-if "id" in selected_df.columns:
-    st.markdown("### Select solution to highlight")
-
-    selected_id = st.selectbox(
-        "Solution ID",
-        selected_df["id"].unique()
-    )
-
-    selected_df["highlight"] = selected_df["id"] == selected_id
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -249,9 +240,12 @@ for i, group in enumerate(st.session_state.groups):
 
     color_col = "count" if "count" in selected_df.columns else None
 
+    # ============================
+    # 🔹 GRÁFICOS ENLAZADOS
+    # ============================
     colA, colB = st.columns(2)
 
-    # ---- MAIN GRAPH
+    # ---- GRÁFICO PRINCIPAL
     with colA:
         fig1 = px.scatter(
             selected_df,
@@ -259,8 +253,6 @@ for i, group in enumerate(st.session_state.groups):
             y=y,
             size=size if size else None,
             color=color_col,
-            symbol="highlight" if "highlight" in selected_df.columns else None,
-            symbol_map={True: "x", False: "circle"},
             hover_data=["id"] if "id" in df.columns else None,
             color_continuous_scale="Viridis"
         )
@@ -268,19 +260,31 @@ for i, group in enumerate(st.session_state.groups):
         fig1.update_xaxes(title=x, tickformat=".2f")
         fig1.update_yaxes(title=y, tickformat=".2f")
 
+        hover_parts = [
+            f"{x}: %{{x:.2f}}",
+            f"{y}: %{{y:.2f}}"
+        ]
+
+        if size:
+            hover_parts.append(f"{size}: %{{marker.size:.2f}}")
+
+        if color_col:
+            hover_parts.append("matches: %{marker.color}")
+
+        fig1.update_traces(hovertemplate="<br>".join(hover_parts))
+
         st.plotly_chart(fig1, use_container_width=True)
 
-    # ---- LINKED GRAPH
+    # ---- GRÁFICO ENLAZADO automático
     with colB:
         if size:
+            # proyección alternativa
             fig2 = px.scatter(
                 selected_df,
                 x=x,
                 y=size,
                 size=y,
                 color=color_col,
-                symbol="highlight" if "highlight" in selected_df.columns else None,
-                symbol_map={True: "x", False: "circle"},
                 hover_data=["id"] if "id" in df.columns else None,
                 color_continuous_scale="Viridis"
             )
@@ -288,9 +292,23 @@ for i, group in enumerate(st.session_state.groups):
             fig2.update_xaxes(title=x, tickformat=".2f")
             fig2.update_yaxes(title=size, tickformat=".2f")
 
+            hover_parts2 = [
+                f"{x}: %{{x:.2f}}",
+                f"{size}: %{{y:.2f}}"
+            ]
+
+            if y:
+                hover_parts2.append(f"{y}: %{{marker.size:.2f}}")
+
+            if color_col:
+                hover_parts2.append("matches: %{marker.color}")
+
+            fig2.update_traces(hovertemplate="<br>".join(hover_parts2))
+
             st.plotly_chart(fig2, use_container_width=True)
         else:
             st.info("Add a third dimension to see linked view")
+
 
 # --------------------------------------------
 # DATA PREVIEW
