@@ -52,7 +52,7 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# FULL DATA
+# PREVIEW
 # --------------------------------------------
 with st.expander("Full preview"):
     st.write(f"Showing all {len(df)} solutions")
@@ -147,7 +147,7 @@ if mode == "Score-based":
         st.sidebar.success(f"{len(selected_df)} solutions selected")
 
 # --------------------------------------------
-# MODE 2: RANKING
+# MODE 2: RANKING (MIN/MAX POR MÉTRICA)
 # --------------------------------------------
 elif mode == "Ranking-based":
 
@@ -163,16 +163,23 @@ elif mode == "Ranking-based":
         10
     )
 
-    goal = st.sidebar.selectbox(
-        "Objective",
-        ["Maximize", "Minimize"]
-    )
+    # dirección por métrica
+    metric_goals = {}
+
+    for m in selected_metrics:
+        metric_goals[m] = st.sidebar.selectbox(
+            f"{m}",
+            ["Maximize", "Minimize"],
+            key=f"goal_{m}"
+        )
 
     if selected_metrics:
 
         ranking_lists = []
 
         for m in selected_metrics:
+
+            goal = metric_goals[m]
 
             if goal == "Maximize":
                 top_df = filtered_df.sort_values(m, ascending=False).head(n_top)
@@ -185,11 +192,12 @@ elif mode == "Ranking-based":
 
         counts = combined_df.groupby("id").size().reset_index(name="count")
 
-        selected_df = filtered_df.merge(counts, on="id", how="inner")
+        selected_df = filtered_df.merge(counts, on="id", how="left")
+        selected_df["count"] = selected_df["count"].fillna(0)
 
         selected_df = selected_df.sort_values("count", ascending=False)
 
-        st.sidebar.success(f"{len(selected_df)} candidate solutions")
+        st.sidebar.success("Ranking computed")
 
 # --------------------------------------------
 # ADD GRAPH
@@ -230,8 +238,7 @@ for i, group in enumerate(st.session_state.groups):
 
     st.session_state.groups[i] = [x, y, size]
 
-    # COLOR SOLO PARA RANKING
-    color_col = "count" if (mode == "Ranking-based" and "count" in selected_df.columns) else None
+    color_col = "count" if ("count" in selected_df.columns) else None
 
     fig = px.scatter(
         selected_df,
@@ -240,6 +247,7 @@ for i, group in enumerate(st.session_state.groups):
         size=size if size else None,
         color=color_col,
         hover_data=["id"] if "id" in df.columns else None,
+        color_continuous_scale="Viridis"
     )
 
     fig.update_xaxes(title=x, tickformat=".2f")
@@ -254,7 +262,7 @@ for i, group in enumerate(st.session_state.groups):
         hover_parts.append(f"{size}: %{{marker.size:.2f}}")
 
     if color_col:
-        hover_parts.append("count: %{marker.color}")
+        hover_parts.append("matches: %{marker.color}")
 
     fig.update_traces(hovertemplate="<br>".join(hover_parts))
 
