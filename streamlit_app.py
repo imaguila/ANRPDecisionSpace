@@ -235,6 +235,17 @@ if "id" in selected_df.columns:
         st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
 
 
+# calcular umbral dinámico para etiquetar
+n_metrics = 0
+
+if mode == "Ranking-based":
+    n_metrics = len(selected_metrics)
+elif mode == "Score-based":
+    n_metrics = len(metrics_max) + len(metrics_min)
+
+threshold = max(1, n_metrics - 1)
+
+
 # --------------------------------------------
 # DRAW GRAPHS
 # --------------------------------------------
@@ -279,7 +290,7 @@ for i, group in enumerate(st.session_state.groups):
                 lambda row: str(row["id"])
                 if (
                     ("highlight" in selected_df.columns and row["highlight"]) or
-                    ("count" in selected_df.columns and row["count"] >= 2)
+                    ("count" in selected_df.columns and row["count"] >= threshold)
                 )
                 else "",
                 axis=1
@@ -320,7 +331,7 @@ for i, group in enumerate(st.session_state.groups):
                     lambda row: str(row["id"])
                     if (
                         ("highlight" in selected_df.columns and row["highlight"]) or
-                        ("count" in selected_df.columns and row["count"] >= 2)
+                        ("count" in selected_df.columns and row["count"] >= threshold)
                     )
                     else "",
                     axis=1
