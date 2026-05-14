@@ -25,7 +25,9 @@ def normalize_series(series):
     return series * 0.0
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids):
-    # Usamos la columna 'label' que calculamos antes de llamar a esta función
+    # Determinamos si hay etiquetas que mostrar
+    has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
+    
     fig = px.scatter(
         df, x=x, y=y, size=size,
         color=color_col,
@@ -34,11 +36,13 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
         symbol_map={True: "x", False: "circle"}
     )
     
-    fig.update_traces(
-        textposition="top right",
-        textfont=dict(size=10),
-        marker=dict(size=8)
-    )
+    # Forzamos a Plotly a renderizar el texto
+    if show_ids:
+        fig.update_traces(textposition="top center", mode='markers+text')
+    else:
+        fig.update_traces(mode='markers')
+
+    fig.update_traces(marker=dict(size=10))
     return fig
 
 # --------------------------------------------
@@ -119,24 +123,26 @@ elif mode == "Ranking-based":
         threshold = max(1, len(sel_metrics) - 1)
 
 # --------------------------------------------
-# HIGHLIGHT Y ETIQUETAS (EL ARREGLO)
+# HIGHLIGHT Y ETIQUETAS (CORREGIDO)
 # --------------------------------------------
 selected_ids = st.multiselect("Select solutions", selected_df["id"].unique())
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
-# Generación de etiquetas tal cual la tenías (pero más limpia)
 if show_ids:
     if mode == "None":
         selected_df["label"] = selected_df["id"].astype(str)
-    else:
-        # Mostramos ID si es highlight o si cumple el umbral de selección
+    elif mode == "Score-based":
+        # En Score-based, como ya es un Top N reducido, mostramos todos los IDs de ese Top
+        selected_df["label"] = selected_df["id"].astype(str)
+    elif mode == "Ranking-based":
+        # En Ranking usamos el umbral de coincidencias
         selected_df["label"] = selected_df.apply(
             lambda r: str(int(r["id"])) if (r["highlight"] or r.get("count", 0) >= threshold) else "",
             axis=1
         )
 else:
     selected_df["label"] = ""
-
+    
 # --------------------------------------------
 # DIBUJAR GRÁFICOS
 # --------------------------------------------
