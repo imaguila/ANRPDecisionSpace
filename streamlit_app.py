@@ -52,53 +52,43 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# ADD GRAPH 
+# ADD GRAPH
 # --------------------------------------------
 used_metrics = [m for g in st.session_state.groups for m in g if m]
 remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 
-if len(remaining_metrics)>=2:
+if len(remaining_metrics) >= 2:
     if st.sidebar.button("Add graph"):
         st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
-# SHOW IDS TOGGLE
+# SHOW IDS
 # --------------------------------------------
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
-
-
-
-# --------------------------------------------
-# PREVIEW COMPLETO
-# --------------------------------------------
-with st.expander("Full preview"):
-    st.write(f"Showing all {len(df)} solutions")
-    st.dataframe(df, use_container_width=True)
 
 # --------------------------------------------
 # FILTERS
 # --------------------------------------------
 st.sidebar.markdown("### Filters")
-
 filtered_df = df.copy()
 
 for m in available_metrics:
-    min_val = float(df[m].min())
-    max_val = float(df[m].max())
+    if pd.api.types.is_numeric_dtype(df[m]):
+        min_val = float(df[m].min())
+        max_val = float(df[m].max())
 
-    if min_val != max_val:
-        val_range = st.sidebar.slider(
-            f"{m}",
-            min_val,
-            max_val,
-            (min_val, max_val),
-            key=f"filter_{m}"
-        )
-
-        filtered_df = filtered_df[
-            (filtered_df[m] >= val_range[0]) &
-            (filtered_df[m] <= val_range[1])
-        ]
+        if min_val != max_val:
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_val,
+                max_val,
+                (min_val, max_val),
+                key=f"filter_{m}"
+            )
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
 
 # --------------------------------------------
 # SELECTION MODE
@@ -107,36 +97,35 @@ st.sidebar.markdown("### Selection")
 
 mode = st.sidebar.selectbox(
     "Selection mode",
-    ["Score-based", "Ranking-based"]
+    ["None", "Score-based", "Ranking-based"]
 )
 
 selected_df = filtered_df.copy()
 
+metrics_max, metrics_min, selected_metrics = [], [], []
+
 # --------------------------------------------
-# MODE 1: SCORE
+# MODE NONE ✅
 # --------------------------------------------
-if mode == "Score-based":
+if mode == "None":
+    pass
+
+# --------------------------------------------
+# MODE SCORE
+# --------------------------------------------
+elif mode == "Score-based":
 
     metrics_max = st.sidebar.multiselect(
         "Metrics to maximize",
-        available_quality_metrics,
-        key="max_metrics"
+        available_quality_metrics
     )
 
     metrics_min = st.sidebar.multiselect(
         "Metrics to minimize",
-        [m for m in available_quality_metrics if m not in metrics_max],
-        key="min_metrics"
+        [m for m in available_quality_metrics if m not in metrics_max]
     )
 
-    if len(metrics_max) + len(metrics_min) > 0:
-
-        n_top = st.sidebar.slider(
-            "Number of solutions",
-            1,
-            min(50, len(filtered_df)),
-            10
-        )
+    if metrics_max or metrics_min:
 
         temp_df = filtered_df.copy()
 
@@ -153,16 +142,22 @@ if mode == "Score-based":
 
         if metrics_max:
             score += temp_df[[m + "_norm" for m in metrics_max]].mean(axis=1)
-
         if metrics_min:
             score -= temp_df[[m + "_norm" for m in metrics_min]].mean(axis=1)
 
         temp_df["score"] = score
 
+        n_top = st.sidebar.slider(
+            "Top N (Score)",
+            1,
+            min(50, len(temp_df)),
+            10
+        )
+
         selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
 
 # --------------------------------------------
-# MODE 2: RANKING
+# MODE RANKING
 # --------------------------------------------
 elif mode == "Ranking-based":
 
@@ -210,44 +205,47 @@ elif mode == "Ranking-based":
 
         selected_df = selected_df.sort_values("count", ascending=False)
 
-
 # --------------------------------------------
-# HIGHLIGHT SELECTION (MULTIPLE)
+# THRESHOLD (solo si NO es None)
 # --------------------------------------------
-selected_ids = []
+threshold = 0
 
-if "id" in selected_df.columns:
+if mode != "None":
 
-    st.markdown("### Select solutions to highlight")
-
-    selected_ids = st.multiselect(
-        "Solutions",
-        options=selected_df["id"].unique().tolist(),
-        default=[]
+    n_metrics = (
+        len(selected_metrics) if mode == "Ranking-based"
+        else len(metrics_max) + len(metrics_min)
     )
 
-    # crear columna highlight segura
-    selected_df["highlight"] = selected_df["id"].isin(selected_ids)
+    threshold = max(1, n_metrics - 1)
 
-    # mostrar las seleccionadas
-    if selected_ids:
-        st.markdown("### Selected solutions")
-        st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
+    st.sidebar.write(f"Highlight threshold: count ≥ {threshold}")
 
+# --------------------------------------------
+# HIGHLIGHT
+# --------------------------------------------
+selected_ids = st.multiselect("Select solutions", selected_df["id"].unique())
 
-# calcular umbral dinámico para etiquetar
-n_metrics = 0
+selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
-if mode == "Ranking-based":
-    n_metrics = len(selected_metrics)
-elif mode == "Score-based":
-    n_metrics = len(metrics_max) + len(metrics_min)
+# --------------------------------------------
+# LABELS
+# --------------------------------------------
+if show_ids:
 
-threshold = max(1, n_metrics - 1)
+    if mode == "None":
+        selected_df["label"] = selected_df["id"].astype(str)
 
-## Se pone en la barra
-st.sidebar.write(f"Highlight threshold: count ≥ {threshold}")
+    else:
+        selected_df["label"] = selected_df.apply(
+            lambda row: str(row["id"])
+            if row["highlight"] or row.get("count", 0) >= threshold
+            else "",
+            axis=1
+        )
 
+else:
+    selected_df["label"] = ""
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -269,12 +267,14 @@ for i, group in enumerate(st.session_state.groups):
         x = st.selectbox(f"X {i}", available, key=f"x_{i}")
 
     with col2:
-        y_options = [m for m in available if m != x]
-        y = st.selectbox(f"Y {i}", y_options, key=f"y_{i}")
+        y = st.selectbox(f"Y {i}", [m for m in available if m != x], key=f"y_{i}")
 
     with col3:
-        size_options = [None] + [m for m in available if m not in [x, y]]
-        size = st.selectbox(f"Size {i}", size_options, key=f"size_{i}")
+        size = st.selectbox(
+            f"Size {i}",
+            [None] + [m for m in available if m not in [x, y]],
+            key=f"size_{i}"
+        )
 
     st.session_state.groups[i] = [x, y, size]
 
@@ -282,92 +282,36 @@ for i, group in enumerate(st.session_state.groups):
 
     colA, colB = st.columns(2)
 
-    # ---- MAIN GRAPH
-
     with colA:
-
-        # ✅ lógica para decidir qué etiquetas mostrar
-        text_labels = None
-        if show_ids:
-            text_labels = selected_df.apply(
-                lambda row: str(row["id"])
-                if (
-                    ("highlight" in selected_df.columns and row["highlight"]) or
-                    ("count" in selected_df.columns and row["count"] >= threshold)
-                )
-                else "",
-                axis=1
-            )
-
         fig1 = px.scatter(
             selected_df,
             x=x,
             y=y,
-            size=size if size else None,
+            size=size,
             color=color_col,
-            symbol="highlight" if "highlight" in selected_df.columns else None,
-            symbol_map={True: "x", False: "circle"},
-            text=text_labels,
-            hover_data=["id"],
-            color_continuous_scale="Viridis"
+            text=selected_df["label"],
+            symbol="highlight",
+            symbol_map={True: "x", False: "circle"}
         )
-
-        fig1.update_xaxes(title=x, tickformat=".2f")
-        fig1.update_yaxes(title=y, tickformat=".2f")
-
-        if show_ids:
-            fig1.update_traces(
-                textposition="top center",
-                textfont=dict(size=10)
-            )
-
         st.plotly_chart(fig1, use_container_width=True)
 
-
-    # ---- LINKED GRAPH
     with colB:
         if size:
-
-            text_labels2 = None
-            if show_ids:
-                text_labels2 = selected_df.apply(
-                    lambda row: str(row["id"])
-                    if (
-                        ("highlight" in selected_df.columns and row["highlight"]) or
-                        ("count" in selected_df.columns and row["count"] >= threshold)
-                    )
-                    else "",
-                    axis=1
-                )
-
             fig2 = px.scatter(
                 selected_df,
                 x=x,
                 y=size,
                 size=y,
                 color=color_col,
-                symbol="highlight" if "highlight" in selected_df.columns else None,
-                symbol_map={True: "x", False: "circle"},
-                text=text_labels2,
-                hover_data=["id"],
-                color_continuous_scale="Viridis"
+                text=selected_df["label"],
+                symbol="highlight"
             )
-
-            fig2.update_xaxes(title=x, tickformat=".2f")
-            fig2.update_yaxes(title=size, tickformat=".2f")
-
-            if show_ids:
-                fig2.update_traces(
-                    textposition="top center",
-                    textfont=dict(size=10)
-                )
-
             st.plotly_chart(fig2, use_container_width=True)
-
         else:
-            st.info("Add a third dimension to see linked view")
+            st.info("Add a third dimension")
+
 # --------------------------------------------
-# DATA PREVIEW (LIMPIO)
+# DATA PREVIEW
 # --------------------------------------------
 with st.expander("Data preview"):
     st.write(f"Showing {len(selected_df)} solutions")
