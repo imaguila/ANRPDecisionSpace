@@ -349,7 +349,7 @@ with st.expander("Data preview"):
 
 def plot_radar(selected_df, available_metrics):
 
-    st.markdown("### 🔍 Compare selected solutions")
+    st.markdown("###  Detailed review of selected solution")
 
     compare_ids = st.multiselect(
         "Pick solutions to compare (max 4 recommended)",
