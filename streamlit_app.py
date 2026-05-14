@@ -296,18 +296,20 @@ for i, group in enumerate(st.session_state.groups):
         else:
             st.info("Add a third dimension to see linked view")
 
+
 # --------------------------------------------
 # DATA PREVIEW (LIMPIO)
 # --------------------------------------------
 with st.expander("Data preview"):
     st.write(f"Showing {len(selected_df)} solutions")
 
-    # quitar columna highlight de visualización
     cols_show = [c for c in selected_df.columns if c != "highlight"]
 
-    styled_df = selected_df[cols_show].style.apply(
+    df_preview = selected_df[cols_show].head(100)
+
+    styled_df = df_preview.style.apply(
         lambda row: ['background-color: lightyellow' if row.get("id") == selected_id else '' for _ in row],
         axis=1
     )
 
-    st.dataframe(styled_df.head(100))
+    st.dataframe(styled_df)
