@@ -272,6 +272,19 @@ for i, group in enumerate(st.session_state.groups):
 
     with colA:
 
+        # ✅ lógica para decidir qué etiquetas mostrar
+        text_labels = None
+        if show_ids:
+            text_labels = selected_df.apply(
+                lambda row: str(row["id"])
+                if (
+                    ("highlight" in selected_df.columns and row["highlight"]) or
+                    ("count" in selected_df.columns and row["count"] >= 2)
+                )
+                else "",
+                axis=1
+            )
+
         fig1 = px.scatter(
             selected_df,
             x=x,
@@ -280,7 +293,7 @@ for i, group in enumerate(st.session_state.groups):
             color=color_col,
             symbol="highlight" if "highlight" in selected_df.columns else None,
             symbol_map={True: "x", False: "circle"},
-            text=selected_df["id"] if show_ids else None,  # ✅ más robusto que "id"
+            text=text_labels,
             hover_data=["id"],
             color_continuous_scale="Viridis"
         )
@@ -288,11 +301,10 @@ for i, group in enumerate(st.session_state.groups):
         fig1.update_xaxes(title=x, tickformat=".2f")
         fig1.update_yaxes(title=y, tickformat=".2f")
 
-        # ✅ posición del texto
         if show_ids:
             fig1.update_traces(
                 textposition="top center",
-                textfont=dict(size=10)  # opcional: mejora legibilidad
+                textfont=dict(size=10)
             )
 
         st.plotly_chart(fig1, use_container_width=True)
@@ -302,6 +314,18 @@ for i, group in enumerate(st.session_state.groups):
     with colB:
         if size:
 
+            text_labels2 = None
+            if show_ids:
+                text_labels2 = selected_df.apply(
+                    lambda row: str(row["id"])
+                    if (
+                        ("highlight" in selected_df.columns and row["highlight"]) or
+                        ("count" in selected_df.columns and row["count"] >= 2)
+                    )
+                    else "",
+                    axis=1
+                )
+
             fig2 = px.scatter(
                 selected_df,
                 x=x,
@@ -310,7 +334,7 @@ for i, group in enumerate(st.session_state.groups):
                 color=color_col,
                 symbol="highlight" if "highlight" in selected_df.columns else None,
                 symbol_map={True: "x", False: "circle"},
-                text=selected_df["id"] if show_ids else None,
+                text=text_labels2,
                 hover_data=["id"],
                 color_continuous_scale="Viridis"
             )
@@ -328,8 +352,6 @@ for i, group in enumerate(st.session_state.groups):
 
         else:
             st.info("Add a third dimension to see linked view")
-
-
 # --------------------------------------------
 # DATA PREVIEW (LIMPIO)
 # --------------------------------------------
