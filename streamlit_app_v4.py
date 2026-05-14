@@ -57,7 +57,7 @@ if st.sidebar.button("Reset graphs"):
 used_metrics = [m for g in st.session_state.groups for m in g if m]
 remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 
-if len(remaining_metrics)>=2:
+if len(remaining_metrics) >= 2:
     if st.sidebar.button("Add graph"):
         st.session_state.groups.append([None, None, None])
 
