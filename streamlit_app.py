@@ -70,6 +70,12 @@ if len(remaining_metrics) >= 2:
         st.session_state.groups.append([None, None, None])
 
 
+# Se muestran todos los datos en cabecera
+with st.expander("Full preview"):
+    st.write(f"Showing all {len(df)} solutions")
+    st.dataframe(df, use_container_width=True)
+
+
 # --------------------------------------------
 # FILTERS
 # --------------------------------------------
