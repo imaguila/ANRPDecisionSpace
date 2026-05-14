@@ -52,6 +52,16 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
+# ADD GRAPH
+# --------------------------------------------
+used_metrics = [m for g in st.session_state.groups for m in g if m]
+remaining_metrics = [m for m in available_metrics if m not in used_metrics]
+
+if len(remaining_metrics) >= 2:
+    if st.sidebar.button("Add graph"):
+        st.session_state.groups.append([None, None, None])
+
+# --------------------------------------------
 # PREVIEW
 # --------------------------------------------
 with st.expander("Full preview"):
@@ -198,15 +208,6 @@ elif mode == "Ranking-based":
 
         st.sidebar.success("Ranking computed")
 
-# --------------------------------------------
-# ADD GRAPH
-# --------------------------------------------
-used_metrics = [m for g in st.session_state.groups for m in g if m]
-remaining_metrics = [m for m in available_metrics if m not in used_metrics]
-
-if len(remaining_metrics) >= 2:
-    if st.sidebar.button("Add graph"):
-        st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -237,60 +238,94 @@ for i, group in enumerate(st.session_state.groups):
 
     st.session_state.groups[i] = [x, y, size]
 
-    use_3d = size is not None
     color_col = "count" if "count" in selected_df.columns else None
 
-    # --------------------------------------------
-    # PLOT 2D o 3D
-    # --------------------------------------------
-    if use_3d:
-        fig = px.scatter_3d(
+    # ============================
+    # 🔹 GRÁFICOS ENLAZADOS
+    # ============================
+    colA, colB = st.columns(2)
+
+    # ---- GRÁFICO PRINCIPAL
+    with colA:
+        fig1 = px.scatter(
             selected_df,
             x=x,
             y=y,
-            z=size,
+            size=size if size else None,
             color=color_col,
             hover_data=["id"] if "id" in df.columns else None,
             color_continuous_scale="Viridis"
         )
 
-        fig.update_layout(
-            scene=dict(
-                xaxis_title=x,
-                yaxis_title=y,
-                zaxis_title=size
+        fig1.update_xaxes(title=x, tickformat=".2f")
+        fig1.update_yaxes(title=y, tickformat=".2f")
+
+        hover_parts = [
+            f"{x}: %{{x:.2f}}",
+            f"{y}: %{{y:.2f}}"
+        ]
+
+        if size:
+            hover_parts.append(f"{size}: %{{marker.size:.2f}}")
+
+        if color_col:
+            hover_parts.append("matches: %{marker.color}")
+
+        fig1.update_traces(hovertemplate="<br>".join(hover_parts))
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+    # ---- GRÁFICO ENLAZADO automático
+    with colB:
+        if size:
+            # proyección alternativa
+            fig2 = px.scatter(
+                selected_df,
+                x=x,
+                y=size,
+                size=y,
+                color=color_col,
+                hover_data=["id"] if "id" in df.columns else None,
+                color_continuous_scale="Viridis"
             )
-        )
-    else:
-        fig = px.scatter(
+
+            fig2.update_xaxes(title=x, tickformat=".2f")
+            fig2.update_yaxes(title=size, tickformat=".2f")
+
+            hover_parts2 = [
+                f"{x}: %{{x:.2f}}",
+                f"{size}: %{{y:.2f}}"
+            ]
+
+            if y:
+                hover_parts2.append(f"{y}: %{{marker.size:.2f}}")
+
+            if color_col:
+                hover_parts2.append("matches: %{marker.color}")
+
+            fig2.update_traces(hovertemplate="<br>".join(hover_parts2))
+
+            st.plotly_chart(fig2, use_container_width=True)
+        else:
+            st.info("Add a third dimension to see linked view")
+
+    # ============================
+    # 🔹 PARALLEL COORDINATES
+    # ============================
+    with st.expander(f"Parallel view {i+1}"):
+
+        parallel_metrics = [x, y]
+        if size:
+            parallel_metrics.append(size)
+
+        fig_parallel = px.parallel_coordinates(
             selected_df,
-            x=x,
-            y=y,
-            color=color_col,
-            hover_data=["id"] if "id" in df.columns else None,
+            dimensions=parallel_metrics,
+            color=color_col if color_col else None,
             color_continuous_scale="Viridis"
         )
 
-        fig.update_xaxes(title=x, tickformat=".2f")
-        fig.update_yaxes(title=y, tickformat=".2f")
-
-    # --------------------------------------------
-    # HOVER
-    # --------------------------------------------
-    hover_parts = [
-        f"{x}: %{{x:.2f}}",
-        f"{y}: %{{y:.2f}}"
-    ]
-
-    if size:
-        hover_parts.append(f"{size}: %{{z:.2f}}")
-
-    if color_col:
-        hover_parts.append("matches: %{marker.color}")
-
-    fig.update_traces(hovertemplate="<br>".join(hover_parts))
-
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_parallel, use_container_width=True)
 
 # --------------------------------------------
 # DATA PREVIEW
