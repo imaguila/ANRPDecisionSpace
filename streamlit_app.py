@@ -45,6 +45,70 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
     fig.update_traces(marker=dict(size=10))
     return fig
 
+def plot_radar(df_para_comparar, available_metrics):
+    """
+    Genera el radar comparando solo las soluciones que pasaron 
+    el filtrado y la selección actual.
+    """
+    st.markdown("---")
+    st.subheader("📊 Detailed Comparison of Selected Solutions")
+
+    # Solo permitimos elegir entre lo que está "vivo" en el dataframe actual
+    opciones_disponibles = df_para_comparar["id"].unique()
+    
+    if len(opciones_disponibles) < 2:
+        st.warning("Not enough solutions after filtering to perform a comparison (min. 2).")
+        return
+
+    compare_ids = st.multiselect(
+        "Pick solutions from current selection to compare",
+        options=opciones_disponibles,
+        help="Only showing solutions that passed your current filters/selection mode."
+    )
+
+    if len(compare_ids) < 2:
+        st.info("Select at least 2 solutions from the list above to generate the radar chart.")
+        return
+
+    # Filtrar el dataframe ya filtrado
+    compare_df = df_para_comparar[df_para_comparar["id"].isin(compare_ids)].copy()
+    
+    # Métricas numéricas disponibles
+    metrics_to_plot = [m for m in available_metrics if pd.api.types.is_numeric_dtype(compare_df[m])]
+
+    fig = go.Figure()
+
+    for _, row in compare_df.iterrows():
+        # Normalizamos los valores solo para este gráfico para que la escala sea 0-1
+        values = []
+        for m in metrics_to_plot:
+            min_v = df_para_comparar[m].min()
+            max_v = df_para_comparar[m].max()
+            if max_v > min_v:
+                norm_val = (row[m] - min_v) / (max_v - min_v)
+            else:
+                norm_val = 0.5 # Valor neutro si no hay variación
+            values.append(norm_val)
+            
+        # Cerrar el gráfico circular
+        values.append(values[0])
+        
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=metrics_to_plot + [metrics_to_plot[0]],
+            fill='toself',
+            name=f"ID {int(row['id'])}"
+        ))
+
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+        showlegend=True,
+        height=600
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
 # --------------------------------------------
 # CARGA DE DATOS
 # --------------------------------------------
@@ -142,7 +206,7 @@ if show_ids:
         )
 else:
     selected_df["label"] = ""
-    
+
 # --------------------------------------------
 # DIBUJAR GRÁFICOS
 # --------------------------------------------
@@ -165,21 +229,29 @@ for i, group in enumerate(st.session_state.groups):
             st.plotly_chart(render_scatter_plot(selected_df, x, size, y, color_col, show_ids), use_container_width=True)
         else:
             st.info("Add a third dimension")
-
 # --------------------------------------------
-# RADAR Y PREVIEW (CONSOLIDADOS)
+# COMPARISON & PREVIEW (CONSOLIDADOS)
 # --------------------------------------------
 if st.session_state.show_comparison:
-    st.markdown("---")
-    compare_ids = st.multiselect("Solutions to compare (Radar)", selected_df["id"].unique())
-    if len(compare_ids) >= 2:
-        comp_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
-        metrics = [m for m in available_metrics if pd.api.types.is_numeric_dtype(comp_df[m])]
-        fig = go.Figure()
-        for _, row in comp_df.iterrows():
-            vals = [normalize_series(comp_df[m]).iloc[comp_df.index.get_loc(row.name)] for m in metrics]
-            fig.add_trace(go.Scatterpolar(r=vals + [vals[0]], theta=metrics + [metrics[0]], name=f"ID {row['id']}"))
-        st.plotly_chart(fig, use_container_width=True)
+    # Invocamos la función modular que definimos arriba
+    # Esta ya contiene el multiselect, la lógica de filtrado y el gráfico
+    plot_radar(selected_df, available_metrics)
 
 with st.expander("Data preview"):
-    st.dataframe(selected_df.drop(columns=["highlight", "label"]).head(100))
+    st.write(f"Showing {len(selected_df)} solutions after filtering/selection")
+    
+    # Lista de columnas a ocultar para que la tabla sea legible
+    cols_to_drop = ["highlight", "label"]
+    # Solo intentamos dropear las que realmente existan en el DF actual
+    existing_cols_to_drop = [c for c in cols_to_drop if c in selected_df.columns]
+    
+    df_display = selected_df.drop(columns=existing_cols_to_drop).head(100)
+    
+    # Aplicar estilo para resaltar las filas seleccionadas manualmente
+    # (Usamos el índice original para verificar el highlight antes del drop)
+    def highlight_selected(row):
+        is_highlighted = selected_df.loc[row.name, "highlight"] if "highlight" in selected_df.columns else False
+        return ['background-color: #154360' if is_highlighted else '' for _ in row]
+
+    st.dataframe(df_display.style.apply(highlight_selected, axis=1))
+    
