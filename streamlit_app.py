@@ -4,7 +4,7 @@ import plotly.express as px
 import os
 
 st.set_page_config(layout="wide")
-st.title("Assisted NRP")
+st.title("Assisted Next Release Problem")
 
 DATA_PATH = "data"
 
