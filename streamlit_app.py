@@ -216,11 +216,14 @@ if "id" in selected_df.columns:
         selected_df["id"].unique()
     )
 
-    selected_df["highlight"] = selected_df["id"] == selected_id
+    selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
     # mostrar fila seleccionada
     st.markdown("### Selected solution")
-    st.dataframe(selected_df[selected_df["id"] == selected_id])
+
+    if selected_ids:
+        st.markdown("### Selected solutions")
+        st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -308,7 +311,7 @@ with st.expander("Data preview"):
     df_preview = selected_df[cols_show].head(100)
 
     styled_df = df_preview.style.apply(
-        lambda row: ['background-color: lightyellow' if row.get("id") == selected_id else '' for _ in row],
+        lambda row: ['background-color: lightyellow' if row.get("id") in selected_ids else '' for _ in row],
         axis=1
     )
 
