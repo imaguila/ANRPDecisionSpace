@@ -235,7 +235,7 @@ if "id" in selected_df.columns:
         st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
 
 
-# calcular umbral automático
+# calcular umbral dinámico para etiquetar
 n_metrics = 0
 
 if mode == "Ranking-based":
@@ -243,20 +243,20 @@ if mode == "Ranking-based":
 elif mode == "Score-based":
     n_metrics = len(metrics_max) + len(metrics_min)
 
-threshold_auto = max(1, n_metrics - 1)
+threshold = max(1, n_metrics - 1)
 
-# slider para ajustar manualmente
+## Se pone en la barra
+st.sidebar.write(f"Highlight threshold: count ≥ {threshold}")
+
+
 threshold = st.sidebar.slider(
     "Highlight threshold",
     min_value=1,
-    max_value=threshold_auto,
+    max_value=max(1, threshold_auto),
     value=threshold_auto,
     help="Lower values show more solutions"
 )
 
-# mostrar ambos (muy útil)
-st.sidebar.caption(f"Auto threshold: {threshold_auto}")
-st.sidebar.write(f"Active threshold: count ≥ {threshold}")
 
 
 # --------------------------------------------
