@@ -105,6 +105,18 @@ selected_df = filtered_df.copy()
 metrics_max, metrics_min, selected_metrics = [], [], []
 
 # --------------------------------------------
+# TOGGLE COMPARISON VIEW
+# --------------------------------------------
+if "show_comparison" not in st.session_state:
+    st.session_state.show_comparison = False
+
+if st.sidebar.button("Show comparison"):
+    st.session_state.show_comparison = not st.session_state.show_comparison
+
+
+###############
+
+# --------------------------------------------
 # MODE NONE ✅
 # --------------------------------------------
 if mode == "None":
@@ -410,4 +422,5 @@ def plot_radar(selected_df, available_metrics):
 # --------------------------------------------
 # COMPARISON
 # --------------------------------------------
-plot_radar(selected_df, available_metrics)
+if st.session_state.show_comparison:
+    plot_radar(selected_df, available_metrics)
