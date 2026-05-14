@@ -163,7 +163,6 @@ elif mode == "Ranking-based":
         10
     )
 
-    # dirección por métrica
     metric_goals = {}
 
     for m in selected_metrics:
@@ -238,28 +237,53 @@ for i, group in enumerate(st.session_state.groups):
 
     st.session_state.groups[i] = [x, y, size]
 
-    color_col = "count" if ("count" in selected_df.columns) else None
+    use_3d = size is not None
+    color_col = "count" if "count" in selected_df.columns else None
 
-    fig = px.scatter(
-        selected_df,
-        x=x,
-        y=y,
-        size=size if size else None,
-        color=color_col,
-        hover_data=["id"] if "id" in df.columns else None,
-        color_continuous_scale="Viridis"
-    )
+    # --------------------------------------------
+    # PLOT 2D o 3D
+    # --------------------------------------------
+    if use_3d:
+        fig = px.scatter_3d(
+            selected_df,
+            x=x,
+            y=y,
+            z=size,
+            color=color_col,
+            hover_data=["id"] if "id" in df.columns else None,
+            color_continuous_scale="Viridis"
+        )
 
-    fig.update_xaxes(title=x, tickformat=".2f")
-    fig.update_yaxes(title=y, tickformat=".2f")
+        fig.update_layout(
+            scene=dict(
+                xaxis_title=x,
+                yaxis_title=y,
+                zaxis_title=size
+            )
+        )
+    else:
+        fig = px.scatter(
+            selected_df,
+            x=x,
+            y=y,
+            color=color_col,
+            hover_data=["id"] if "id" in df.columns else None,
+            color_continuous_scale="Viridis"
+        )
 
+        fig.update_xaxes(title=x, tickformat=".2f")
+        fig.update_yaxes(title=y, tickformat=".2f")
+
+    # --------------------------------------------
+    # HOVER
+    # --------------------------------------------
     hover_parts = [
         f"{x}: %{{x:.2f}}",
         f"{y}: %{{y:.2f}}"
     ]
 
     if size:
-        hover_parts.append(f"{size}: %{{marker.size:.2f}}")
+        hover_parts.append(f"{size}: %{{z:.2f}}")
 
     if color_col:
         hover_parts.append("matches: %{marker.color}")
