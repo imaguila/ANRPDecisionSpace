@@ -25,11 +25,6 @@ if not files:
 selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-with st.expander("Full Problem"):
-    st.write(f"Showing {len(df)} solutions")
-    st.dataframe(df)
-
-
 # --------------------------------------------
 # METRICS CATALOG (2 FILES)
 # --------------------------------------------
@@ -60,19 +55,6 @@ if "groups" not in st.session_state:
 # reset
 if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
-
-# --------------------------------------------
-# ADD GRAPH BUTTON
-# --------------------------------------------
-used_metrics = [m for g in st.session_state.groups for m in g if m]
-remaining_metrics = [m for m in available_metrics if m not in used_metrics]
-
-st.sidebar.markdown("### Visualizations")
-
-if len(remaining_metrics) >= 2:
-    if st.sidebar.button("Add graph"):
-        st.session_state.groups.append([None, None, None])
-
 
 # --------------------------------------------
 # FILTERS
@@ -168,7 +150,17 @@ if use_selection:
             st.sidebar.success(f"{len(selected_df)} solutions selected")
 
 
+# --------------------------------------------
+# ADD GRAPH BUTTON
+# --------------------------------------------
+used_metrics = [m for g in st.session_state.groups for m in g if m]
+remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 
+st.sidebar.markdown("### Visualizations")
+
+if len(remaining_metrics) >= 2:
+    if st.sidebar.button("Add graph"):
+        st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
 # DRAW GRAPHS
