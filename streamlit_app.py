@@ -373,9 +373,10 @@ def plot_radar(selected_df, available_metrics):
         fig.add_trace(go.Scatterpolar(
             r=values,
             theta=metrics_loop,
-            fill='toself',
+            mode='lines',   # ✅ solo línea
             name=f"ID {int(row['id'])}"
         ))
+
 
     fig.update_layout(
         polar=dict(radialaxis=dict(visible=True)),
