@@ -293,6 +293,14 @@ for i, group in enumerate(st.session_state.groups):
             symbol="highlight",
             symbol_map={True: "x", False: "circle"}
         )
+        
+        # ✅ AQUÍ VA (la mejora)
+        fig1.update_traces(
+            textposition="top right",
+            textfont=dict(size=10),
+            marker=dict(size=8)  # opcional pero mejora visibilidad
+        )
+
         st.plotly_chart(fig1, use_container_width=True)
 
     with colB:
@@ -306,7 +314,16 @@ for i, group in enumerate(st.session_state.groups):
                 text=selected_df["label"],
                 symbol="highlight"
             )
+            # ✅ AQUÍ VA (la mejora)
+            fig2.update_traces(
+                textposition="top right",
+                textfont=dict(size=10),
+                marker=dict(size=8)  # opcional pero mejora visibilidad
+            )
             st.plotly_chart(fig2, use_container_width=True)
+            
+
+
         else:
             st.info("Add a third dimension")
 
