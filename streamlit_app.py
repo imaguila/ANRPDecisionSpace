@@ -227,6 +227,11 @@ if "id" in selected_df.columns:
         st.markdown("### Selected solutions")
         st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
 
+# --------------------------------------------
+# SHOW IDS TOGGLE
+# --------------------------------------------
+show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
+
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -262,7 +267,9 @@ for i, group in enumerate(st.session_state.groups):
     colA, colB = st.columns(2)
 
     # ---- MAIN GRAPH
+
     with colA:
+
         fig1 = px.scatter(
             selected_df,
             x=x,
@@ -271,6 +278,7 @@ for i, group in enumerate(st.session_state.groups):
             color=color_col,
             symbol="highlight" if "highlight" in selected_df.columns else None,
             symbol_map={True: "x", False: "circle"},
+            text=selected_df["id"] if show_ids else None,  # ✅ más robusto que "id"
             hover_data=["id"],
             color_continuous_scale="Viridis"
         )
@@ -278,11 +286,20 @@ for i, group in enumerate(st.session_state.groups):
         fig1.update_xaxes(title=x, tickformat=".2f")
         fig1.update_yaxes(title=y, tickformat=".2f")
 
+        # ✅ posición del texto
+        if show_ids:
+            fig1.update_traces(
+                textposition="top center",
+                textfont=dict(size=10)  # opcional: mejora legibilidad
+            )
+
         st.plotly_chart(fig1, use_container_width=True)
+
 
     # ---- LINKED GRAPH
     with colB:
         if size:
+
             fig2 = px.scatter(
                 selected_df,
                 x=x,
@@ -291,6 +308,7 @@ for i, group in enumerate(st.session_state.groups):
                 color=color_col,
                 symbol="highlight" if "highlight" in selected_df.columns else None,
                 symbol_map={True: "x", False: "circle"},
+                text=selected_df["id"] if show_ids else None,
                 hover_data=["id"],
                 color_continuous_scale="Viridis"
             )
@@ -298,7 +316,14 @@ for i, group in enumerate(st.session_state.groups):
             fig2.update_xaxes(title=x, tickformat=".2f")
             fig2.update_yaxes(title=size, tickformat=".2f")
 
+            if show_ids:
+                fig2.update_traces(
+                    textposition="top center",
+                    textfont=dict(size=10)
+                )
+
             st.plotly_chart(fig2, use_container_width=True)
+
         else:
             st.info("Add a third dimension to see linked view")
 
