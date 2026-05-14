@@ -249,16 +249,6 @@ threshold = max(1, n_metrics - 1)
 st.sidebar.write(f"Highlight threshold: count ≥ {threshold}")
 
 
-threshold = st.sidebar.slider(
-    "Highlight threshold",
-    min_value=1,
-    max_value=max(1, threshold_auto),
-    value=threshold_auto,
-    help="Lower values show more solutions"
-)
-
-
-
 # --------------------------------------------
 # DRAW GRAPHS
 # --------------------------------------------
