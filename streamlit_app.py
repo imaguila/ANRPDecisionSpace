@@ -310,11 +310,13 @@ with st.expander("Data preview"):
     st.write(f"Showing {len(selected_df)} solutions")
 
     cols_show = [c for c in selected_df.columns if c != "highlight"]
-
     df_preview = selected_df[cols_show].head(100)
 
     styled_df = df_preview.style.apply(
-        lambda row: ['background-color: lightyellow' if row.get("id") == selected_id else '' for _ in row],
+        lambda row: [
+            'background-color: lightyellow' if row["id"] in selected_ids else ''
+            for _ in row
+        ],
         axis=1
     )
 
