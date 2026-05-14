@@ -314,19 +314,37 @@ for i, group in enumerate(st.session_state.groups):
     # ============================
     with st.expander(f"Parallel view {i+1}"):
 
+        # aseguramos mínimo 3 métricas
         parallel_metrics = [x, y]
         if size:
             parallel_metrics.append(size)
 
-        fig_parallel = px.parallel_coordinates(
-            selected_df,
-            dimensions=parallel_metrics,
-            color=color_col if color_col else None,
-            color_continuous_scale="Viridis"
-        )
+        # añadir otra métrica automática si hay pocas
+        if len(parallel_metrics) < 3:
+            extra = [m for m in available_metrics if m not in parallel_metrics]
+            if extra:
+                parallel_metrics.append(extra[0])
 
-        st.plotly_chart(fig_parallel, use_container_width=True)
+        # aseguramos columnas numéricas
+        plot_parallel = selected_df[parallel_metrics].copy()
+        plot_parallel = plot_parallel.apply(pd.to_numeric, errors='coerce')
 
+        # eliminamos NaN
+        plot_parallel = plot_parallel.dropna()
+
+        if len(plot_parallel) > 0:
+
+            fig_parallel = px.parallel_coordinates(
+                plot_parallel,
+                dimensions=parallel_metrics,
+                color=selected_df.loc[plot_parallel.index, "count"] if "count" in selected_df.columns else None,
+                color_continuous_scale="Viridis"
+            )
+
+            st.plotly_chart(fig_parallel, use_container_width=True)
+
+        else:
+            st.warning("Not enough valid data for parallel view")
 # --------------------------------------------
 # DATA PREVIEW
 # --------------------------------------------
