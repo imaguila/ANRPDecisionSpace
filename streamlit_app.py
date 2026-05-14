@@ -328,3 +328,68 @@ with st.expander("Data preview"):
     )
 
     st.dataframe(styled_df)
+
+
+def plot_radar(selected_df, available_metrics):
+
+    st.markdown("### 🔍 Compare selected solutions")
+
+    compare_ids = st.multiselect(
+        "Pick solutions to compare (max 4 recommended)",
+        selected_df["id"].unique()
+    )
+
+    if len(compare_ids) < 2:
+        st.info("Select at least 2 solutions to compare")
+        return
+
+    compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
+
+    # métricas numéricas
+    compare_metrics = [
+        m for m in available_metrics
+        if pd.api.types.is_numeric_dtype(compare_df[m])
+    ]
+
+    # ✅ normalizar para comparabilidad
+    for m in compare_metrics:
+        min_val = compare_df[m].min()
+        max_val = compare_df[m].max()
+
+        if max_val > min_val:
+            compare_df[m] = (compare_df[m] - min_val) / (max_val - min_val)
+
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+
+    for _, row in compare_df.iterrows():
+
+        values = row[compare_metrics].tolist()
+        values.append(values[0])
+
+        metrics_loop = compare_metrics + [compare_metrics[0]]
+
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=metrics_loop,
+            fill='toself',
+            name=f"ID {int(row['id'])}"
+        ))
+
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True)),
+        title="Solution Comparison (Radar)",
+        showlegend=True
+    )
+
+    st.plotly_chart(fig, use_container_width=True)    
+
+
+
+#####################
+
+# --------------------------------------------
+# COMPARISON
+# --------------------------------------------
+plot_radar(selected_df, available_metrics)
