@@ -203,27 +203,30 @@ elif mode == "Ranking-based":
 
         selected_df = selected_df.sort_values("count", ascending=False)
 
+
 # --------------------------------------------
-# HIGHLIGHT SELECTION
+# HIGHLIGHT SELECTION (MULTIPLE)
 # --------------------------------------------
-selected_id = None
+selected_ids = []
 
 if "id" in selected_df.columns:
-    st.markdown("### Select solution to highlight")
 
-    selected_id = st.selectbox(
-        "Solution ID",
-        selected_df["id"].unique()
+    st.markdown("### Select solutions to highlight")
+
+    selected_ids = st.multiselect(
+        "Solutions",
+        options=selected_df["id"].unique().tolist(),
+        default=[]
     )
 
+    # crear columna highlight segura
     selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
-    # mostrar fila seleccionada
-    st.markdown("### Selected solution")
-
+    # mostrar las seleccionadas
     if selected_ids:
         st.markdown("### Selected solutions")
         st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
+
 
 # --------------------------------------------
 # DRAW GRAPHS
@@ -311,7 +314,7 @@ with st.expander("Data preview"):
     df_preview = selected_df[cols_show].head(100)
 
     styled_df = df_preview.style.apply(
-        lambda row: ['background-color: lightyellow' if row.get("id") in selected_ids else '' for _ in row],
+        lambda row: ['background-color: lightyellow' if row.get("id") == selected_id else '' for _ in row],
         axis=1
     )
 
