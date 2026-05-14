@@ -53,7 +53,7 @@ if "groups" not in st.session_state:
     st.session_state.groups = []
 
 # reset
-if st.sidebar.button("Resetr graphs"):
+if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 
@@ -63,7 +63,7 @@ if st.sidebar.button("Resetr graphs"):
 used_metrics = [m for g in st.session_state.groups for m in g if m]
 remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 
-st.sidebar.markdown("### Visualizations")
+# st.sidebar.markdown("### Visualizations")
 
 if len(remaining_metrics) >= 2:
     if st.sidebar.button("Add graph"):
