@@ -25,6 +25,11 @@ if not files:
 selected_file = st.sidebar.selectbox("Dataset", files)
 df = load_csv(os.path.join(DATA_PATH, selected_file))
 
+with st.expander("Data preview"):
+    st.write(f"Showing {len(df)} solutions")
+    st.dataframe(df)
+
+
 # --------------------------------------------
 # METRICS CATALOG (2 FILES)
 # --------------------------------------------
