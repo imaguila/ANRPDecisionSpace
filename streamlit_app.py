@@ -245,6 +245,9 @@ elif mode == "Score-based":
 
 threshold = max(1, n_metrics - 1)
 
+## Se pone en la barra
+st.sidebar.write(f"Highlight threshold: count ≥ {threshold}")
+
 
 # --------------------------------------------
 # DRAW GRAPHS
