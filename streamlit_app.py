@@ -52,7 +52,7 @@ if st.sidebar.button("Reset graphs"):
     st.session_state.groups = []
 
 # --------------------------------------------
-# ADD GRAPH (SIN TOCAR)
+# ADD GRAPH 
 # --------------------------------------------
 used_metrics = [m for g in st.session_state.groups for m in g if m]
 remaining_metrics = [m for m in available_metrics if m not in used_metrics]
@@ -60,6 +60,13 @@ remaining_metrics = [m for m in available_metrics if m not in used_metrics]
 if len(remaining_metrics) >= 2:
     if st.sidebar.button("Add graph"):
         st.session_state.groups.append([None, None, None])
+
+# --------------------------------------------
+# SHOW IDS TOGGLE
+# --------------------------------------------
+show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
+
+
 
 # --------------------------------------------
 # PREVIEW COMPLETO
@@ -226,11 +233,6 @@ if "id" in selected_df.columns:
     if selected_ids:
         st.markdown("### Selected solutions")
         st.dataframe(selected_df[selected_df["id"].isin(selected_ids)])
-
-# --------------------------------------------
-# SHOW IDS TOGGLE
-# --------------------------------------------
-show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 
 
 # --------------------------------------------
