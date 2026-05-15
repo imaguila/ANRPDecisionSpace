@@ -53,7 +53,6 @@ def plot_radar(selected_df, available_metrics):
     st.markdown("---")
     st.subheader("Detailed Comparison of Selected Solutions")
     
-    # RESTRICCIÓN: Solo las soluciones que han pasado los filtros/ranking
     opciones = selected_df["id"].unique()
     compare_ids = st.multiselect("Pick solutions to compare", opciones)
 
@@ -61,33 +60,45 @@ def plot_radar(selected_df, available_metrics):
         st.info("Select at least 2 solutions to compare")
         return
 
-    # Filtramos el DataFrame para quedarnos solo con las elegidas
     compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
     compare_metrics = [m for m in available_metrics if pd.api.types.is_numeric_dtype(compare_df[m])]
 
-    # NORMALIZACIÓN DINÁMICA: Basada solo en las soluciones a comparar
+    # --- NUEVA LÓGICA: Inversión de métricas de coste ---
+    # Definimos qué métricas son "cuanto menos, mejor"
+    metrics_to_invert = ["effort", "squandering", "dissatisfaction"] # Añade aquí las que necesites
+
     for m in compare_metrics:
-        # Usamos los valores de compare_df (las elegidas), no del df total
         min_v = compare_df[m].min()
         max_v = compare_df[m].max()
         
         if max_v > min_v:
-            compare_df[m] = (compare_df[m] - min_v) / (max_v - min_v)
+            # Normalización estándar
+            norm_val = (compare_df[m] - min_v) / (max_v - min_v)
+            
+            # Si la métrica es de esfuerzo/coste, invertimos: 1 es lo mejor (menos esfuerzo)
+            if m.lower() in [x.lower() for x in metrics_to_invert]:
+                compare_df[m] = 1.0 - norm_val
+            else:
+                compare_df[m] = norm_val
         else:
-            # Si todos tienen el mismo valor en esta métrica, los ponemos al 100% (borde exterior)
-            compare_df[m] = 1.0
+            # Si son iguales, los ponemos al 0.5 para que no colapsen al centro ni al borde
+            compare_df[m] = 0.5
 
     fig = go.Figure()
     for _, row in compare_df.iterrows():
         values = row[compare_metrics].tolist()
-        values.append(values[0]) # Cerrar el círculo
+        values.append(values[0])
+        
+        # Etiqueta personalizada para el hover que explique si está invertido
+        name_id = f"ID {int(row['id'])}"
         
         fig.add_trace(go.Scatterpolar(
             r=values, 
             theta=compare_metrics + [compare_metrics[0]],
-            fill=None,           # Solo línea
-            mode='lines+markers', # Líneas y puntos
-            name=f"ID {int(row['id'])}"
+            fill=None,
+            mode='lines+markers',
+            name=name_id,
+            hovertemplate="Indicator: %{theta}<br>points: %{r:.2%}<extra></extra>"
         ))
     
     fig.update_layout(
@@ -95,13 +106,14 @@ def plot_radar(selected_df, available_metrics):
             radialaxis=dict(
                 visible=True, 
                 range=[0, 1],
-                tickformat=".0%" # Muestra porcentajes para mayor claridad
+                tickvals=[0, 0.25, 0.5, 0.75, 1],
+                ticktext=["worse", "25%", "50%", "75%", "Better"] # Ayuda a entender el "1-effort"
             )
         ), 
+        title="Relative Comparison (external prefered)",
         showlegend=True
     )
     st.plotly_chart(fig, use_container_width=True)
-
 # --------------------------------------------
 # CARGA DE DATOS
 # --------------------------------------------
