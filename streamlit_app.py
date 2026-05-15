@@ -29,7 +29,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
     has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
     df["highlight_label"] = df["highlight"].map({
         True: "Hide",
-        False: "Hide"
+        False: "hide"
     })
 
     fig = px.scatter(
@@ -38,7 +38,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
         text="label" if show_ids else None,
         symbol="highlight_label",
         # symbol_map={True: "x", False: "circle"}
-        symbol_map={"Unmask": "triangle-up", "mask": "circle"},
+        symbol_map={"Hide": "triangle-up", "hide": "circle"},
         color_discrete_sequence=px.colors.qualitative.Plotly
     )
     
