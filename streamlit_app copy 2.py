@@ -179,7 +179,7 @@ elif mode == "Ranking-based":
 # --------------------------------------------
 # HIGHLIGHT Y LABELS
 # --------------------------------------------
-selected_ids = st.multiselect("Select solutions to **unmask**  ▲", selected_df["id"].unique())
+selected_ids = st.multiselect("Select solutions to unmask ", selected_df["id"].unique())
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
 if show_ids:
