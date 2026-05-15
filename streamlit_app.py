@@ -38,7 +38,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
         text="label" if show_ids else None,
         symbol="highlight_label",
         # symbol_map={True: "x", False: "circle"}
-        symbol_map={"Unmask": "circle", "mask": "x"}
+        symbol_map={"Unmask": "circle", "mask": "x"},
         color_discrete_sequence=px.colors.qualitative.Plotly
     )
     
