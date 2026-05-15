@@ -25,12 +25,19 @@ def normalize_series(series):
     return series * 0.0
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
+    # Determinamos si hay etiquetas que mostrar
+    has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
+    df["highlight_label"] = df["highlight"].map({
+        True: "Hide",
+        False: "hide"
+    })
+
     fig = px.scatter(
         df, x=x, y=y, size=size,
         color=color_col,
         text="label" if show_ids else None,
         symbol="highlight",
-        symbol_map={True: "x", False: "circle"},
+        symbol_map={"Hide": "triangle-up", "hide": "circle"},
         color_discrete_sequence=px.colors.qualitative.Plotly
     )
     
