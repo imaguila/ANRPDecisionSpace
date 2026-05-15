@@ -197,7 +197,7 @@ elif mode == "Ranking-based":
 # --------------------------------------------
 # HIGHLIGHT Y ETIQUETAS (CORREGIDO)
 # --------------------------------------------
-selected_ids = st.multiselect("Solution unmasking", selected_df["id"].unique())
+selected_ids = st.multiselect("Solution unmasking  ▲", selected_df["id"].unique())
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
 if show_ids:
@@ -239,10 +239,20 @@ for i, group in enumerate(st.session_state.groups):
     
     colA, colB = st.columns(2)
     with colA:
-        st.plotly_chart(render_scatter_plot(selected_df, x, y, None, color_col, show_ids), use_container_width=True)
+        # Añadimos key=f"chart_A_{i}"
+        st.plotly_chart(
+            render_scatter_plot(selected_df, x, y, None, color_col, show_ids), 
+            use_container_width=True,
+            key=f"chart_A_{i}"
+        )
     with colB:
         if size:
-            st.plotly_chart(render_scatter_plot(selected_df, x, size, y, color_col, show_ids), use_container_width=True)
+            # Añadimos key=f"chart_B_{i}"
+            st.plotly_chart(
+                render_scatter_plot(selected_df, x, size, y, color_col, show_ids), 
+                use_container_width=True,
+                key=f"chart_B_{i}"
+            )
         else:
             st.info("Add a third dimension")
 # --------------------------------------------
