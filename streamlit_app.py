@@ -27,13 +27,19 @@ def normalize_series(series):
 def render_scatter_plot(df, x, y, size, color_col, show_ids):
     # Determinamos si hay etiquetas que mostrar
     has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
-    
+    df["highlight_label"] = df["highlight"].map({
+        True: "Unmask",
+        False: "mask"
+    })
+
     fig = px.scatter(
         df, x=x, y=y, size=size,
         color=color_col,
         text="label" if show_ids else None,
-        symbol="highlight",
-        symbol_map={True: "x", False: "circle"}
+        symbol="highlight_label",
+        # symbol_map={True: "x", False: "circle"}
+        symbol_map={"Unmask": "circle", "mask": "x"}
+        color_discrete_sequence=px.colors.qualitative.Plotly
     )
     
     # Forzamos a Plotly a renderizar el texto
@@ -51,7 +57,7 @@ def plot_radar(df_para_comparar, available_metrics):
     el filtrado y la selección actual.
     """
     st.markdown("---")
-    st.subheader("📊 Detailed Comparison of Selected Solutions")
+    st.subheader("Detailed Comparison of Selected Solutions")
 
     # Solo permitimos elegir entre lo que está "vivo" en el dataframe actual
     opciones_disponibles = df_para_comparar["id"].unique()
@@ -183,13 +189,15 @@ elif mode == "Ranking-based":
             ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
+        # Convertimos a string para tener colores sólidos en Plotly
+        selected_df["count"] = selected_df["count"].astype(int).astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
         threshold = max(1, len(sel_metrics) - 1)
 
 # --------------------------------------------
 # HIGHLIGHT Y ETIQUETAS (CORREGIDO)
 # --------------------------------------------
-selected_ids = st.multiselect("Select solutions", selected_df["id"].unique())
+selected_ids = st.multiselect("Solution unmasking", selected_df["id"].unique())
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
 if show_ids:
@@ -210,10 +218,18 @@ else:
 # --------------------------------------------
 # DIBUJAR GRÁFICOS
 # --------------------------------------------
-color_col = "count" if "count" in selected_df.columns else None
+# Aseguramos que si existe 'count', se mantenga como categoría (string)
+if "count" in selected_df.columns:
+    color_col = "count"
+    # Re-ordenamos para que la leyenda de colores salga 3, 2, 1, 0
+    selected_df = selected_df.sort_values("count", ascending=False)
+else:
+    color_col = None
+
+# color_col = "count" if "count" in selected_df.columns else None
 
 for i, group in enumerate(st.session_state.groups):
-    st.subheader(f"Graph {i+1}")
+    st.subheader(f"Trade-off Map {i+1}")
     c1, c2, c3 = st.columns(3)
     with c1: x = st.selectbox(f"X {i}", available_metrics, key=f"x_{i}")
     with c2: y = st.selectbox(f"Y {i}", [m for m in available_metrics if m != x], key=f"y_{i}")
