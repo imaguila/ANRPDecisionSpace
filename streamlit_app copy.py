@@ -52,8 +52,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 def plot_radar(selected_df, available_metrics):
     st.markdown("---")
     st.subheader("Detailed Comparison of Selected Solutions")
-    
-    # RESTRICCIÓN: Solo las soluciones que ya han pasado los filtros/ranking
     opciones = selected_df["id"].unique()
     compare_ids = st.multiselect("Pick solutions to compare", opciones)
 
@@ -65,7 +63,7 @@ def plot_radar(selected_df, available_metrics):
     compare_metrics = [m for m in available_metrics if pd.api.types.is_numeric_dtype(compare_df[m])]
 
     for m in compare_metrics:
-        min_v, max_v = df[m].min(), df[m].max() # Normalización base sobre el total
+        min_v, max_v = compare_df[m].min(), compare_df[m].max()
         if max_v > min_v:
             compare_df[m] = (compare_df[m] - min_v) / (max_v - min_v)
 
@@ -74,18 +72,12 @@ def plot_radar(selected_df, available_metrics):
         values = row[compare_metrics].tolist()
         values.append(values[0])
         fig.add_trace(go.Scatterpolar(
-            r=values, 
-            theta=compare_metrics + [compare_metrics[0]],
-            fill=None,           # <--- CAMBIO: Sin superficie (solo línea)
-            mode='lines+markers', # <--- CAMBIO: Solo líneas y puntos
-            name=f"ID {int(row['id'])}"
+            r=values, theta=compare_metrics + [compare_metrics[0]],
+            fill='toself', name=f"ID {int(row['id'])}"
         ))
-    
-    fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0,1])), 
-        showlegend=True
-    )
+    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0,1])), showlegend=True)
     st.plotly_chart(fig, use_container_width=True)
+
 # --------------------------------------------
 # CARGA DE DATOS
 # --------------------------------------------
