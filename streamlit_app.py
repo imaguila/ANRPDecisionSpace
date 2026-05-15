@@ -216,10 +216,10 @@ else:
     selected_df["label"] = ""
 
 
+
 # --------------------------------------------
 # DIBUJAR GRÁFICOS
 # --------------------------------------------
-# Aseguramos que si existe 'count', se mantenga como categoría (string) para colores sólidos
 if "count" in selected_df.columns:
     color_col = "count"
     selected_df = selected_df.sort_values("count", ascending=False)
@@ -230,21 +230,28 @@ for i, group in enumerate(st.session_state.groups):
     st.subheader(f"Trade-off Map {i+1}")
     c1, c2, c3 = st.columns(3)
     
-    # 1. Selector X: Todas las métricas disponibles
-    with c1: 
-        x = st.selectbox(f"X Axis {i}", available_metrics, key=f"x_{i}")
+    # Recuperamos lo que había guardado en el estado para este grupo
+    saved_x, saved_y, saved_size = group
+
+    # 1. Selector X
+    with c1:
+        # Buscamos el índice del valor guardado para que no se resetee
+        idx_x = available_metrics.index(saved_x) if saved_x in available_metrics else 0
+        x = st.selectbox(f"X Axis {i}", available_metrics, index=idx_x, key=f"x_{i}")
     
-    # 2. Selector Y: Excluimos la seleccionada en X
+    # 2. Selector Y (Excluye X)
     with c2: 
         y_options = [m for m in available_metrics if m != x]
-        y = st.selectbox(f"Y Axis {i}", y_options, key=f"y_{i}")
+        idx_y = y_options.index(saved_y) if saved_y in y_options else 0
+        y = st.selectbox(f"Y Axis {i}", y_options, index=idx_y, key=f"y_{i}")
     
-    # 3. Selector Size: Excluimos las seleccionadas en X e Y
+    # 3. Selector Size (Excluye X e Y)
     with c3: 
         size_options = [None] + [m for m in available_metrics if m not in [x, y]]
-        size = st.selectbox(f"Size (3rd Dimension) {i}", size_options, key=f"s_{i}")
+        idx_s = size_options.index(saved_size) if saved_size in size_options else 0
+        size = st.selectbox(f"Size (3rd Dimension) {i}", size_options, index=idx_s, key=f"s_{i}")
     
-    # Actualizamos el estado de la sesión con las selecciones actuales
+    # ACTUALIZACIÓN CRÍTICA: Guardamos la selección actual en el state
     st.session_state.groups[i] = [x, y, size]
     
     colA, colB = st.columns(2)
@@ -252,7 +259,7 @@ for i, group in enumerate(st.session_state.groups):
         st.plotly_chart(
             render_scatter_plot(selected_df, x, y, None, color_col, show_ids), 
             use_container_width=True,
-            key=f"chart_A_{i}" # Importante para evitar el error de Duplicate ID
+            key=f"chart_A_{i}"
         )
     with colB:
         if size:
@@ -262,7 +269,8 @@ for i, group in enumerate(st.session_state.groups):
                 key=f"chart_B_{i}"
             )
         else:
-            st.info("Select a metric in 'Size' to enable the comparative trade-off view.")
+            st.info("Select a metric in 'Size' to enable comparison.")
+
 # --------------------------------------------
 # COMPARISON & PREVIEW (CONSOLIDADOS)
 # --------------------------------------------
