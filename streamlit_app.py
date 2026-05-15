@@ -215,46 +215,54 @@ if show_ids:
 else:
     selected_df["label"] = ""
 
+
 # --------------------------------------------
 # DIBUJAR GRÁFICOS
 # --------------------------------------------
-# Aseguramos que si existe 'count', se mantenga como categoría (string)
+# Aseguramos que si existe 'count', se mantenga como categoría (string) para colores sólidos
 if "count" in selected_df.columns:
     color_col = "count"
-    # Re-ordenamos para que la leyenda de colores salga 3, 2, 1, 0
     selected_df = selected_df.sort_values("count", ascending=False)
 else:
     color_col = None
 
-# color_col = "count" if "count" in selected_df.columns else None
-
 for i, group in enumerate(st.session_state.groups):
     st.subheader(f"Trade-off Map {i+1}")
     c1, c2, c3 = st.columns(3)
-    with c1: x = st.selectbox(f"X {i}", available_metrics, key=f"x_{i}")
-    with c2: y = st.selectbox(f"Y {i}", [m for m in available_metrics if m != x], key=f"y_{i}")
-    with c3: size = st.selectbox(f"Size {i}", [None] + [m for m in available_metrics if m not in [x, y]], key=f"s_{i}")
     
+    # 1. Selector X: Todas las métricas disponibles
+    with c1: 
+        x = st.selectbox(f"X Axis {i}", available_metrics, key=f"x_{i}")
+    
+    # 2. Selector Y: Excluimos la seleccionada en X
+    with c2: 
+        y_options = [m for m in available_metrics if m != x]
+        y = st.selectbox(f"Y Axis {i}", y_options, key=f"y_{i}")
+    
+    # 3. Selector Size: Excluimos las seleccionadas en X e Y
+    with c3: 
+        size_options = [None] + [m for m in available_metrics if m not in [x, y]]
+        size = st.selectbox(f"Size (3rd Dimension) {i}", size_options, key=f"s_{i}")
+    
+    # Actualizamos el estado de la sesión con las selecciones actuales
     st.session_state.groups[i] = [x, y, size]
     
     colA, colB = st.columns(2)
     with colA:
-        # Añadimos key=f"chart_A_{i}"
         st.plotly_chart(
             render_scatter_plot(selected_df, x, y, None, color_col, show_ids), 
             use_container_width=True,
-            key=f"chart_A_{i}"
+            key=f"chart_A_{i}" # Importante para evitar el error de Duplicate ID
         )
     with colB:
         if size:
-            # Añadimos key=f"chart_B_{i}"
             st.plotly_chart(
                 render_scatter_plot(selected_df, x, size, y, color_col, show_ids), 
                 use_container_width=True,
                 key=f"chart_B_{i}"
             )
         else:
-            st.info("Add a third dimension")
+            st.info("Select a metric in 'Size' to enable the comparative trade-off view.")
 # --------------------------------------------
 # COMPARISON & PREVIEW (CONSOLIDADOS)
 # --------------------------------------------
