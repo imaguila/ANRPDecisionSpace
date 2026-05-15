@@ -48,76 +48,93 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         mode='markers+text' if show_ids else 'markers'
     )
     st.plotly_chart(fig, use_container_width=True, key=key)
-
 def plot_radar(selected_df, available_metrics):
     st.markdown("---")
-    st.subheader("Detailed Comparison of Selected Solutions")
-    
-    opciones = selected_df["id"].unique()
-    compare_ids = st.multiselect("Pick solutions to compare", opciones)
+    st.subheader("Custom Detailed Comparison (Kiviat)")
+
+    # 1. Selección de soluciones a comparar
+    opciones_id = selected_df["id"].unique()
+    compare_ids = st.multiselect("1. Pick solutions to compare", opciones_id)
 
     if len(compare_ids) < 2:
         st.info("Select at least 2 solutions to compare")
         return
 
-    compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
-    compare_metrics = [m for m in available_metrics if pd.api.types.is_numeric_dtype(compare_df[m])]
-
-    # Configuración de métricas inversas (menos es mejor)
-    metrics_to_invert = ["effort", "squandering", "risk"]
+    # 2. Configuración dinámica de dimensiones del Radar
+    st.markdown("#### 2. Configure Radar Dimensions")
     
-    # AJUSTE: Margen para que no toquen el centro ni el borde
-    low_limit = 0.1  # El peor valor será 10% de radio
-    high_limit = 0.9 # El mejor valor será 90% de radio
+    # Multiselect para elegir qué métricas entran al radar
+    selected_radar_metrics = st.multiselect(
+        "Select metrics (at least 3)", 
+        [m for m in available_metrics if pd.api.types.is_numeric_dtype(selected_df[m])],
+        default=available_metrics[:3] if len(available_metrics) >=3 else None
+    )
 
-    for m in compare_metrics:
+    if len(selected_radar_metrics) < 3:
+        st.warning("Please select at least 3 metrics to generate the radar chart.")
+        return
+
+    # Diccionario para guardar el objetivo de cada métrica elegida
+    metric_goals = {}
+    cols = st.columns(len(selected_radar_metrics))
+    
+    for idx, m in enumerate(selected_radar_metrics):
+        with cols[idx]:
+            # El usuario decide si para esta métrica "Mejor" es Max o Min
+            goal = st.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"radar_g_{m}")
+            metric_goals[m] = goal
+
+    # Preparar datos
+    compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
+    
+    # Ajuste de escala: Margen del 10% para evitar colapsos
+    low_limit = 0.1
+    high_limit = 0.9
+
+    for m in selected_radar_metrics:
         min_v = compare_df[m].min()
         max_v = compare_df[m].max()
         
         if max_v > min_v:
             norm_val = (compare_df[m] - min_v) / (max_v - min_v)
             
-            # Aplicar inversión si toca
-            if m.lower() in [x.lower() for x in metrics_to_invert]:
+            # Aplicar inversión según la decisión del usuario en el selectbox
+            if metric_goals[m] == "Minimize":
                 norm_val = 1.0 - norm_val
             
-            # REESCALADO: Mapeamos el [0, 1] al rango [low_limit, high_limit]
             compare_df[m] = low_limit + (norm_val * (high_limit - low_limit))
         else:
-            # Si son iguales, todos al centro del rango visible
-            compare_df[m] = (high_limit + low_limit) / 2
+            compare_df[m] = 0.5
 
+    # Crear el gráfico
     fig = go.Figure()
     for _, row in compare_df.iterrows():
-        values = row[compare_metrics].tolist()
+        values = row[selected_radar_metrics].tolist()
         values.append(values[0])
         
         fig.add_trace(go.Scatterpolar(
             r=values, 
-            theta=compare_metrics + [compare_metrics[0]],
+            theta=selected_radar_metrics + [selected_radar_metrics[0]],
             fill=None,
             mode='lines+markers',
             name=f"ID {int(row['id'])}",
-            marker=dict(size=8),
-            line=dict(width=3)
+            hovertemplate="Métrica: %{theta}<br>Puntaje relativo: %{r:.2%}<extra></extra>"
         ))
     
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True, 
-                range=[0, 1], # El eje sigue siendo 0-1, pero nuestros datos están en 0.1-0.9
+                range=[0, 1],
                 tickvals=[low_limit, 0.5, high_limit],
                 ticktext=["Peor", "Media", "Mejor"],
                 gridcolor="lightgrey"
             )
-        ), 
-        showlegend=True,
-        margin=dict(l=80, r=80, t=20, b=20)
+        ),
+        title="Custom Trade-off Comparison (Outer is Better)",
+        showlegend=True
     )
     st.plotly_chart(fig, use_container_width=True)
-
-
 # --------------------------------------------
 # CARGA DE DATOS
 # --------------------------------------------
