@@ -36,7 +36,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         df, x=x, y=y, size=size,
         color=color_col,
         text="label" if show_ids else None,
-        symbol="highlight",
+        symbol="highlight_label",
         symbol_map={"Hide": "triangle-up", "hide": "circle"},
         color_discrete_sequence=px.colors.qualitative.Plotly
     )
