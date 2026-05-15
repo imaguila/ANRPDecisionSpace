@@ -53,7 +53,7 @@ def plot_radar(selected_df, available_metrics):
     st.markdown("---")
     st.subheader("Detailed Comparison of Selected Solutions")
     
-    # RESTRICCIÓN: Solo las soluciones que ya han pasado los filtros/ranking
+    # RESTRICCIÓN: Solo las soluciones que han pasado los filtros/ranking
     opciones = selected_df["id"].unique()
     compare_ids = st.multiselect("Pick solutions to compare", opciones)
 
@@ -61,31 +61,47 @@ def plot_radar(selected_df, available_metrics):
         st.info("Select at least 2 solutions to compare")
         return
 
+    # Filtramos el DataFrame para quedarnos solo con las elegidas
     compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
     compare_metrics = [m for m in available_metrics if pd.api.types.is_numeric_dtype(compare_df[m])]
 
+    # NORMALIZACIÓN DINÁMICA: Basada solo en las soluciones a comparar
     for m in compare_metrics:
-        min_v, max_v = df[m].min(), df[m].max() # Normalización base sobre el total
+        # Usamos los valores de compare_df (las elegidas), no del df total
+        min_v = compare_df[m].min()
+        max_v = compare_df[m].max()
+        
         if max_v > min_v:
             compare_df[m] = (compare_df[m] - min_v) / (max_v - min_v)
+        else:
+            # Si todos tienen el mismo valor en esta métrica, los ponemos al 100% (borde exterior)
+            compare_df[m] = 1.0
 
     fig = go.Figure()
     for _, row in compare_df.iterrows():
         values = row[compare_metrics].tolist()
-        values.append(values[0])
+        values.append(values[0]) # Cerrar el círculo
+        
         fig.add_trace(go.Scatterpolar(
             r=values, 
             theta=compare_metrics + [compare_metrics[0]],
-            fill=None,           # <--- CAMBIO: Sin superficie (solo línea)
-            mode='lines+markers', # <--- CAMBIO: Solo líneas y puntos
+            fill=None,           # Solo línea
+            mode='lines+markers', # Líneas y puntos
             name=f"ID {int(row['id'])}"
         ))
     
     fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0,1])), 
+        polar=dict(
+            radialaxis=dict(
+                visible=True, 
+                range=[0, 1],
+                tickformat=".0%" # Muestra porcentajes para mayor claridad
+            )
+        ), 
         showlegend=True
     )
     st.plotly_chart(fig, use_container_width=True)
+
 # --------------------------------------------
 # CARGA DE DATOS
 # --------------------------------------------
