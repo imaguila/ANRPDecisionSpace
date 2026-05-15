@@ -28,8 +28,8 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
     # Determinamos si hay etiquetas que mostrar
     has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
     df["highlight_label"] = df["highlight"].map({
-        True: "Unmask",
-        False: "mask"
+        True: "Hide",
+        False: "Hide"
     })
 
     fig = px.scatter(
@@ -38,7 +38,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids):
         text="label" if show_ids else None,
         symbol="highlight_label",
         # symbol_map={True: "x", False: "circle"}
-        symbol_map={"Unmask": "circle", "mask": "x"},
+        symbol_map={"Unmask": "triangle-up", "mask": "circle"},
         color_discrete_sequence=px.colors.qualitative.Plotly
     )
     
@@ -209,7 +209,7 @@ if show_ids:
     elif mode == "Ranking-based":
         # En Ranking usamos el umbral de coincidencias
         selected_df["label"] = selected_df.apply(
-            lambda r: str(int(r["id"])) if (r["highlight"] or r.get("count", 0) >= threshold) else "",
+            lambda r: str(int(r["id"])) if (r["highlight"] or int(r.get("count", 0)) >= threshold) else "",
             axis=1
         )
 else:
