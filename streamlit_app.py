@@ -20,6 +20,7 @@ files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" no
 # selector de origen
 source = st.sidebar.radio("Data source", ["Built-in", "Upload CSV"])
 
+
 if source == "Built-in":
     if not files:
         st.error("No datasets found")
