@@ -25,6 +25,7 @@ def normalize_series(series):
     return series * 0.0
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
+    # Determinamos si hay etiquetas que mostrar
     has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
     df["highlight_label"] = df["highlight"].map({
         True: "Hide",
@@ -48,9 +49,12 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     )
     st.plotly_chart(fig, use_container_width=True, key=key)
 
+
+
 def plot_radar(selected_df, available_metrics):
     st.markdown("---")
     
+    # 1. Selección de soluciones a comparar (Común para ambos radares)
     opciones_id = selected_df["id"].unique()
     compare_ids = st.multiselect("Pick solutions to compare in Radar", opciones_id)
 
@@ -60,12 +64,13 @@ def plot_radar(selected_df, available_metrics):
 
     compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
     
+    # --- PESTAÑAS PARA ORGANIZAR LOS DOS RADARES ---
     tab1, tab2 = st.tabs(["📊 Performance Radar", "👥 Stakeholder Coverage"])
 
-    # ---------- PERFORMANCE ----------
     with tab1:
         st.subheader("Custom Trade-off Comparison")
         
+        # Selección dinámica de métricas
         numeric_cols = [m for m in available_metrics if pd.api.types.is_numeric_dtype(selected_df[m])]
         selected_radar_metrics = st.multiselect(
             "Select metrics (at least 3)", 
@@ -77,12 +82,12 @@ def plot_radar(selected_df, available_metrics):
         if len(selected_radar_metrics) >= 3:
             metric_goals = {}
             cols = st.columns(len(selected_radar_metrics))
-            
             for idx, m in enumerate(selected_radar_metrics):
                 with cols[idx]:
                     goal = st.selectbox(f"Goal {m}", ["Maximize", "Minimize"], key=f"radar_g_{m}")
                     metric_goals[m] = goal
 
+            # Procesar datos (Normalización local con padding 10%)
             radar_df = compare_df.copy()
             low, high = 0.1, 0.9
 
@@ -90,108 +95,91 @@ def plot_radar(selected_df, available_metrics):
                 mi, ma = radar_df[m].min(), radar_df[m].max()
                 if ma > mi:
                     norm = (radar_df[m] - mi) / (ma - mi)
-                    if metric_goals[m] == "Minimize":
-                        norm = 1.0 - norm
+                    if metric_goals[m] == "Minimize": norm = 1.0 - norm
                     radar_df[m] = low + (norm * (high - low))
                 else:
                     radar_df[m] = 0.5
 
+            # Dibujar Radar Performance
             fig_perf = go.Figure()
             for _, row in radar_df.iterrows():
                 val = row[selected_radar_metrics].tolist()
                 val.append(val[0])
                 fig_perf.add_trace(go.Scatterpolar(
-                    r=val,
-                    theta=selected_radar_metrics + [selected_radar_metrics[0]],
-                    fill=None,
-                    mode='lines+markers',
-                    name=f"ID {int(row['id'])}"
+                    r=val, theta=selected_radar_metrics + [selected_radar_metrics[0]],
+                    fill=None, mode='lines+markers', name=f"ID {int(row['id'])}"
                 ))
-
-            fig_perf.update_layout(
-                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-                showlegend=True
-            )
+            fig_perf.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True)
             st.plotly_chart(fig_perf, use_container_width=True)
-
         else:
             st.warning("Select at least 3 metrics.")
 
-    # ---------- STAKEHOLDER ----------
     with tab2:
         st.subheader("Coverage per Stakeholder")
         
+        # Detectar columnas de clientes
         stcov_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
         
         if not stcov_cols:
             st.info("No stakeholder coverage columns (stcov_...) found in dataset.")
         else:
-            if len(stcov_cols) < 3:
-                st.warning("Need at least 3 stakeholders to create a radar chart.")
-            else:
-                cov_df = compare_df.copy()
-                low, high = 0.1, 0.9
+            show_stcov = st.checkbox("Generate Stakeholder Radar", value=True)
+            
+            if show_stcov:
+                if len(stcov_cols) < 3:
+                    st.warning("Need at least 3 stakeholders to create a radar chart.")
+                else:
+                    # Procesar datos de cobertura (siempre es Maximizar cobertura)
+                    cov_df = compare_df.copy()
+                    low, high = 0.1, 0.9
 
-                for c in stcov_cols:
-                    mi, ma = cov_df[c].min(), cov_df[c].max()
-                    if ma > mi:
-                        norm = (cov_df[c] - mi) / (ma - mi)
-                        cov_df[c] = low + (norm * (high - low))
-                    else:
-                        cov_df[c] = 0.5
+                    for c in stcov_cols:
+                        mi, ma = cov_df[c].min(), cov_df[c].max()
+                        if ma > mi:
+                            norm = (cov_df[c] - mi) / (ma - mi)
+                            cov_df[c] = low + (norm * (high - low))
+                        else:
+                            cov_df[c] = 0.5
 
-                fig_cov = go.Figure()
-                for _, row in cov_df.iterrows():
-                    val = row[stcov_cols].tolist()
-                    val.append(val[0])
-                    fig_cov.add_trace(go.Scatterpolar(
-                        r=val,
-                        theta=stcov_cols + [stcov_cols[0]],
-                        fill=None,
-                        mode='lines+markers',
-                        name=f"ID {int(row['id'])}"
-                    ))
+                    # Dibujar Radar Cobertura
+                    fig_cov = go.Figure()
+                    for _, row in cov_df.iterrows():
+                        val = row[stcov_cols].tolist()
+                        val.append(val[0])
+                        fig_cov.add_trace(go.Scatterpolar(
+                            r=val, theta=stcov_cols + [stcov_cols[0]],
+                            fill=None, mode='lines+markers', name=f"ID {int(row['id'])}"
+                        ))
+                    
+                    fig_cov.update_layout(
+                        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                        title="Stakeholder Satisfaction (Outer is more covered)",
+                        showlegend=True
+                    )
+                    st.plotly_chart(fig_cov, use_container_width=True)
 
-                fig_cov.update_layout(
-                    polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-                    showlegend=True
-                )
-                st.plotly_chart(fig_cov, use_container_width=True)
 
-# --------------------------------------------
-# DATA SOURCE (AÑADIDO SIN ROMPER NADA)
-# --------------------------------------------
-source = st.sidebar.radio("Data source", ["Built-in", "Upload CSV"])
-
-if source == "Built-in":
-    if not os.path.exists(DATA_PATH):
-        st.error("Data folder not found")
-        st.stop()
-
-    files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
-    if not files:
-        st.error("No datasets found")
-        st.stop()
-
-    selected_file = st.sidebar.selectbox("Dataset", files)
-    df = load_csv(os.path.join(DATA_PATH, selected_file))
-
-else:
-    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-    if uploaded_file is None:
-        st.stop()
-    df = pd.read_csv(uploaded_file)
 
 # --------------------------------------------
-# METRICS
+# CARGA DE DATOS
 # --------------------------------------------
+if not os.path.exists(DATA_PATH):
+    st.error("Data folder not found"); st.stop()
+
+files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
+if not files:
+    st.error("No datasets found"); st.stop()
+
+selected_file = st.sidebar.selectbox("Dataset", files)
+df = load_csv(os.path.join(DATA_PATH, selected_file))
+
 opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
 qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
 available_metrics = [m for m in list(opt_df.columns) + list(qual_df.columns) if m in df.columns]
 available_qual = [m for m in qual_df.columns if m in df.columns]
 
 # --------------------------------------------
-# SESSION STATE
+# ESTADO DE SESIÓN
 # --------------------------------------------
 if "groups" not in st.session_state: st.session_state.groups = []
 if "show_comparison" not in st.session_state: st.session_state.show_comparison = False
@@ -199,6 +187,7 @@ if "show_comparison" not in st.session_state: st.session_state.show_comparison =
 if st.sidebar.button("Reset graphs"): 
     st.session_state.groups = []; st.rerun()
 
+# Lógica de exclusión para añadir nuevo gráfico
 used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
 
@@ -226,7 +215,7 @@ for m in available_metrics:
             filtered_df = filtered_df[(filtered_df[m] >= val_range[0]) & (filtered_df[m] <= val_range[1])]
 
 # --------------------------------------------
-# SELECCIÓN
+# SELECCIÓN (SCORE / RANKING)
 # --------------------------------------------
 mode = st.sidebar.selectbox("Selection mode", ["None", "Score-based", "Ranking-based"])
 selected_df = filtered_df.copy()
@@ -257,11 +246,12 @@ elif mode == "Ranking-based":
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
         threshold = max(1, len(sel_metrics) - 1)
+        # Convertir a string para colores sólidos (DISCRETOS)
         selected_df["count"] = selected_df["count"].astype(int).astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
 
 # --------------------------------------------
-# HIGHLIGHT + LABELS
+# HIGHLIGHT Y LABELS
 # --------------------------------------------
 selected_ids = st.multiselect("Select solutions to **unmask**  ▲", selected_df["id"].unique())
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
@@ -277,13 +267,14 @@ else:
     selected_df["label"] = ""
 
 # --------------------------------------------
-# GRÁFICOS
+# DIBUJAR GRÁFICOS (CON EXCLUSIÓN DINÁMICA)
 # --------------------------------------------
 color_col = "count" if "count" in selected_df.columns else None
 
 for i, group in enumerate(st.session_state.groups):
     st.subheader(f"Trade-off Map {i+1}")
     
+    # Calcular qué usan otros gráficos para excluirlos
     others = [m for idx, g in enumerate(st.session_state.groups) if idx != i for m in g if m]
     available_here = [m for m in available_metrics if m not in others]
 
@@ -294,6 +285,7 @@ for i, group in enumerate(st.session_state.groups):
     col1, col2, col3 = st.columns(3)
     
     with col1:
+        # Buscamos el índice para que no se resetee al cambiar otras cosas
         curr_x = group[0] if group[0] in available_here else available_here[0]
         x = st.selectbox(f"X Axis {i}", available_here, index=available_here.index(curr_x), key=f"x_{i}")
     
@@ -307,6 +299,7 @@ for i, group in enumerate(st.session_state.groups):
         curr_s = group[2] if group[2] in s_opts else None
         size = st.selectbox(f"Size {i}", s_opts, index=s_opts.index(curr_s), key=f"s_{i}")
 
+    # Guardamos en el estado para que el siguiente gráfico sepa qué no usar
     st.session_state.groups[i] = [x, y, size]
 
     cA, cB = st.columns(2)
@@ -319,13 +312,10 @@ for i, group in enumerate(st.session_state.groups):
             st.info("Select a metric in 'Size' to enable comparison.")
 
 # --------------------------------------------
-# RADAR
+# RADAR Y PREVIEW
 # --------------------------------------------
 if st.session_state.show_comparison:
     plot_radar(selected_df, available_metrics)
 
-# --------------------------------------------
-# PREVIEW
-# --------------------------------------------
 with st.expander("Data preview"):
     st.dataframe(selected_df.head(100))
