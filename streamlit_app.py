@@ -1,337 +1,328 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import os
 
-# --------------------------------------------
-# CONFIGURACIÓN
-# --------------------------------------------
 st.set_page_config(layout="wide")
 st.title("Assisted Next Release Problem")
+
 DATA_PATH = "data"
 
 # --------------------------------------------
-# FUNCIONES CORE
+# LOAD DATA
 # --------------------------------------------
 @st.cache_data
 def load_csv(path):
     return pd.read_csv(path)
 
-def normalize_series(series):
-    min_val, max_val = series.min(), series.max()
-    if max_val > min_val:
-        return (series - min_val) / (max_val - min_val)
-    return series * 0.0
-
-def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
-    # Determinamos si hay etiquetas que mostrar
-    has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
-    df["highlight_label"] = df["highlight"].map({
-        True: "Hide",
-        False: "hide"
-    })
-
-    fig = px.scatter(
-        df, x=x, y=y, size=size,
-        color=color_col,
-        text="label" if show_ids else None,
-        symbol="highlight_label",
-        symbol_map={"Hide": "triangle-up", "hide": "circle"},
-        color_discrete_sequence=px.colors.qualitative.Plotly
-    )
-    
-    fig.update_traces(
-        textposition="top right",
-        textfont=dict(size=10),
-        marker=dict(size=10),
-        mode='markers+text' if show_ids else 'markers'
-    )
-    st.plotly_chart(fig, use_container_width=True, key=key)
-
-
-
-def plot_radar(selected_df, available_metrics):
-    st.markdown("---")
-    
-    # 1. Selección de soluciones a comparar (Común para ambos radares)
-    opciones_id = selected_df["id"].unique()
-    compare_ids = st.multiselect("Pick solutions to compare in Radar", opciones_id)
-
-    if len(compare_ids) < 2:
-        st.info("Select at least 2 solutions to compare")
-        return
-
-    compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
-    
-    # --- PESTAÑAS PARA ORGANIZAR LOS DOS RADARES ---
-    tab1, tab2 = st.tabs(["📊 Performance Radar", "👥 Stakeholder Coverage"])
-
-    with tab1:
-        st.subheader("Custom Trade-off Comparison")
-        
-        # Selección dinámica de métricas
-        numeric_cols = [m for m in available_metrics if pd.api.types.is_numeric_dtype(selected_df[m])]
-        selected_radar_metrics = st.multiselect(
-            "Select metrics (at least 3)", 
-            numeric_cols,
-            default=numeric_cols[:3] if len(numeric_cols) >= 3 else None,
-            key="perf_metrics"
-        )
-
-        if len(selected_radar_metrics) >= 3:
-            metric_goals = {}
-            cols = st.columns(len(selected_radar_metrics))
-            for idx, m in enumerate(selected_radar_metrics):
-                with cols[idx]:
-                    goal = st.selectbox(f"Goal {m}", ["Maximize", "Minimize"], key=f"radar_g_{m}")
-                    metric_goals[m] = goal
-
-            # Procesar datos (Normalización local con padding 10%)
-            radar_df = compare_df.copy()
-            low, high = 0.1, 0.9
-
-            for m in selected_radar_metrics:
-                mi, ma = radar_df[m].min(), radar_df[m].max()
-                if ma > mi:
-                    norm = (radar_df[m] - mi) / (ma - mi)
-                    if metric_goals[m] == "Minimize": norm = 1.0 - norm
-                    radar_df[m] = low + (norm * (high - low))
-                else:
-                    radar_df[m] = 0.5
-
-            # Dibujar Radar Performance
-            fig_perf = go.Figure()
-            for _, row in radar_df.iterrows():
-                val = row[selected_radar_metrics].tolist()
-                val.append(val[0])
-                fig_perf.add_trace(go.Scatterpolar(
-                    r=val, theta=selected_radar_metrics + [selected_radar_metrics[0]],
-                    fill=None, mode='lines+markers', name=f"ID {int(row['id'])}"
-                ))
-            fig_perf.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])), showlegend=True)
-            st.plotly_chart(fig_perf, use_container_width=True)
-        else:
-            st.warning("Select at least 3 metrics.")
-
-    with tab2:
-        st.subheader("Coverage per Stakeholder")
-        
-        # Detectar columnas de clientes
-        stcov_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
-        
-        if not stcov_cols:
-            st.info("No stakeholder coverage columns (stcov_...) found in dataset.")
-        else:
-            show_stcov = st.checkbox("Generate Stakeholder Radar", value=True)
-            
-            if show_stcov:
-                if len(stcov_cols) < 3:
-                    st.warning("Need at least 3 stakeholders to create a radar chart.")
-                else:
-                    # Procesar datos de cobertura (siempre es Maximizar cobertura)
-                    cov_df = compare_df.copy()
-                    low, high = 0.1, 0.9
-
-                    for c in stcov_cols:
-                        mi, ma = cov_df[c].min(), cov_df[c].max()
-                        if ma > mi:
-                            norm = (cov_df[c] - mi) / (ma - mi)
-                            cov_df[c] = low + (norm * (high - low))
-                        else:
-                            cov_df[c] = 0.5
-
-                    # Dibujar Radar Cobertura
-                    fig_cov = go.Figure()
-                    for _, row in cov_df.iterrows():
-                        val = row[stcov_cols].tolist()
-                        val.append(val[0])
-                        fig_cov.add_trace(go.Scatterpolar(
-                            r=val, theta=stcov_cols + [stcov_cols[0]],
-                            fill=None, mode='lines+markers', name=f"ID {int(row['id'])}"
-                        ))
-                    
-                    fig_cov.update_layout(
-                        polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-                        title="Stakeholder Satisfaction (Outer is more covered)",
-                        showlegend=True
-                    )
-                    st.plotly_chart(fig_cov, use_container_width=True)
-
-
-
-
-# --------------------------------------------
-# CARGA DE DATOS (MEJORADA)
-# --------------------------------------------
-if not os.path.exists(DATA_PATH):
-    st.error("Data folder not found")
-    st.stop()
-
 files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
 
-# Selector de fuente de datos
-data_source = st.sidebar.radio(
-    "Data source",
-    ["Use built-in dataset", "Upload CSV"]
-)
+# selector de origen
+source = st.sidebar.radio("Data source", ["Built-in", "Upload CSV"])
 
-if data_source == "Use built-in dataset":
+if source == "Built-in":
     if not files:
         st.error("No datasets found")
         st.stop()
-        
+
     selected_file = st.sidebar.selectbox("Dataset", files)
     df = load_csv(os.path.join(DATA_PATH, selected_file))
 
 else:
     uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-    
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-    else:
-        st.warning("Please upload a CSV file")
-        st.stop()
+
+    if uploaded_file is None:
+        st.stop()  # espera a que subas archivo
+
+    df = pd.read_csv(uploaded_file)
 
 
 # --------------------------------------------
-# ESTADO DE SESIÓN
+# METRICS
 # --------------------------------------------
-if "groups" not in st.session_state: st.session_state.groups = []
-if "show_comparison" not in st.session_state: st.session_state.show_comparison = False
+opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
+optimization_metrics = opt_df.columns.tolist()
 
-if st.sidebar.button("Reset graphs"): 
-    st.session_state.groups = []; st.rerun()
+qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
+quality_metrics = qual_df.columns.tolist()
 
-# Lógica de exclusión para añadir nuevo gráfico
-used_now = [m for g in st.session_state.groups for m in g if m]
-remaining = [m for m in available_metrics if m not in used_now]
+available_optimization_metrics = [m for m in optimization_metrics if m in df.columns]
+available_quality_metrics = [m for m in quality_metrics if m in df.columns]
 
-if len(remaining) >= 2:
+available_metrics = available_optimization_metrics + available_quality_metrics
+
+if len(available_metrics) < 2:
+    st.error("There are not enough metrics")
+    st.stop()
+
+# --------------------------------------------
+# SESSION STATE
+# --------------------------------------------
+if "groups" not in st.session_state:
+    st.session_state.groups = []
+
+if st.sidebar.button("Reset graphs"):
+    st.session_state.groups = []
+
+# --------------------------------------------
+# ADD GRAPH (SIN TOCAR)
+# --------------------------------------------
+used_metrics = [m for g in st.session_state.groups for m in g if m]
+remaining_metrics = [m for m in available_metrics if m not in used_metrics]
+
+if len(remaining_metrics) >= 2:
     if st.sidebar.button("Add graph"):
-        st.session_state.groups.append([remaining[0], remaining[1], None])
-        st.rerun()
-
-if st.sidebar.button("Show/Hide comparison view"):
-    st.session_state.show_comparison = not st.session_state.show_comparison
-    st.rerun()
-
-show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
+        st.session_state.groups.append([None, None, None])
 
 # --------------------------------------------
-# FILTROS
+# PREVIEW COMPLETO
+# --------------------------------------------
+with st.expander("Full preview"):
+    st.write(f"Showing all {len(df)} solutions")
+    st.dataframe(df, use_container_width=True)
+
+# --------------------------------------------
+# FILTERS
 # --------------------------------------------
 st.sidebar.markdown("### Filters")
+
 filtered_df = df.copy()
+
 for m in available_metrics:
-    if pd.api.types.is_numeric_dtype(df[m]):
-        min_v, max_v = float(df[m].min()), float(df[m].max())
-        if min_v != max_v:
-            val_range = st.sidebar.slider(f"{m}", min_v, max_v, (min_v, max_v), key=f"f_{m}")
-            filtered_df = filtered_df[(filtered_df[m] >= val_range[0]) & (filtered_df[m] <= val_range[1])]
+    min_val = float(df[m].min())
+    max_val = float(df[m].max())
+
+    if min_val != max_val:
+        val_range = st.sidebar.slider(
+            f"{m}",
+            min_val,
+            max_val,
+            (min_val, max_val),
+            key=f"filter_{m}"
+        )
+
+        filtered_df = filtered_df[
+            (filtered_df[m] >= val_range[0]) &
+            (filtered_df[m] <= val_range[1])
+        ]
 
 # --------------------------------------------
-# SELECCIÓN (SCORE / RANKING)
+# SELECTION MODE
 # --------------------------------------------
-mode = st.sidebar.selectbox("Selection mode", ["None", "Score-based", "Ranking-based"])
+st.sidebar.markdown("### Selection")
+
+mode = st.sidebar.selectbox(
+    "Selection mode",
+    ["Score-based", "Ranking-based"]
+)
+
 selected_df = filtered_df.copy()
-threshold = 0
 
+# --------------------------------------------
+# MODE 1: SCORE
+# --------------------------------------------
 if mode == "Score-based":
-    m_max = st.sidebar.multiselect("Maximize", available_qual)
-    m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max])
-    if m_max or m_min:
-        score = 0
-        for m in m_max + m_min:
-            mi, ma = selected_df[m].min(), selected_df[m].max()
-            norm = (selected_df[m] - mi) / (ma - mi) if ma > mi else 0
-            score = (score + norm) if m in m_max else (score - norm)
-        selected_df["score"] = score
-        n = st.sidebar.slider("Top N", 1, min(50, len(selected_df)), 10)
-        selected_df = selected_df.sort_values("score", ascending=False).head(n)
-        threshold = 1
 
+    metrics_max = st.sidebar.multiselect(
+        "Metrics to maximize",
+        available_quality_metrics,
+        key="max_metrics"
+    )
+
+    metrics_min = st.sidebar.multiselect(
+        "Metrics to minimize",
+        [m for m in available_quality_metrics if m not in metrics_max],
+        key="min_metrics"
+    )
+
+    if len(metrics_max) + len(metrics_min) > 0:
+
+        n_top = st.sidebar.slider(
+            "Number of solutions",
+            1,
+            min(50, len(filtered_df)),
+            10
+        )
+
+        temp_df = filtered_df.copy()
+
+        for m in metrics_max + metrics_min:
+            min_val = temp_df[m].min()
+            max_val = temp_df[m].max()
+
+            if max_val > min_val:
+                temp_df[m + "_norm"] = (temp_df[m] - min_val) / (max_val - min_val)
+            else:
+                temp_df[m + "_norm"] = 0
+
+        score = 0
+
+        if metrics_max:
+            score += temp_df[[m + "_norm" for m in metrics_max]].mean(axis=1)
+
+        if metrics_min:
+            score -= temp_df[[m + "_norm" for m in metrics_min]].mean(axis=1)
+
+        temp_df["score"] = score
+
+        selected_df = temp_df.sort_values("score", ascending=False).head(n_top)
+
+# --------------------------------------------
+# MODE 2: RANKING
+# --------------------------------------------
 elif mode == "Ranking-based":
-    sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
-    n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
-    if sel_metrics:
-        ranks = []
-        for m in sel_metrics:
-            goal = st.sidebar.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"g_{m}")
-            ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
-        counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
-        selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
-        threshold = max(1, len(sel_metrics) - 1)
-        # Convertir a string para colores sólidos (DISCRETOS)
-        selected_df["count"] = selected_df["count"].astype(int).astype(str)
+
+    selected_metrics = st.sidebar.multiselect(
+        "Quality metrics",
+        available_quality_metrics
+    )
+
+    n_top = st.sidebar.slider(
+        "Top N per metric",
+        1,
+        min(50, len(filtered_df)),
+        10
+    )
+
+    metric_goals = {}
+
+    for m in selected_metrics:
+        metric_goals[m] = st.sidebar.selectbox(
+            f"{m}",
+            ["Maximize", "Minimize"],
+            key=f"goal_{m}"
+        )
+
+    if selected_metrics:
+
+        ranking_lists = []
+
+        for m in selected_metrics:
+            goal = metric_goals[m]
+
+            if goal == "Maximize":
+                top_df = filtered_df.sort_values(m, ascending=False).head(n_top)
+            else:
+                top_df = filtered_df.sort_values(m, ascending=True).head(n_top)
+
+            ranking_lists.append(top_df)
+
+        combined_df = pd.concat(ranking_lists)
+
+        counts = combined_df.groupby("id").size().reset_index(name="count")
+
+        selected_df = filtered_df.merge(counts, on="id", how="left")
+        selected_df["count"] = selected_df["count"].fillna(0)
+
         selected_df = selected_df.sort_values("count", ascending=False)
 
 # --------------------------------------------
-# HIGHLIGHT Y LABELS
+# HIGHLIGHT SELECTION
 # --------------------------------------------
-selected_ids = st.multiselect("Select solutions to **unmask**  ▲", selected_df["id"].unique())
-selected_df["highlight"] = selected_df["id"].isin(selected_ids)
+selected_id = None
 
-if show_ids:
-    if mode == "Ranking-based":
-        selected_df["label"] = selected_df.apply(
-            lambda r: str(int(r["id"])) if (r["highlight"] or int(r.get("count", 0)) >= threshold) else "", axis=1
-        )
-    else:
-        selected_df["label"] = selected_df["id"].astype(str)
-else:
-    selected_df["label"] = ""
+if "id" in selected_df.columns:
+    st.markdown("### Select solution to highlight")
+
+    selected_id = st.selectbox(
+        "Solution ID",
+        selected_df["id"].unique()
+    )
+
+    selected_df["highlight"] = selected_df["id"] == selected_id
+
+    # mostrar fila seleccionada
+    st.markdown("### Selected solution")
+    st.dataframe(selected_df[selected_df["id"] == selected_id])
 
 # --------------------------------------------
-# DIBUJAR GRÁFICOS (CON EXCLUSIÓN DINÁMICA)
+# DRAW GRAPHS
 # --------------------------------------------
-color_col = "count" if "count" in selected_df.columns else None
-
 for i, group in enumerate(st.session_state.groups):
-    st.subheader(f"Trade-off Map {i+1}")
-    
-    # Calcular qué usan otros gráficos para excluirlos
-    others = [m for idx, g in enumerate(st.session_state.groups) if idx != i for m in g if m]
-    available_here = [m for m in available_metrics if m not in others]
 
-    if len(available_here) < 2:
-        st.warning("No more metrics available for this group.")
-        continue
+    st.subheader(f"Graph {i+1}")
+
+    used_metrics = [
+        m for idx, g in enumerate(st.session_state.groups)
+        if idx != i for m in g if m
+    ]
+
+    available = [m for m in available_metrics if m not in used_metrics]
 
     col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        # Buscamos el índice para que no se resetee al cambiar otras cosas
-        curr_x = group[0] if group[0] in available_here else available_here[0]
-        x = st.selectbox(f"X Axis {i}", available_here, index=available_here.index(curr_x), key=f"x_{i}")
-    
-    with col2:
-        y_opts = [m for m in available_here if m != x]
-        curr_y = group[1] if group[1] in y_opts else y_opts[0]
-        y = st.selectbox(f"Y Axis {i}", y_opts, index=y_opts.index(curr_y), key=f"y_{i}")
-    
-    with col3:
-        s_opts = [None] + [m for m in available_here if m not in [x, y]]
-        curr_s = group[2] if group[2] in s_opts else None
-        size = st.selectbox(f"Size {i}", s_opts, index=s_opts.index(curr_s), key=f"s_{i}")
 
-    # Guardamos en el estado para que el siguiente gráfico sepa qué no usar
+    with col1:
+        x = st.selectbox(f"X {i}", available, key=f"x_{i}")
+
+    with col2:
+        y_options = [m for m in available if m != x]
+        y = st.selectbox(f"Y {i}", y_options, key=f"y_{i}")
+
+    with col3:
+        size_options = [None] + [m for m in available if m not in [x, y]]
+        size = st.selectbox(f"Size {i}", size_options, key=f"size_{i}")
+
     st.session_state.groups[i] = [x, y, size]
 
-    cA, cB = st.columns(2)
-    with cA:
-        render_scatter_plot(selected_df, x, y, None, color_col, show_ids, key=f"p1_{i}")
-    with cB:
+    color_col = "count" if "count" in selected_df.columns else None
+
+    colA, colB = st.columns(2)
+
+    # ---- MAIN GRAPH
+    with colA:
+        fig1 = px.scatter(
+            selected_df,
+            x=x,
+            y=y,
+            size=size if size else None,
+            color=color_col,
+            symbol="highlight" if "highlight" in selected_df.columns else None,
+            symbol_map={True: "x", False: "circle"},
+            hover_data=["id"],
+            color_continuous_scale="Viridis"
+        )
+
+        fig1.update_xaxes(title=x, tickformat=".2f")
+        fig1.update_yaxes(title=y, tickformat=".2f")
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+    # ---- LINKED GRAPH
+    with colB:
         if size:
-            render_scatter_plot(selected_df, x, size, y, color_col, show_ids, key=f"p2_{i}")
+            fig2 = px.scatter(
+                selected_df,
+                x=x,
+                y=size,
+                size=y,
+                color=color_col,
+                symbol="highlight" if "highlight" in selected_df.columns else None,
+                symbol_map={True: "x", False: "circle"},
+                hover_data=["id"],
+                color_continuous_scale="Viridis"
+            )
+
+            fig2.update_xaxes(title=x, tickformat=".2f")
+            fig2.update_yaxes(title=size, tickformat=".2f")
+
+            st.plotly_chart(fig2, use_container_width=True)
         else:
-            st.info("Select a metric in 'Size' to enable comparison.")
+            st.info("Add a third dimension to see linked view")
+
 
 # --------------------------------------------
-# RADAR Y PREVIEW
+# DATA PREVIEW (LIMPIO)
 # --------------------------------------------
-if st.session_state.show_comparison:
-    plot_radar(selected_df, available_metrics)
-
 with st.expander("Data preview"):
-    st.dataframe(selected_df.head(100))
+    st.write(f"Showing {len(selected_df)} solutions")
+
+    cols_show = [c for c in selected_df.columns if c != "highlight"]
+
+    df_preview = selected_df[cols_show].head(100)
+
+    styled_df = df_preview.style.apply(
+        lambda row: ['background-color: lightyellow' if row.get("id") == selected_id else '' for _ in row],
+        axis=1
+    )
+
+    st.dataframe(styled_df)
