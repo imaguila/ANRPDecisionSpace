@@ -160,23 +160,39 @@ def plot_radar(selected_df, available_metrics):
 
 
 
+
 # --------------------------------------------
-# CARGA DE DATOS
+# CARGA DE DATOS (MEJORADA)
 # --------------------------------------------
 if not os.path.exists(DATA_PATH):
-    st.error("Data folder not found"); st.stop()
+    st.error("Data folder not found")
+    st.stop()
 
 files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
-if not files:
-    st.error("No datasets found"); st.stop()
 
-selected_file = st.sidebar.selectbox("Dataset", files)
-df = load_csv(os.path.join(DATA_PATH, selected_file))
+# Selector de fuente de datos
+data_source = st.sidebar.radio(
+    "Data source",
+    ["Use built-in dataset", "Upload CSV"]
+)
 
-opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
-qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
-available_metrics = [m for m in list(opt_df.columns) + list(qual_df.columns) if m in df.columns]
-available_qual = [m for m in qual_df.columns if m in df.columns]
+if data_source == "Use built-in dataset":
+    if not files:
+        st.error("No datasets found")
+        st.stop()
+        
+    selected_file = st.sidebar.selectbox("Dataset", files)
+    df = load_csv(os.path.join(DATA_PATH, selected_file))
+
+else:
+    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+    
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+    else:
+        st.warning("Please upload a CSV file")
+        st.stop()
+
 
 # --------------------------------------------
 # ESTADO DE SESIÓN
