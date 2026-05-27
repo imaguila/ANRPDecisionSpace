@@ -61,7 +61,7 @@ def plot_radar(selected_df, available_metrics):
     compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
     
 
-    tab1, tab2, tab3 = st.tabs(["📊 Performance Radar", "👥 Stakeholder Coverage", "📋 Requirement Coverage"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Radar", "👥 Stakeholders", "📋 Requisitos", "🔗 Alineación"])
 
     # ---------- PERFORMANCE ----------
     with tab1:
@@ -208,6 +208,90 @@ def plot_radar(selected_df, available_metrics):
             )
             
             st.plotly_chart(fig_req, use_container_width=True)
+
+
+# ---------- NUEVA PESTAÑA: ALINEACIÓN STAKEHOLDERS (EL "RIZO") ----------
+    with tab4:
+        st.subheader("Stakeholder-Requirement Alignment Matrix")
+        st.write("Visualizing which requirements satisfy each stakeholder's specific interests.")
+
+        # 1. Identificar columnas
+        req_cols = [c for c in selected_df.columns if c.startswith("req_")]
+        st_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
+
+        # Para esta visualización, lo mejor es analizar UNA solución a la vez 
+        # o comparar una 'maestra' contra el interés de los stakeholders.
+        focus_id = st.selectbox("Select Solution to analyze alignment", compare_df["id"].unique(), key="align_sel")
+        row_focus = compare_df[compare_df["id"] == focus_id].iloc[0]
+
+        if not req_cols or not st_cols:
+            st.info("Required data columns (req_ or stcov_) missing.")
+        else:
+            # --- Lógica de Simulación de Mapeo (Personalizable) ---
+            # En un proyecto real, aquí cargarías la matriz Stakeholder vs Requisito.
+            # Aquí creamos una matriz donde 'activamos' la relación si el requisito influye en el coverage.
+            import numpy as np
+            
+            alignment_data = []
+            for st_name in st_cols:
+                row_values = []
+                for req_name in req_cols:
+                    # SIMULACIÓN: Decidimos si el Stakeholder propuso el requisito.
+                    # En tu caso, podrías cargar un CSV con este mapeo. 
+                    # Aquí usamos una lógica determinista simple para el ejemplo:
+                    proposed_by_stake = (hash(st_name + req_name) % 3 == 0) 
+                    
+                    is_included = row_focus[req_name] == 1
+                    
+                    if proposed_by_stake and is_included:
+                        val = 2  # ¡Éxito! Propuesto y cumplido
+                    elif proposed_by_stake and not is_included:
+                        val = 1  # Deuda: Propuesto pero fuera
+                    else:
+                        val = 0  # No le interesa
+                    row_values.append(val)
+                alignment_data.append(row_values)
+
+            # Crear DataFrame para el gráfico
+            align_df = pd.DataFrame(alignment_data, index=st_cols, columns=req_cols)
+
+            # 2. Construir el Heatmap con Intensidades
+            # 0: Sin interés (Gris muy claro)
+            # 1: Propuesto pero NO incluido (Gris oscuro/Rojo suave)
+            # 2: Propuesto E INCLUIDO (Verde brillante)
+            fig_align = px.imshow(
+                align_df,
+                labels=dict(x="Requirements", y="Stakeholders", color="Alignment"),
+                x=req_cols,
+                y=[s.replace("stcov_", "Stakeholder ") for s in st_cols],
+                color_continuous_scale=[
+                    [0, "#f8f9fa"],   # Sin relación
+                    [0.5, "#adb5bd"], # Deuda (Gris medio)
+                    [1, "#00e676"]    # Cumplido (Verde)
+                ]
+            )
+
+            fig_align.update_layout(
+                template="plotly_white",
+                coloraxis_showscale=False,
+                xaxis=dict(tickangle=-45, tickfont=dict(size=10)),
+                yaxis=dict(tickfont=dict(size=10)),
+                height=400
+            )
+
+            fig_align.update_traces(
+                xgap=2, ygap=2,
+                hovertemplate="<b>%{y}</b><br>Requirement: %{x}<br>Status: %{z}<extra></extra>"
+            )
+
+            st.plotly_chart(fig_align, use_container_width=True)
+            
+            # Leyenda personalizada
+            c1, c2, c3 = st.columns(3)
+            c1.markdown("⚪ **No solicitado**")
+            c2.markdown("🔘 **Solicitado (No incluido)**")
+            c3.markdown("🟢 **Solicitado e Incluido**")
+
 # --------------------------------------------
 # DATA SOURCE 
 # --------------------------------------------
