@@ -328,4 +328,14 @@ if st.session_state.show_comparison:
 # PREVIEW
 # --------------------------------------------
 with st.expander("Data preview"):
-    st.dataframe(selected_df.head(100))
+    # Hacemos una copia para no alterar los datos reales del programa
+    df_preview = selected_df.copy()
+    
+    # Lista de columnas técnicas creadas por el código que queremos ocultar
+    columnas_a_ocultar = ["highlight", "highlight_label", "label"]
+    
+    # Las eliminamos de la vista si existen
+    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
+    
+    # Mostramos la tabla limpia
+    st.dataframe(df_preview.head(100))
