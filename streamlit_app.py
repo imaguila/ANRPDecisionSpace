@@ -60,7 +60,8 @@ def plot_radar(selected_df, available_metrics):
 
     compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
     
-    tab1, tab2 = st.tabs(["📊 Performance Radar", "👥 Stakeholder Coverage"])
+
+    tab1, tab2, tab3 = st.tabs(["📊 Performance Radar", "👥 Stakeholder Coverage", "📋 Requirement Coverage"])
 
     # ---------- PERFORMANCE ----------
     with tab1:
@@ -157,9 +158,52 @@ def plot_radar(selected_df, available_metrics):
                     showlegend=True
                 )
                 st.plotly_chart(fig_cov, use_container_width=True)
+# ---------- NUEVA PESTAÑA: REQUISITOS ----------
+    with tab3:
+        st.subheader("Requirements Included in Selected Solutions")
+        
+        # Detectamos dinámicamente cualquier columna que empiece por "req_"
+        req_cols = [c for c in selected_df.columns if c.startswith("req_")]
+        
+        if not req_cols:
+            st.info("No requirement columns (req_...) found in dataset.")
+        else:
+            # Preparamos los datos: Filas como IDs de solución y columnas como Requisitos
+            req_df = compare_df.set_index("id")[req_cols].copy()
+            
+            # Convertimos el ID a string para que Plotly lo trate como categoría en el eje Y
+            req_df.index = [f"ID {int(i)}" for i in req_df.index]
+            
+            # Creamos el mapa de calor binario
+            fig_req = px.imshow(
+                req_df,
+                labels=dict(x="Requirements", y="Solutions", color="Included"),
+                x=req_cols,
+                y=req_df.index,
+                color_continuous_scale=["#f8d7da", "#d4edda"], # Rojo claro (No) vs Verde claro (Sí)
+            )
+            
+            # Configuramos el diseño del gráfico para que sea limpio
+            fig_req.update_layout(
+                coloraxis_showscale=False, # Ocultamos la barra de colores porque es binario (0 o 1)
+                xaxis=dict(tickangle=-45), # Inclinamos los requisitos por si son muchos
+                yaxis=dict(autorange="reversed") # Mantiene el orden de los IDs de arriba a abajo
+            )
+            
+            # Añadimos bordes a las celdas para que se distingan como una cuadrícula/matriz
+            fig_req.update_traces(
+                xgap=2, 
+                ygap=2,
+                hovertemplate="Solution: %{y}<br>Requirement: %{x}<br>Status: %{z}<extra></extra>"
+            )
+            
+            st.plotly_chart(fig_req, use_container_width=True)
+
+
+
 
 # --------------------------------------------
-# DATA SOURCE (AÑADIDO SIN ROMPER NADA)
+# DATA SOURCE 
 # --------------------------------------------
 source = st.sidebar.radio("Data source", ["Built-in", "Upload CSV"])
 
