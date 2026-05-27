@@ -171,36 +171,45 @@ def plot_radar(selected_df, available_metrics):
             # Preparamos los datos: Filas como IDs de solución y columnas como Requisitos
             req_df = compare_df.set_index("id")[req_cols].copy()
             
-            # Convertimos el ID a string para que Plotly lo trate como categoría en el eje Y
+            # Convertimos el ID a string para el eje Y
             req_df.index = [f"ID {int(i)}" for i in req_df.index]
             
-            # Creamos el mapa de calor binario
+            # MAPA DE COLOR CON CONTRASTE ALTO:
+            # Usamos una escala de colores personalizada e intensa
+            # [0, "color para el 0"], [1, "color para el 1"]
             fig_req = px.imshow(
                 req_df,
-                labels=dict(x="Requirements", y="Solutions", color="Included"),
+                labels=dict(x="Requirements", y="Solutions", color="Status"),
                 x=req_cols,
                 y=req_df.index,
-                color_continuous_scale=["#f8d7da", "#d4edda"], # Rojo claro (No) vs Verde claro (Sí)
+                color_continuous_scale=[[0, "#ffccd5"], [1, "#2ec4b6"]], # Rojo pastel intenso (0) vs Verde Azulado Vivo (1)
             )
             
-            # Configuramos el diseño del gráfico para que sea limpio
+            # Configuramos el diseño del gráfico para eliminar el fondo gris
             fig_req.update_layout(
-                coloraxis_showscale=False, # Ocultamos la barra de colores porque es binario (0 o 1)
-                xaxis=dict(tickangle=-45), # Inclinamos los requisitos por si son muchos
-                yaxis=dict(autorange="reversed") # Mantiene el orden de los IDs de arriba a abajo
+                template="plotly_white", # Fondo blanco limpio, elimina el gris del fondo de Plotly
+                coloraxis_showscale=False, # Ocultamos la barra lateral de colores
+                xaxis=dict(
+                    tickangle=-45, 
+                    showgrid=False, # Quitamos líneas de cuadrícula grises del fondo
+                    textfont=dict(size=11, color="black")
+                ),
+                yaxis=dict(
+                    autorange="reversed", 
+                    showgrid=False,
+                    textfont=dict(size=11, color="black")
+                ),
+                margin=dict(l=50, r=50, t=30, b=50) # Ajustamos márgenes
             )
             
-            # Añadimos bordes a las celdas para que se distingan como una cuadrícula/matriz
+            # Añadimos bordes blancos muy marcados para separar las celdas claramente
             fig_req.update_traces(
-                xgap=2, 
-                ygap=2,
-                hovertemplate="Solution: %{y}<br>Requirement: %{x}<br>Status: %{z}<extra></extra>"
+                xgap=3, 
+                ygap=3,
+                hovertemplate="<b>%{y}</b><br>Requirement: %{x}<br>Status: %{z} (1=Included, 0=Excluded)<extra></extra>"
             )
             
             st.plotly_chart(fig_req, use_container_width=True)
-
-
-
 
 # --------------------------------------------
 # DATA SOURCE 
