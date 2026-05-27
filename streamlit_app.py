@@ -175,29 +175,27 @@ def plot_radar(selected_df, available_metrics):
             req_df.index = [f"ID {int(i)}" for i in req_df.index]
             
             # MAPA DE COLOR CON CONTRASTE ALTO:
-            # Usamos una escala de colores personalizada e intensa
-            # [0, "color para el 0"], [1, "color para el 1"]
             fig_req = px.imshow(
                 req_df,
                 labels=dict(x="Requirements", y="Solutions", color="Status"),
                 x=req_cols,
                 y=req_df.index,
-                color_continuous_scale=[[0, "#ffccd5"], [1, "#2ec4b6"]], # Rojo pastel intenso (0) vs Verde Azulado Vivo (1)
+                color_continuous_scale=[[0, "#ffccd5"], [1, "#2ec4b6"]], # Rojo pastel intenso (0) vs Verde Vivo (1)
             )
             
-            # Configuramos el diseño del gráfico para eliminar el fondo gris
+            # Configuramos el diseño del gráfico de forma correcta
             fig_req.update_layout(
-                template="plotly_white", # Fondo blanco limpio, elimina el gris del fondo de Plotly
+                template="plotly_white", # Fondo blanco limpio
                 coloraxis_showscale=False, # Ocultamos la barra lateral de colores
                 xaxis=dict(
                     tickangle=-45, 
-                    showgrid=False, # Quitamos líneas de cuadrícula grises del fondo
-                    textfont=dict(size=11, color="black")
+                    showgrid=False, # Quitamos líneas de cuadrícula del fondo
+                    tickfont=dict(size=11, color="black") # ¡CORREGIDO AQUÍ! (Era tickfont, no textfont)
                 ),
                 yaxis=dict(
                     autorange="reversed", 
                     showgrid=False,
-                    textfont=dict(size=11, color="black")
+                    tickfont=dict(size=11, color="black") # ¡CORREGIDO AQUÍ! (Era tickfont, no textfont)
                 ),
                 margin=dict(l=50, r=50, t=30, b=50) # Ajustamos márgenes
             )
@@ -210,7 +208,6 @@ def plot_radar(selected_df, available_metrics):
             )
             
             st.plotly_chart(fig_req, use_container_width=True)
-
 # --------------------------------------------
 # DATA SOURCE 
 # --------------------------------------------
