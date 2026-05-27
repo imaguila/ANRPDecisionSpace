@@ -180,7 +180,7 @@ def plot_radar(selected_df, available_metrics):
                 labels=dict(x="Requirements", y="Solutions", color="Status"),
                 x=req_cols,
                 y=req_df.index,
-                color_continuous_scale=[[0, "#e0e0e0"], [1, "#2ec4b6"]] # Gris Claro (#e0e0e0) vs Verde Vivo (#2ec4b6)
+                color_continuous_scale=[[0, "#e0e0e0"], [1, "#00e676"]] # Gris Claro vs Verde Brillante Puro
             )
             
             # Configuramos el diseño del gráfico de forma correcta
