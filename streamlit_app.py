@@ -332,7 +332,7 @@ with st.expander("Data preview"):
     df_preview = selected_df.copy()
     
     # Lista de columnas técnicas creadas por el código que queremos ocultar
-    columnas_a_ocultar = ["highlight", "highlight_label", "label"]
+    columnas_a_ocultar = ["id","highlight", "highlight_label", "label"]
     
     # Las eliminamos de la vista si existen
     df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
