@@ -210,88 +210,96 @@ def plot_radar(selected_df, available_metrics):
             st.plotly_chart(fig_req, use_container_width=True)
 
 
-# ---------- NUEVA PESTAÑA: ALINEACIÓN STAKEHOLDERS (EL "RIZO") ----------
+# ---------- NUEVA PESTAÑA: ALINEACIÓN STAKEHOLDERS + FILA RESUMEN ----------
     with tab4:
         st.subheader("Stakeholder-Requirement Alignment Matrix")
-        st.write("Visualizing which requirements satisfy each stakeholder's specific interests.")
+        st.write("Visualizing which requirements satisfy each stakeholder's specific interests and their final release status.")
 
         # 1. Identificar columnas
         req_cols = [c for c in selected_df.columns if c.startswith("req_")]
         st_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
 
-        # Para esta visualización, lo mejor es analizar UNA solución a la vez 
-        # o comparar una 'maestra' contra el interés de los stakeholders.
+        # Desplegable para analizar una solución concreta
         focus_id = st.selectbox("Select Solution to analyze alignment", compare_df["id"].unique(), key="align_sel")
         row_focus = compare_df[compare_df["id"] == focus_id].iloc[0]
 
         if not req_cols or not st_cols:
             st.info("Required data columns (req_ or stcov_) missing.")
         else:
-            # --- Lógica de Simulación de Mapeo (Personalizable) ---
-            # En un proyecto real, aquí cargarías la matriz Stakeholder vs Requisito.
-            # Aquí creamos una matriz donde 'activamos' la relación si el requisito influye en el coverage.
             import numpy as np
             
             alignment_data = []
+            # Generamos las filas de los Stakeholders normales
             for st_name in st_cols:
                 row_values = []
                 for req_name in req_cols:
-                    # SIMULACIÓN: Decidimos si el Stakeholder propuso el requisito.
-                    # En tu caso, podrías cargar un CSV con este mapeo. 
-                    # Aquí usamos una lógica determinista simple para el ejemplo:
+                    # Simulación: Aquí decides si el Stakeholder propuso el requisito
                     proposed_by_stake = (hash(st_name + req_name) % 3 == 0) 
-                    
                     is_included = row_focus[req_name] == 1
                     
                     if proposed_by_stake and is_included:
-                        val = 2  # ¡Éxito! Propuesto y cumplido
+                        val = 2  # Solicitado e incluido (Verde brillante)
                     elif proposed_by_stake and not is_included:
-                        val = 1  # Deuda: Propuesto pero fuera
+                        val = 1  # Solicitado pero fuera (Gris medio)
                     else:
-                        val = 0  # No le interesa
+                        val = 0  # No solicitado (Gris muy claro)
                     row_values.append(val)
                 alignment_data.append(row_values)
 
-            # Crear DataFrame para el gráfico
-            align_df = pd.DataFrame(alignment_data, index=st_cols, columns=req_cols)
+            # --- LA FILA RESUMEN (RIZANDO MÁS EL RIZO) ---
+            # Añadimos la fila final que mira directamente si el req está en la solución (1) o no (0)
+            summary_row = []
+            for req_name in req_cols:
+                if row_focus[req_name] == 1:
+                    summary_row.append(3) # Incluido en el release (Verde Oscuro)
+                else:
+                    summary_row.append(1) # Fuera del release (Gris Medio)
+            alignment_data.append(summary_row)
 
-            # 2. Construir el Heatmap con Intensidades
-            # 0: Sin interés (Gris muy claro)
-            # 1: Propuesto pero NO incluido (Gris oscuro/Rojo suave)
-            # 2: Propuesto E INCLUIDO (Verde brillante)
+            # Creamos la lista de nombres para el eje Y incluyendo nuestro resumen
+            y_labels = [s.replace("stcov_", "Stakeholder ") for s in st_cols] + ["📦 RELEASE STATUS"]
+
+            # Crear DataFrame para el Heatmap
+            align_df = pd.DataFrame(alignment_data, index=y_labels, columns=req_cols)
+
+            # 2. Construir el Heatmap con Escala de 4 colores discretos
             fig_align = px.imshow(
                 align_df,
-                labels=dict(x="Requirements", y="Stakeholders", color="Alignment"),
+                labels=dict(x="Requirements", y="Alignment Status", color="Status"),
                 x=req_cols,
-                y=[s.replace("stcov_", "Stakeholder ") for s in st_cols],
+                y=y_labels,
+                # Definimos los cortes exactos de color para 0, 1, 2 y 3
                 color_continuous_scale=[
-                    [0, "#f8f9fa"],   # Sin relación
-                    [0.5, "#adb5bd"], # Deuda (Gris medio)
-                    [1, "#00e676"]    # Cumplido (Verde)
+                    [0.0, "#f8f9fa"],   # 0: Sin interés (Blanco/Gris suave)
+                    [0.33, "#adb5bd"],  # 1: Fuera del Release / Deuda (Gris medio)
+                    [0.66, "#00e676"],  # 2: Solicitado e Incluido (Verde brillante)
+                    [1.0, "#00695c"]    # 3: Fila Resumen - ¡En el Release! (Verde Oscuro Azulado)
                 ]
             )
 
+            # Diseño limpio del gráfico
             fig_align.update_layout(
                 template="plotly_white",
-                coloraxis_showscale=False,
-                xaxis=dict(tickangle=-45, tickfont=dict(size=10)),
-                yaxis=dict(tickfont=dict(size=10)),
-                height=400
+                coloraxis_showscale=False, # Ocultamos barra de escala continua
+                xaxis=dict(tickangle=-45, tickfont=dict(size=11, color="black")),
+                yaxis=dict(tickfont=dict(size=11, color="black")),
+                height=450
             )
 
+            # Espaciado de celdas y caja de información al pasar el ratón (Hover)
             fig_align.update_traces(
-                xgap=2, ygap=2,
-                hovertemplate="<b>%{y}</b><br>Requirement: %{x}<br>Status: %{z}<extra></extra>"
+                xgap=3, ygap=3,
+                hovertemplate="<b>%{y}</b><br>Requirement: %{x}<extra></extra>"
             )
 
             st.plotly_chart(fig_align, use_container_width=True)
             
-            # Leyenda personalizada
-            c1, c2, c3 = st.columns(3)
+            # Leyenda explicativa interactiva en columnas abajo del gráfico
+            c1, c2, c3, c4 = st.columns(4)
             c1.markdown("⚪ **No solicitado**")
-            c2.markdown("🔘 **Solicitado (No incluido)**")
-            c3.markdown("🟢 **Solicitado e Incluido**")
-
+            c2.markdown("🔘 **Solicitado (No incluido) / Fuera del Release**")
+            c3.markdown("🟢 **Solicitado e Incluido (Stakeholder)**")
+            c4.markdown("🌲 **Incluido en el Release Final (Fila Resumen)**")
 # --------------------------------------------
 # DATA SOURCE 
 # --------------------------------------------
