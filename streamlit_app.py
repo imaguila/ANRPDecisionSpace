@@ -506,27 +506,17 @@ if mode == "Weighted-Sum":
 elif mode == "Ranking-based":
     sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
     n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
-
     if sel_metrics:
         ranks = []
         for m in sel_metrics:
             goal = st.sidebar.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"g_{m}")
             ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
-
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
-
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
-
         threshold = max(1, len(sel_metrics) - 1)
-
-        # ✅ IMPORTANTE: doble columna
-        selected_df["count"] = selected_df["count"].astype(int)          # para hover / lógica
-        selected_df["count_str"] = selected_df["count"].astype(str)      # para colores
-
+        selected_df["count"] = selected_df["count"].astype(int).astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
 
-        # ✅ usamos la versión string para mantener colores DISCRETOS
-        color_col = "count_str"
 
 # --------------------------------------------
 # TOPSIS (score propio)
