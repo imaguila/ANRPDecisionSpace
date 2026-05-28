@@ -517,7 +517,6 @@ elif mode == "Ranking-based":
         selected_df["count"] = selected_df["count"].astype(int).astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
 
-
 # --------------------------------------------
 # TOPSIS (score propio)
 # --------------------------------------------
