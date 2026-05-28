@@ -23,52 +23,62 @@ def normalize_series(series):
     if max_val > min_val:
         return (series - min_val) / (max_val - min_val)
     return series * 0.0
-
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
-    
-    # Control de labels
-    has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
-    
-    # Highlight visual (NO tocar)
-    df["highlight_label"] = df["highlight"].map({
-        True: "Hide",
-        False: "hide"
-    })
 
-    # -------- HOVER DINÁMICO --------
+    # --- Highlight visual (NO tocar) ---
+    df["highlight_label"] = df["highlight"].map({True: "Hide", False: "hide"})
+
+    # --- Hover dinámico ---
     hover_data = {}
-
     if "score" in df.columns:
         hover_data["score"] = ':.3f'
-
     if "score_topsis" in df.columns:
         hover_data["score_topsis"] = ':.3f'
-
     if "count" in df.columns:
         hover_data["count"] = True
-    
     if "cluster" in df.columns:
         hover_data["cluster"] = True
 
+    # --- Decidir si el color debe ser categórico o continuo ---
+    discrete_cols = {"count", "count_str", "cluster", "cluster_str"}  # tus colores “tipo ranking/clustering”
 
-
-    # Forzar que la columna de color sea categórica (clave)
+    is_discrete = False
     if color_col and color_col in df.columns:
-        df[color_col] = df[color_col].astype(str)
+        if color_col in discrete_cols:
+            is_discrete = True
+            df[color_col] = df[color_col].astype(str)  # forzamos categórico SOLO aquí
+        else:
+            # Si ya es texto (object) también es discreto
+            if pd.api.types.is_object_dtype(df[color_col]):
+                is_discrete = True
 
-    fig = px.scatter(
-        df,
-        x=x,
-        y=y,
-        size=size,
-        color=color_col,
-        text="label" if show_ids else None,
-        symbol="highlight_label",
-        symbol_map={"Hide": "triangle-up", "hide": "circle"},
-        hover_data=hover_data   # ✅ aquí está la clave
-    )
+    # --- Scatter ---
+    if is_discrete:
+        # Colores categóricos (Ranking/Clustering)
+        fig = px.scatter(
+            df,
+            x=x, y=y, size=size,
+            color=color_col,
+            text="label" if show_ids else None,
+            symbol="highlight_label",
+            symbol_map={"Hide": "triangle-up", "hide": "circle"},
+            hover_data=hover_data,
+            color_discrete_sequence=px.colors.qualitative.Plotly
+        )
+    else:
+        # Colores continuos (Weighted-Sum / TOPSIS)
+        fig = px.scatter(
+            df,
+            x=x, y=y, size=size,
+            color=color_col,
+            text="label" if show_ids else None,
+            symbol="highlight_label",
+            symbol_map={"Hide": "triangle-up", "hide": "circle"},
+            hover_data=hover_data,
+            color_continuous_scale=px.colors.sequential.Viridis
+        )
 
-    # -------- ESTÉTICA --------
+    # --- Estética ---
     fig.update_traces(
         textposition="top right",
         textfont=dict(size=10),
@@ -76,9 +86,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         mode='markers+text' if show_ids else 'markers'
     )
 
-    # -------- MOSTRAR --------
     st.plotly_chart(fig, use_container_width=True, key=key)
-
 
 
 def plot_radar(selected_df, available_metrics):
