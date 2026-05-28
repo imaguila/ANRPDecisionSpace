@@ -25,28 +25,53 @@ def normalize_series(series):
     return series * 0.0
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
+    
+    # Control de labels
     has_labels = show_ids and "label" in df.columns and not df["label"].replace("", None).isnull().all()
+    
+    # Highlight visual (NO tocar)
     df["highlight_label"] = df["highlight"].map({
         True: "Hide",
         False: "hide"
     })
 
+    # -------- HOVER DINÁMICO --------
+    hover_data = {}
+
+    if "score" in df.columns:
+        hover_data["score"] = ':.3f'
+
+    if "score_topsis" in df.columns:
+        hover_data["score_topsis"] = ':.3f'
+
+    if "count" in df.columns:
+        hover_data["count"] = True
+
+    # -------- SCATTER --------
     fig = px.scatter(
-        df, x=x, y=y, size=size,
+        df,
+        x=x,
+        y=y,
+        size=size,
         color=color_col,
         text="label" if show_ids else None,
         symbol="highlight_label",
         symbol_map={"Hide": "triangle-up", "hide": "circle"},
-        color_discrete_sequence=px.colors.qualitative.Plotly
+        color_discrete_sequence=px.colors.qualitative.Plotly,
+        hover_data=hover_data   # ✅ aquí está la clave
     )
-    
+
+    # -------- ESTÉTICA --------
     fig.update_traces(
         textposition="top right",
         textfont=dict(size=10),
         marker=dict(size=10),
         mode='markers+text' if show_ids else 'markers'
     )
+
+    # -------- MOSTRAR --------
     st.plotly_chart(fig, use_container_width=True, key=key)
+
 
 def plot_radar(selected_df, available_metrics):
     st.markdown("---")
@@ -418,6 +443,9 @@ for m in available_qual:
 # --------------------------------------------
 # SELECCIÓN
 # --------------------------------------------
+# --------------------------------------------
+# SELECCIÓN
+# --------------------------------------------
 
 mode_label = st.sidebar.selectbox(
     "Selection mode",
@@ -441,13 +469,8 @@ mode = mode_map[mode_label]
 selected_df = filtered_df.copy()
 threshold = 0
 
-# Variable clave para visualización (color y hover)
+# IMPORTANTE: esta variable controla el color en los plots
 color_col = None
-
-
-# --------------------------------------------
-# PREFERENCE - BASED
-# --------------------------------------------
 
 # --------------------------------------------
 # WEIGHTED SUM (score)
@@ -468,11 +491,11 @@ if mode == "Weighted-Sum":
         n = st.sidebar.slider("Top N", 1, min(50, len(selected_df)), 10)
         selected_df = selected_df.sort_values("score", ascending=False).head(n)
 
-        color_col = "score"   # ✅ usamos score para color
+        color_col = "score"   # ✅ solo aquí
 
 
 # --------------------------------------------
-# RANKING BASED (count)
+# RANKING BASED (count SIN NORMALIZAR)
 # --------------------------------------------
 elif mode == "Ranking-based":
     sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
@@ -487,16 +510,18 @@ elif mode == "Ranking-based":
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
 
+        # ⚠️ IMPORTANTE: NO convertir a string ni normalizar
         selected_df["count"] = selected_df["count"].astype(int)
+
         selected_df = selected_df.sort_values("count", ascending=False)
 
         threshold = max(1, len(sel_metrics) - 1)
 
-        color_col = "count"   # ✅ usamos count aquí
+        color_col = "count"   # ✅ mantiene colores categóricos como tenías
 
 
 # --------------------------------------------
-# TOPSIS (score_dist)
+# TOPSIS (score propio)
 # --------------------------------------------
 elif mode == "TOPSIS":
     m_max = st.sidebar.multiselect("Maximize", available_qual, key="topsis_max")
@@ -539,6 +564,7 @@ elif mode == "TOPSIS":
             d_plus.append(dp)
             d_minus.append(dm)
 
+        # SCORE TOPSIS
         df_topsis["score_topsis"] = [
             dm / (dp + dm) if (dp + dm) != 0 else 0 for dp, dm in zip(d_plus, d_minus)
         ]
@@ -547,16 +573,7 @@ elif mode == "TOPSIS":
 
         selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
 
-        color_col = "score_topsis"   # ✅ usamos score TOPSIS
-
-# --------------------------------------------
-# PREFERENCE - BASED
-# --------------------------------------------
-
-
-# --------------------------------------------
-# PREFERENCE - BASED
-# --------------------------------------------
+        color_col = "score_topsis"   # ✅ solo aquí
 
 
 # --------------------------------------------
@@ -564,8 +581,6 @@ elif mode == "TOPSIS":
 # --------------------------------------------
 else:
     color_col = None
-
-
 
 
 # --------------------------------------------
