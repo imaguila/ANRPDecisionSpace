@@ -61,7 +61,7 @@ def plot_radar(selected_df, available_metrics):
     compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
     
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Radar", "👥 Stakeholders", "📋 Requisitos", "🔗 Alineación"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Radar", "👥 Stakeholders", "📋 Requirements", "🔗 Alineación"])
 
     # ---------- PERFORMANCE ----------
     with tab1:
@@ -368,7 +368,7 @@ available_opt = [m for m in opt_df.columns if m in df.columns]
 available_qual = [m for m in qual_df.columns if m in df.columns]
 
 # -------- OPTIMIZATION METRICS --------
-st.sidebar.markdown("#### 🔵 Optimization metrics")
+st.sidebar.markdown("#### 🔵 :blue[Optimization function]")
 
 for m in available_opt:
     if pd.api.types.is_numeric_dtype(df[m]):
@@ -389,7 +389,7 @@ for m in available_opt:
             ]
 
 # -------- QUALITY METRICS --------
-st.sidebar.markdown("#### 🟢 Quality metrics")
+st.sidebar.markdown("#### 🟢 :green[Quality Indicators]")
 
 for m in available_qual:
     if pd.api.types.is_numeric_dtype(df[m]):
@@ -414,11 +414,24 @@ for m in available_qual:
 # --------------------------------------------
 # SELECCIÓN
 # --------------------------------------------
-mode = st.sidebar.selectbox("Selection mode", ["None", "Score-based", "Ranking-based"])
+# 
+
+mode = st.sidebar.selectbox(
+    "Selection mode",
+    [
+        "None",
+        "🔵 Preference - Weighted-Sum",
+        "🔵 Preference - Ranking-based",
+        "🔵 Preference - TOPSIS",
+    ]
+)
+
 selected_df = filtered_df.copy()
 threshold = 0
 
-if mode == "Score-based":
+# Realemente hace una agregación de valores  para elegir las N mejores
+
+if mode == "Weighted-Sum":
     m_max = st.sidebar.multiselect("Maximize", available_qual)
     m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max])
     if m_max or m_min:
@@ -445,6 +458,62 @@ elif mode == "Ranking-based":
         threshold = max(1, len(sel_metrics) - 1)
         selected_df["count"] = selected_df["count"].astype(int).astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
+
+
+elif mode == "TOPSIS":
+    m_max = st.sidebar.multiselect("Maximize", available_qual, key="topsis_max")
+    m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max], key="topsis_min")
+
+    criteria = m_max + m_min
+
+    if criteria:
+        df_topsis = selected_df.copy()
+
+        # --- Normalización vectorial (clásica TOPSIS)
+        norm_df = df_topsis[criteria].copy()
+        for m in criteria:
+            denom = (norm_df[m]**2).sum() ** 0.5
+            if denom != 0:
+                norm_df[m] = norm_df[m] / denom
+
+        # --- Ideal y anti-ideal
+        ideal = {}
+        anti_ideal = {}
+
+        for m in criteria:
+            if m in m_max:
+                ideal[m] = norm_df[m].max()
+                anti_ideal[m] = norm_df[m].min()
+            else:
+                ideal[m] = norm_df[m].min()
+                anti_ideal[m] = norm_df[m].max()
+
+        # --- Distancias
+        d_plus = []
+        d_minus = []
+
+        for i in range(len(norm_df)):
+            row = norm_df.iloc[i]
+
+            dp = sum((row[m] - ideal[m])**2 for m in criteria) ** 0.5
+            dm = sum((row[m] - anti_ideal[m])**2 for m in criteria) ** 0.5
+
+            d_plus.append(dp)
+            d_minus.append(dm)
+
+        df_topsis["d_plus"] = d_plus
+        df_topsis["d_minus"] = d_minus
+
+        # --- Score TOPSIS
+        df_topsis["score"] = df_topsis["d_minus"] / (df_topsis["d_plus"] + df_topsis["d_minus"])
+
+        # --- Selección TOP N
+        n = st.sidebar.slider("Top N", 1, min(50, len(df_topsis)), 10, key="topsis_n")
+
+        selected_df = df_topsis.sort_values("score", ascending=False).head(n)
+
+        threshold = 1
+
 
 # --------------------------------------------
 # HIGHLIGHT + LABELS
