@@ -23,12 +23,18 @@ def normalize_series(series):
     if max_val > min_val:
         return (series - min_val) / (max_val - min_val)
     return series * 0.0
+
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
+    import pandas as pd
+    import plotly.express as px
+    import plotly.graph_objects as go
 
-    # --- Highlight visual (NO tocar) ---
-    df["highlight_label"] = df["highlight"].map({True: "Hide", False: "hide"})
+    # Trabajar sobre copia para no ensuciar el DF original
+    df = df.copy()
 
-    # --- Hover dinámico ---
+    # -----------------------------
+    # Hover dinámico
+    # -----------------------------
     hover_data = {}
     if "score" in df.columns:
         hover_data["score"] = ':.3f'
@@ -39,46 +45,86 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     if "cluster" in df.columns:
         hover_data["cluster"] = True
 
-    # --- Decidir si el color debe ser categórico o continuo ---
-    discrete_cols = {"count", "count_str", "cluster", "cluster_str"}  # tus colores “tipo ranking/clustering”
+    # -----------------------------
+    # Detectar si el color es discreto o continuo
+    # (discreto: grupos como ranking/clustering)
+    # -----------------------------
+    discrete_cols = {"count", "count_str", "cluster", "cluster_str", "group_label"}
 
     is_discrete = False
     if color_col and color_col in df.columns:
-        if color_col in discrete_cols:
+        if color_col in discrete_cols or pd.api.types.is_object_dtype(df[color_col]):
             is_discrete = True
-            df[color_col] = df[color_col].astype(str)  # forzamos categórico SOLO aquí
-        else:
-            # Si ya es texto (object) también es discreto
-            if pd.api.types.is_object_dtype(df[color_col]):
-                is_discrete = True
+            df[color_col] = df[color_col].astype(str)
 
-    # --- Scatter ---
+    # -----------------------------
+    # Crear mapa de colores estable para categorías (si es discreto)
+    # -----------------------------
+    color_map = None
+    if is_discrete and color_col and color_col in df.columns:
+        unique_vals = sorted(df[color_col].dropna().unique().tolist())
+        palette = px.colors.qualitative.Plotly
+        color_map = {v: palette[i % len(palette)] for i, v in enumerate(unique_vals)}
+
+    # -----------------------------
+    # 1) Traza base: TODOS los puntos coloreados por grupo o gradiente
+    #    (NO usamos symbol aquí para no mezclar leyendas)
+    # -----------------------------
     if is_discrete:
-        # Colores categóricos (Ranking/Clustering)
         fig = px.scatter(
             df,
             x=x, y=y, size=size,
             color=color_col,
             text="label" if show_ids else None,
-            symbol="highlight_label",
-            symbol_map={"Hide": "triangle-up", "hide": "circle"},
             hover_data=hover_data,
-            color_discrete_sequence=px.colors.qualitative.Plotly
+            color_discrete_map=color_map
         )
+        fig.update_layout(legend_title_text="Groups")
     else:
-        # Colores continuos (Weighted-Sum / TOPSIS)
         fig = px.scatter(
             df,
             x=x, y=y, size=size,
             color=color_col,
             text="label" if show_ids else None,
-            symbol="highlight_label",
-            symbol_map={"Hide": "triangle-up", "hide": "circle"},
             hover_data=hover_data,
             color_continuous_scale=px.colors.sequential.Viridis
         )
+        fig.update_layout(legend_title_text=color_col if color_col else "")
 
-    # --- Estética ---
+    # -----------------------------
+    # 2) Overlay: SOLO highlights como triángulos con borde negro
+    #    (una única entrada en la leyenda: "Unmasked")
+    # -----------------------------
+    if "highlight" in df.columns and df["highlight"].any():
+        df_hi = df[df["highlight"] == True].copy()
+
+        # Si hay grupos discretos, usar el mismo color del grupo en el triángulo
+        if is_discrete and color_map and color_col in df_hi.columns:
+            tri_colors = df_hi[color_col].astype(str).map(color_map).fillna("#000000")
+        else:
+            # Si es continuo (score), ponemos triángulos negros (o puedes elegir otro)
+            tri_colors = "#000000"
+
+        fig.add_trace(
+            go.Scatter(
+                x=df_hi[x],
+                y=df_hi[y],
+                mode="markers",
+                name="Unmasked",
+                marker=dict(
+                    symbol="triangle-up",
+                    size=14,
+                    color=tri_colors,
+                    line=dict(width=2, color="black")
+                ),
+                showlegend=True,
+                hoverinfo="skip"  # el hover ya lo da la traza base
+            )
+        )
+
+    # -----------------------------
+    # Estética
+    # -----------------------------
     fig.update_traces(
         textposition="top right",
         textfont=dict(size=10),
@@ -550,11 +596,18 @@ elif mode == "Ranking-based":
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
         threshold = max(1, len(sel_metrics) - 1)
 
+
         selected_df["count"] = selected_df["count"].astype(int)
         selected_df["count_str"] = selected_df["count"].astype(str)
+
+        # Etiqueta bonita para leyenda
+        selected_df["group_label"] = "Matches = " + selected_df["count_str"]
+
         selected_df = selected_df.sort_values("count", ascending=False)
 
-        color_col = "count_str"   # ✅ colores discretos como antes
+        # Pintar por la etiqueta bonita
+        color_col = "group_label"
+
 
 
 # --------------------------------------------
@@ -693,15 +746,18 @@ elif mode == "Clustering":
 
         labels = model.fit_predict(X_scaled)
 
-        # -------------------------------
-        # Guardar resultados
-        # -------------------------------
 
         selected_df["cluster"] = labels.astype(int)
         selected_df["cluster_str"] = selected_df["cluster"].astype(str)
+
+        # Etiqueta bonita para leyenda
+        selected_df["group_label"] = "Cluster " + selected_df["cluster_str"]
+
         selected_df = selected_df.sort_values("cluster")
 
-        color_col = "cluster_str"
+        # Pintar por la etiqueta bonita
+        color_col = "group_label"
+
 
 
 
