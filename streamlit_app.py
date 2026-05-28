@@ -406,10 +406,11 @@ def plot_radar(selected_df, available_metrics, group_col=None):
             
             # Leyenda explicativa interactiva en columnas abajo del gráfico
             c1, c2, c3, c4 = st.columns(4)
-            c1.markdown("⚪ **No solicitado**")
-            c2.markdown("🔘 **Solicitado (No incluido) / Fuera del Release**")
-            c3.markdown("🟢 **Solicitado e Incluido (Stakeholder)**")
-            c4.markdown("🌲 **Incluido en el Release Final (Fila Resumen)**")
+            c1.markdown("⚪ **Not requested**")
+            c2.markdown("🔘 **Requested (Not included) / Excluded from the Release**")
+            c3.markdown("🟢 **Requested and Included (Stakeholder)**")
+            c4.markdown("🌲 **Included in the Final Release (Summary Row)**")
+
 # --------------------------------------------
 # DATA SOURCE 
 # --------------------------------------------
