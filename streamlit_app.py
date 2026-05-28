@@ -83,15 +83,18 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
 def plot_radar(selected_df, available_metrics):
     st.markdown("---")
-    
-    opciones_id = selected_df["id"].unique()
+
+    # (Preparado para filtrar por clúster más adelante)
+    df_for_compare = selected_df
+
+    opciones_id = df_for_compare["id"].unique()
     compare_ids = st.multiselect("Pick solutions to compare in Radar", opciones_id)
 
     if len(compare_ids) < 2:
         st.info("Select at least 2 solutions to compare")
         return
 
-    compare_df = selected_df[selected_df["id"].isin(compare_ids)].copy()
+    compare_df = df_for_compare[df_for_compare["id"].isin(compare_ids)].copy()
     
 
     tab1, tab2, tab3, tab4 = st.tabs(["📊 Radar", "👥 Stakeholders", "📋 Requirements", "🔗 Alineación"])
@@ -671,6 +674,7 @@ elif mode == "Clustering":
         selected_df = selected_df.sort_values("cluster")
 
         color_col = "cluster_str"
+
 
 
 # --------------------------------------------
