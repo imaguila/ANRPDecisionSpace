@@ -358,14 +358,58 @@ show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 # --------------------------------------------
 # FILTROS
 # --------------------------------------------
+
 st.sidebar.markdown("### Filters")
+
 filtered_df = df.copy()
-for m in available_metrics:
+
+# Separar métricas
+available_opt = [m for m in opt_df.columns if m in df.columns]
+available_qual = [m for m in qual_df.columns if m in df.columns]
+
+# -------- OPTIMIZATION METRICS --------
+st.sidebar.markdown("#### 🔵 Optimization metrics")
+
+for m in available_opt:
     if pd.api.types.is_numeric_dtype(df[m]):
         min_v, max_v = float(df[m].min()), float(df[m].max())
         if min_v != max_v:
-            val_range = st.sidebar.slider(f"{m}", min_v, max_v, (min_v, max_v), key=f"f_{m}")
-            filtered_df = filtered_df[(filtered_df[m] >= val_range[0]) & (filtered_df[m] <= val_range[1])]
+
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_v,
+                max_v,
+                (min_v, max_v),
+                key=f"opt_{m}"
+            )
+
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
+
+# -------- QUALITY METRICS --------
+st.sidebar.markdown("#### 🟢 Quality metrics")
+
+for m in available_qual:
+    if pd.api.types.is_numeric_dtype(df[m]):
+        min_v, max_v = float(df[m].min()), float(df[m].max())
+        if min_v != max_v:
+
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_v,
+                max_v,
+                (min_v, max_v),
+                key=f"qual_{m}"
+            )
+
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
+
+
 
 # --------------------------------------------
 # SELECCIÓN
