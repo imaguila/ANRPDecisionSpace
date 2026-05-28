@@ -659,22 +659,13 @@ elif mode == "Clustering":
         # -------------------------------
         # Guardar resultados
         # -------------------------------
-        selected_df["cluster"] = labels
-        selected_df["cluster_str"] = selected_df["cluster"].astype(str)
+        selected_df["cluster"] = labels.astype(str)   # 🔥 CLAVE IGUAL QUE RANKING
 
-        # -------------------------------
-        # Orden opcional (solo estética)
-        # -------------------------------
         selected_df = selected_df.sort_values("cluster")
 
-        # -------------------------------
-        # Color por clusters (DISCRETO ✅)
-        # -------------------------------
-        color_col = "cluster_str"
-        
-        # FORZAR COLOR CATEGÓRICO (clave)
-        selected_df["cluster_str"] = selected_df["cluster"].astype(str)
-        color_col = "cluster_str"
+        color_col = "cluster"
+
+
 
 
 # --------------------------------------------
