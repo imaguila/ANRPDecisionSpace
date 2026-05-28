@@ -597,16 +597,16 @@ elif mode == "Ranking-based":
         threshold = max(1, len(sel_metrics) - 1)
 
 
+
         selected_df["count"] = selected_df["count"].astype(int)
         selected_df["count_str"] = selected_df["count"].astype(str)
 
-        # Etiqueta bonita para leyenda
-        selected_df["group_label"] = "Matches = " + selected_df["count_str"]
+        # Tamaño por grupo (Matches)
+        group_sizes = selected_df.groupby("count_str")["id"].transform("size")
+        selected_df["group_label"] = "Matches = " + selected_df["count_str"] + " (n=" + group_sizes.astype(str) + ")"
 
-        selected_df = selected_df.sort_values("count", ascending=False)
-
-        # Pintar por la etiqueta bonita
         color_col = "group_label"
+
 
 
 
@@ -746,18 +746,14 @@ elif mode == "Clustering":
 
         labels = model.fit_predict(X_scaled)
 
-
         selected_df["cluster"] = labels.astype(int)
         selected_df["cluster_str"] = selected_df["cluster"].astype(str)
 
-        # Etiqueta bonita para leyenda
-        selected_df["group_label"] = "Cluster " + selected_df["cluster_str"]
+        # Tamaño por cluster
+        cluster_sizes = selected_df.groupby("cluster_str")["id"].transform("size")
+        selected_df["group_label"] = "Cluster " + selected_df["cluster_str"] + " (n=" + cluster_sizes.astype(str) + ")"
 
-        selected_df = selected_df.sort_values("cluster")
-
-        # Pintar por la etiqueta bonita
         color_col = "group_label"
-
 
 
 
