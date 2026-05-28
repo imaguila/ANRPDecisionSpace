@@ -517,6 +517,9 @@ elif mode == "Ranking-based":
         selected_df["count"] = selected_df["count"].astype(int).astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
 
+
+
+
 # --------------------------------------------
 # TOPSIS (score propio)
 # --------------------------------------------
@@ -668,7 +671,10 @@ elif mode == "Clustering":
         # Color por clusters (DISCRETO ✅)
         # -------------------------------
         color_col = "cluster_str"
-
+        
+        # FORZAR COLOR CATEGÓRICO (clave)
+        selected_df["cluster_str"] = selected_df["cluster"].astype(str)
+        color_col = "cluster_str"
 
 
 # --------------------------------------------
