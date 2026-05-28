@@ -416,15 +416,16 @@ for m in available_qual:
 # --------------------------------------------
 # 
 
-mode = st.sidebar.selectbox(
-    "Selection mode",
-    [
-        "None",
-        "🔵 Preference - Weighted-Sum",
-        "🔵 Preference - Ranking-based",
-        "🔵 Preference - TOPSIS",
-    ]
-)
+
+mode_map = {
+    "None": "None",
+    "🔵 Preference - Weighted-Sum": "Weighted-Sum",
+    "🔵 Preference - Ranking-based": "Ranking-based",
+    "🔵 Preference - TOPSIS": "TOPSIS",
+}
+
+mode = mode_map[mode_label]
+
 
 selected_df = filtered_df.copy()
 threshold = 0
