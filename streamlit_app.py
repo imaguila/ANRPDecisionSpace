@@ -51,7 +51,11 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         hover_data["cluster"] = True
 
 
-    # -------- SCATTER --------
+
+    # Forzar que la columna de color sea categórica (clave)
+    if color_col and color_col in df.columns:
+        df[color_col] = df[color_col].astype(str)
+
     fig = px.scatter(
         df,
         x=x,
@@ -61,7 +65,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         text="label" if show_ids else None,
         symbol="highlight_label",
         symbol_map={"Hide": "triangle-up", "hide": "circle"},
-        color_discrete_sequence=px.colors.qualitative.Plotly,
         hover_data=hover_data   # ✅ aquí está la clave
     )
 
@@ -75,6 +78,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
     # -------- MOSTRAR --------
     st.plotly_chart(fig, use_container_width=True, key=key)
+
 
 
 def plot_radar(selected_df, available_metrics):
