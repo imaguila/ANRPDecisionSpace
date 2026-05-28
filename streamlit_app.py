@@ -508,17 +508,19 @@ elif mode == "Ranking-based":
             ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
 
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
+
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
-
-        # ⚠️ IMPORTANTE: NO convertir a string ni normalizar
-        selected_df["count"] = selected_df["count"].astype(int)
-
-        selected_df = selected_df.sort_values("count", ascending=False)
 
         threshold = max(1, len(sel_metrics) - 1)
 
-        color_col = "count"   # ✅ mantiene colores categóricos como tenías
+        # ✅ IMPORTANTE: doble columna
+        selected_df["count"] = selected_df["count"].astype(int)          # para hover / lógica
+        selected_df["count_str"] = selected_df["count"].astype(str)      # para colores
 
+        selected_df = selected_df.sort_values("count", ascending=False)
+
+        # ✅ usamos la versión string para mantener colores DISCRETOS
+        color_col = "count_str"
 
 # --------------------------------------------
 # TOPSIS (score propio)
