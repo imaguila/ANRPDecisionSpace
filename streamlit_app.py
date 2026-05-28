@@ -46,6 +46,10 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
     if "count" in df.columns:
         hover_data["count"] = True
+    
+    if "cluster" in df.columns:
+        hover_data["cluster"] = True
+
 
     # -------- SCATTER --------
     fig = px.scatter(
@@ -454,6 +458,7 @@ mode_label = st.sidebar.selectbox(
         "🔵 Preference - Weighted-Sum",
         "🔵 Preference - Ranking-based",
         "🔵 Preference - TOPSIS",
+        "🟢 Diversity - Clustering"
     ]
 )
 
@@ -462,6 +467,7 @@ mode_map = {
     "🔵 Preference - Weighted-Sum": "Weighted-Sum",
     "🔵 Preference - Ranking-based": "Ranking-based",
     "🔵 Preference - TOPSIS": "TOPSIS",
+    "🟢 Diversity - Clustering": "Clustering",
 }
 
 mode = mode_map[mode_label]
@@ -576,6 +582,104 @@ elif mode == "TOPSIS":
         selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
 
         color_col = "score_topsis"   # ✅ solo aquí
+
+# ----------------------------------
+# DIVERSITY METHODS
+# ------------------
+elif mode == "Clustering":
+
+    st.sidebar.markdown("### Clustering (k-medoids)")
+
+    # -------------------------------
+    # Selección de métricas
+    # -------------------------------
+    cluster_metrics = st.sidebar.multiselect(
+        "Metrics for clustering",
+        available_metrics,
+        default=available_metrics[:2]
+    )
+
+    # -------------------------------
+    # Selección de k
+    # -------------------------------
+    k_mode = st.sidebar.radio(
+        "Number of clusters",
+        ["Manual", "Auto (Silhouette)"]
+    )
+
+    if cluster_metrics and len(cluster_metrics) >= 2:
+
+        from sklearn.preprocessing import StandardScaler
+        from sklearn_extra.cluster import KMedoids
+        from sklearn.metrics import silhouette_score
+
+        # -------------------------------
+        # Preparar datos
+        # -------------------------------
+        X = selected_df[cluster_metrics].values
+
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # -------------------------------
+        # Selección de k
+        # -------------------------------
+        if k_mode == "Manual":
+            k = st.sidebar.slider("k clusters", 2, min(10, len(selected_df)), 3)
+
+        else:
+            best_k = 2
+            best_score = -1
+
+            for k_test in range(2, min(10, len(X_scaled))):
+                try:
+                    model = KMedoids(
+                        n_clusters=k_test,
+                        method='pam',
+                        random_state=123
+                    )
+                    labels_test = model.fit_predict(X_scaled)
+
+                    if len(set(labels_test)) > 1:
+                        score = silhouette_score(X_scaled, labels_test)
+
+                        if score > best_score:
+                            best_score = score
+                            best_k = k_test
+
+                except:
+                    pass
+
+            k = best_k
+            st.sidebar.info(f"Optimal k (silhouette): {k}")
+
+        # -------------------------------
+        # Ejecutar clustering
+        # -------------------------------
+        model = KMedoids(
+            n_clusters=k,
+            method='pam',
+            random_state=123
+        )
+
+        labels = model.fit_predict(X_scaled)
+
+        # -------------------------------
+        # Guardar resultados
+        # -------------------------------
+        selected_df["cluster"] = labels
+        selected_df["cluster_str"] = selected_df["cluster"].astype(str)
+
+        # -------------------------------
+        # Orden opcional (solo estética)
+        # -------------------------------
+        selected_df = selected_df.sort_values("cluster")
+
+        # -------------------------------
+        # Color por clusters (DISCRETO ✅)
+        # -------------------------------
+        color_col = "cluster_str"
+
 
 
 # --------------------------------------------
