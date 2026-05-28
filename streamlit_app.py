@@ -89,12 +89,32 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     st.plotly_chart(fig, use_container_width=True, key=key)
 
 
-def plot_radar(selected_df, available_metrics):
+def plot_radar(selected_df, available_metrics, group_col=None):
     st.markdown("---")
 
-    # (Preparado para filtrar por clúster más adelante)
     df_for_compare = selected_df
 
+    # -------------------------------
+    # NUEVO: capa extra -> seleccionar GRUPO (cluster o count)
+    # -------------------------------
+    if group_col is not None and group_col in df_for_compare.columns:
+
+        groups = sorted(df_for_compare[group_col].dropna().astype(str).unique().tolist())
+        group_options = ["All"] + groups
+
+        chosen_group = st.selectbox(
+            "Group to analyze (cluster / ranking-group)",
+            group_options,
+            index=0,
+            key="cmp_group_select"
+        )
+
+        if chosen_group != "All":
+            df_for_compare = df_for_compare[df_for_compare[group_col].astype(str) == str(chosen_group)]
+
+    # -------------------------------
+    # Selección de IDs SOLO dentro del grupo elegido
+    # -------------------------------
     opciones_id = df_for_compare["id"].unique()
     compare_ids = st.multiselect("Pick solutions to compare in Radar", opciones_id)
 
@@ -750,11 +770,33 @@ for i, group in enumerate(st.session_state.groups):
         else:
             st.info("Select a metric in 'Size' to enable comparison.")
 
-# --------------------------------------------
 # RADAR
-# --------------------------------------------
+
 if st.session_state.show_comparison:
-    plot_radar(selected_df, available_metrics)
+
+    # 1) Base para comparar: si hay "unmask", usar solo highlight=True
+    if "highlight" in selected_df.columns and selected_df["highlight"].any():
+        df_compare_base = selected_df[selected_df["highlight"] == True].copy()
+    else:
+        df_compare_base = selected_df.copy()
+
+    # 2) Detectar columna de agrupación (cluster o count)
+    group_col = None
+
+    # Clustering (preferimos cluster_str si existe)
+    if "cluster_str" in df_compare_base.columns:
+        group_col = "cluster_str"
+    elif "cluster" in df_compare_base.columns:
+        group_col = "cluster"
+
+    # Ranking (si no hay clustering)
+    if group_col is None:
+        if "count_str" in df_compare_base.columns:
+            group_col = "count_str"
+        elif "count" in df_compare_base.columns:
+            group_col = "count"
+
+    plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
 # --------------------------------------------
 # PREVIEW
