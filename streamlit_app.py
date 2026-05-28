@@ -415,8 +415,9 @@ for m in available_qual:
 # SELECCIÓN
 # --------------------------------------------
 # 
-
-
+# --------------------------------------------
+# SELECCIÓN
+# --------------------------------------------
 
 mode_label = st.sidebar.selectbox(
     "Selection mode",
@@ -437,42 +438,66 @@ mode_map = {
 
 mode = mode_map[mode_label]
 
-
-
 selected_df = filtered_df.copy()
 threshold = 0
 
-# Realemente hace una agregación de valores  para elegir las N mejores
+# Variable clave para visualización (color y hover)
+color_col = None
 
+
+# --------------------------------------------
+# PREFERENCE - BASED
+# --------------------------------------------
+
+# --------------------------------------------
+# WEIGHTED SUM (score)
+# --------------------------------------------
 if mode == "Weighted-Sum":
     m_max = st.sidebar.multiselect("Maximize", available_qual)
     m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max])
+
     if m_max or m_min:
         score = 0
         for m in m_max + m_min:
             mi, ma = selected_df[m].min(), selected_df[m].max()
             norm = (selected_df[m] - mi) / (ma - mi) if ma > mi else 0
             score = (score + norm) if m in m_max else (score - norm)
+
         selected_df["score"] = score
+
         n = st.sidebar.slider("Top N", 1, min(50, len(selected_df)), 10)
         selected_df = selected_df.sort_values("score", ascending=False).head(n)
-        threshold = 1
 
+        color_col = "score"   # ✅ usamos score para color
+
+
+# --------------------------------------------
+# RANKING BASED (count)
+# --------------------------------------------
 elif mode == "Ranking-based":
     sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
     n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
+
     if sel_metrics:
         ranks = []
         for m in sel_metrics:
             goal = st.sidebar.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"g_{m}")
             ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
+
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
-        threshold = max(1, len(sel_metrics) - 1)
-        selected_df["count"] = selected_df["count"].astype(int).astype(str)
+
+        selected_df["count"] = selected_df["count"].astype(int)
         selected_df = selected_df.sort_values("count", ascending=False)
 
+        threshold = max(1, len(sel_metrics) - 1)
 
+        color_col = "count"   # ✅ usamos count aquí
+
+
+# --------------------------------------------
+# TOPSIS (score_dist)
+# --------------------------------------------
 elif mode == "TOPSIS":
     m_max = st.sidebar.multiselect("Maximize", available_qual, key="topsis_max")
     m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max], key="topsis_min")
@@ -482,14 +507,14 @@ elif mode == "TOPSIS":
     if criteria:
         df_topsis = selected_df.copy()
 
-        # --- Normalización vectorial (clásica TOPSIS)
+        # Normalización vectorial
         norm_df = df_topsis[criteria].copy()
         for m in criteria:
             denom = (norm_df[m]**2).sum() ** 0.5
             if denom != 0:
                 norm_df[m] = norm_df[m] / denom
 
-        # --- Ideal y anti-ideal
+        # Ideal y anti-ideal
         ideal = {}
         anti_ideal = {}
 
@@ -501,7 +526,7 @@ elif mode == "TOPSIS":
                 ideal[m] = norm_df[m].min()
                 anti_ideal[m] = norm_df[m].max()
 
-        # --- Distancias
+        # Distancias
         d_plus = []
         d_minus = []
 
@@ -514,18 +539,33 @@ elif mode == "TOPSIS":
             d_plus.append(dp)
             d_minus.append(dm)
 
-        df_topsis["d_plus"] = d_plus
-        df_topsis["d_minus"] = d_minus
+        df_topsis["score_topsis"] = [
+            dm / (dp + dm) if (dp + dm) != 0 else 0 for dp, dm in zip(d_plus, d_minus)
+        ]
 
-        # --- Score TOPSIS
-        df_topsis["score"] = df_topsis["d_minus"] / (df_topsis["d_plus"] + df_topsis["d_minus"])
-
-        # --- Selección TOP N
         n = st.sidebar.slider("Top N", 1, min(50, len(df_topsis)), 10, key="topsis_n")
 
-        selected_df = df_topsis.sort_values("score", ascending=False).head(n)
+        selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
 
-        threshold = 1
+        color_col = "score_topsis"   # ✅ usamos score TOPSIS
+
+# --------------------------------------------
+# PREFERENCE - BASED
+# --------------------------------------------
+
+
+# --------------------------------------------
+# PREFERENCE - BASED
+# --------------------------------------------
+
+
+# --------------------------------------------
+# NONE
+# --------------------------------------------
+else:
+    color_col = None
+
+
 
 
 # --------------------------------------------
