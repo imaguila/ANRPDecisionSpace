@@ -518,10 +518,12 @@ elif mode == "Ranking-based":
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
         threshold = max(1, len(sel_metrics) - 1)
-        selected_df["count"] = selected_df["count"].astype(int).astype(str)
+
+        selected_df["count"] = selected_df["count"].astype(int)
+        selected_df["count_str"] = selected_df["count"].astype(str)
         selected_df = selected_df.sort_values("count", ascending=False)
 
-
+        color_col = "count_str"   # ✅ colores discretos como antes
 
 
 # --------------------------------------------
@@ -663,13 +665,12 @@ elif mode == "Clustering":
         # -------------------------------
         # Guardar resultados
         # -------------------------------
-        selected_df["cluster"] = labels.astype(str)   # 🔥 CLAVE IGUAL QUE RANKING
 
+        selected_df["cluster"] = labels.astype(int)
+        selected_df["cluster_str"] = selected_df["cluster"].astype(str)
         selected_df = selected_df.sort_values("cluster")
 
-        color_col = "cluster"
-
-
+        color_col = "cluster_str"
 
 
 # --------------------------------------------
@@ -698,7 +699,7 @@ else:
 # --------------------------------------------
 # GRÁFICOS
 # --------------------------------------------
-color_col = "count" if "count" in selected_df.columns else None
+# color_col = "count" if "count" in selected_df.columns else None
 
 for i, group in enumerate(st.session_state.groups):
     st.subheader(f"Trade-off Map {i+1}")
