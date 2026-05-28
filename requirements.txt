@@ -17,5 +17,5 @@ nbformat>=5.9.0
 # Dependencia recomendada para que Plotly se vea bien en VS Code
 ipywidgets>=8.1.0
 
-scikit-learn
-scikit-learn-extra
+scikit-learn>=1.3.0
+scikit-learn-extra==0.3.0
