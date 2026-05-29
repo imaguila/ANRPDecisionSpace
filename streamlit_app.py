@@ -642,7 +642,8 @@ if mode == "Weighted-Sum":
 
         selected_df["score"] = score
 
-        n = st.sidebar.slider("Top N", 1, min(50, len(selected_df)), 10)
+        n = st.sidebar.slider("Top N", 1, len(selected_df),min(10, len(selected_df)))
+
         selected_df = selected_df.sort_values("score", ascending=False).head(n)
 
         color_col = "score"   # ✅ solo aquí
@@ -697,7 +698,14 @@ elif mode == "TOPSIS":
             dm / (dp + dm) if (dp + dm) != 0 else 0 for dp, dm in zip(d_plus, d_minus)
         ]
 
-        n = st.sidebar.slider("Top N", 1, min(50, len(df_topsis)), 10, key="topsis_n")
+        
+        n = st.sidebar.slider(
+            "Top N",
+            1,
+            len(df_topsis),
+            min(10, len(df_topsis)),
+            key="topsis_n"
+        )
 
         selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
 
@@ -814,11 +822,12 @@ elif mode == "Efficiency-Ratio":
         st.stop()
 
     # slider primero
+
     n = st.sidebar.slider(
         "Top N efficient solutions",
         1,
-        min(50, len(selected_df)),
-        10,
+        len(selected_df),
+        min(10, len(selected_df)),
         key="eff_topn"
     )
 
