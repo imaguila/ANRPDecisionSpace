@@ -1029,10 +1029,10 @@ for i, group in enumerate(st.session_state.groups):
 
     cA, cB = st.columns(2)
     with cA:
-        render_scatter_plot(selected_df, x, y, None, color_col, show_ids, key=f"p1_{i}")
+        render_scatter_plot(df_plot, x, y, None, color_col, show_ids, key=f"p1_{i}")
     with cB:
         if size:
-            render_scatter_plot(selected_df, x, size, y, color_col, show_ids, key=f"p2_{i}")
+            render_scatter_plot(df_plot, x, size, y, color_col, show_ids, key=f"p2_{i}")
         else:
             st.info("Select a metric in 'Size' to enable comparison.")
 
