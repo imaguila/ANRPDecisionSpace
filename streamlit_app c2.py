@@ -540,6 +540,42 @@ show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 from config import PROBLEMAS
 from problem import run_pipeline, leer_soluciones, REQUISITOS
 
+st.sidebar.markdown("## ⚙️ Data preparation")
+
+# -------------------------------
+# Selección de problema
+# -------------------------------
+problem_name = st.sidebar.selectbox(
+    "Problem",
+    list(PROBLEMAS.keys())
+)
+
+config = PROBLEMAS[problem_name]
+
+# -------------------------------
+# Leer datos base
+# -------------------------------
+df_base = leer_soluciones(config)
+
+# -------------------------------
+# Detectar indicadores posibles
+# -------------------------------
+available_indicators = []
+
+for ind, reqs in REQUISITOS.items():
+    if all(col in df_base.columns for col in reqs):
+        available_indicators.append(ind)
+
+# -------------------------------
+# Selección de indicadores
+# -------------------------------
+default_indicators = config.get("indicadores_default", [])
+
+selected_indicators = st.sidebar.multiselect(
+    "Indicators",
+    available_indicators,
+    default=[i for i in default_indicators if i in available_indicators]
+)
 
 # -------------------------------
 # Generar dataset
