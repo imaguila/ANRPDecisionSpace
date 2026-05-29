@@ -459,7 +459,7 @@ else:
     # -------------------------------
     problem_name = st.sidebar.selectbox(
         "Problem",
-        list(PROBLEMAS.keys())
+        list(PROBLEMAS.keys()),
         key="problem_selector"
     )
 
