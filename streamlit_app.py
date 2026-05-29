@@ -106,6 +106,12 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # 1) Traza base: TODOS los puntos coloreados por grupo o gradiente
     #    (NO usamos symbol aquí para no mezclar leyendas)
     # -----------------------------
+
+    use_continuous = False
+
+    if color_col == "knee_score":
+        use_continuous = True
+
     if is_discrete:
         fig = px.scatter(
             df,
