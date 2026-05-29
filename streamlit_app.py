@@ -1017,11 +1017,15 @@ for i, group in enumerate(st.session_state.groups):
     st.session_state.groups[i] = [x, y, size]
 
 
-    if mode == "Knee":
-        knee_scores = compute_knee(selected_df, x, y)
-        selected_df["knee_score"] = knee_scores
-        color_col = "knee_score"
 
+    df_plot = selected_df.copy()
+
+    if mode == "Knee":
+        knee_scores = compute_knee(df_plot, x, y)
+        df_plot["knee_score"] = knee_scores
+        color_col_plot = "knee_score"
+    else:
+        color_col_plot = color_col
 
     cA, cB = st.columns(2)
     with cA:
