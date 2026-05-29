@@ -965,10 +965,11 @@ for i, group in enumerate(st.session_state.groups):
     df_plot = selected_df.copy()
 
     if mode == "Knee":
-        st.write("DEBUG knee stats:", df_plot["knee_score"].describe())
+        
         knee_scores = compute_knee(df_plot, x, y)
         df_plot["knee_score"] = knee_scores
         color_col_plot = "knee_score"
+        st.write("DEBUG knee stats:", df_plot["knee_score"].describe())
     else:
         color_col_plot = color_col
 
