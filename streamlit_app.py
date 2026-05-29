@@ -26,10 +26,6 @@ def load_csv(path):
 
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
-    import pandas as pd
-    import plotly.express as px
-    import plotly.graph_objects as go
-
     # Trabajar sobre copia para no ensuciar el DF original
     df = df.copy()
 
@@ -804,6 +800,7 @@ elif mode == "Clustering":
         color_col = "group_label"
 
 
+
 # --------------------------------------------
 # EFFICIENCY RATIO (efficiency-based)
 # --------------------------------------------
@@ -814,22 +811,21 @@ elif mode == "Efficiency-Ratio":
     benefit = st.sidebar.selectbox("Benefit (maximize)", available_qual, key="eff_benefit")
     cost = st.sidebar.selectbox("Cost (minimize)", available_metrics, key="eff_cost")
 
-
-    selected_df = selected_df.copy()
-    selected_df["efficiency_score"] = selected_df[benefit] / (selected_df[cost] + 1e-9)
-
-    selected_df = selected_df.sort_values("efficiency_score", ascending=False).head(n)
-
+    # ✅ 1. PRIMERO el slider
     n = st.sidebar.slider(
         "Top N efficient solutions",
         1,
-        min(50, len(df_eff)),
+        min(50, len(selected_df)),
         10,
         key="eff_topn"
     )
 
-    selected_df = df_eff.sort_values("efficiency_score", ascending=False).head(n)
+    # ✅ 2. luego calcular
+    selected_df = selected_df.copy()
+    selected_df["efficiency_score"] = selected_df[benefit] / (selected_df[cost] + 1e-9)
 
+    # ✅ 3. luego ordenar y filtrar
+    selected_df = selected_df.sort_values("efficiency_score", ascending=False).head(n)
 
 
 # --------------------------------------------
