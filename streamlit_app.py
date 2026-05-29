@@ -683,7 +683,6 @@ mode_map = {
 }
 
 
-
 mode = mode_map[mode_label]
 
 selected_df = filtered_df.copy()
