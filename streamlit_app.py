@@ -25,23 +25,11 @@ def load_csv(path):
     return pd.read_csv(path)
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
-    # Trabajar sobre copia para no ensuciar el DF original
+    import numpy as np
+    import plotly.express as px
+    import pandas as pd
+
     df = df.copy()
-
-    # ---------------------------------
-    # Highlight visual → gris para no seleccionados (CONTINUO)
-    # ---------------------------------
-    if color_col and "highlight" in df.columns:
-
-        if df["highlight"].any():
-
-            df["_color_visual"] = df[color_col]
-
-            # ✅ en lugar de texto → NaN
-            df.loc[~df["highlight"], "_color_visual"] = np.nan
-
-            color_col = "_color_visual"
-
 
     # -----------------------------
     # Hover dinámico
@@ -57,13 +45,11 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         hover_data["cluster"] = True
 
     # -----------------------------
-    # Detectar si el color es discreto o continuo
-    # (discreto: grupos como ranking/clustering)
+    # Detectar discreto / continuo
     # -----------------------------
-    discrete_cols = {"count", "cluster",  "group_label"}
+    discrete_cols = {"count", "cluster", "group_label"}
 
     is_discrete = False
-
     if color_col and color_col in df.columns:
 
         if color_col == "group_label":
@@ -74,31 +60,55 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             is_discrete = True
             df[color_col] = df[color_col].astype(str)
 
+    # -----------------------------
+    # 🎯 CASO 1: CONTINUO + highlight
+    # → solución correcta: doble capa
+    # -----------------------------
+    if (not is_discrete) and ("highlight" in df.columns) and df["highlight"].any():
 
+        df_sel = df[df["highlight"] == True]
+        df_rest = df[df["highlight"] == False]
+
+        # capa base (gris claro)
+        fig = px.scatter(
+            df_rest,
+            x=x,
+            y=y,
+            size=size,
+            color_discrete_sequence=["rgba(180,180,180,0.4)"],  # gris suave
+            text="label" if show_ids else None,
+            hover_data=hover_data
+        )
+
+        # capa seleccionados (colores reales)
+        fig_sel = px.scatter(
+            df_sel,
+            x=x,
+            y=y,
+            size=size,
+            color=color_col,
+            color_continuous_scale=px.colors.sequential.Viridis,
+            text="label" if show_ids else None,
+            hover_data=hover_data
+        )
+
+        fig.add_traces(fig_sel.data)
+
+        fig.update_layout(legend_title_text=color_col if color_col else "")
 
     # -----------------------------
-    # Crear mapa de colores estable para categorías (si es discreto)
+    # 🎯 CASO 2: DISCRETO (clustering/ranking)
+    # → sigue usando mapa de colores
     # -----------------------------
-    color_map = None
-
-    if is_discrete and color_col and color_col in df.columns:
+    elif is_discrete:
 
         unique_vals = sorted(df[color_col].dropna().unique().tolist())
         palette = px.colors.qualitative.Plotly
 
         color_map = {}
         for i, v in enumerate(unique_vals):
-            if v == "Not selected":
-                color_map[v] = "#d3d3d3"  # gris fijo
-            else:
-                color_map[v] = palette[i % len(palette)]
+            color_map[v] = palette[i % len(palette)]
 
-    # -----------------------------
-    # 1) Traza base: TODOS los puntos coloreados por grupo o gradiente
-    #    (NO usamos symbol aquí para no mezclar leyendas)
-    # -----------------------------
-
-    if is_discrete:
         fig = px.scatter(
             df,
             x=x, y=y, size=size,
@@ -107,8 +117,14 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             hover_data=hover_data,
             color_discrete_map=color_map
         )
+
         fig.update_layout(legend_title_text="Groups")
+
+    # -----------------------------
+    # 🎯 CASO 3: CONTINUO NORMAL (sin selección)
+    # -----------------------------
     else:
+
         fig = px.scatter(
             df,
             x=x, y=y, size=size,
@@ -117,11 +133,11 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             hover_data=hover_data,
             color_continuous_scale=px.colors.sequential.Viridis
         )
+
         fig.update_layout(legend_title_text=color_col if color_col else "")
 
-
     # -----------------------------
-    # Estética
+    # Estética general
     # -----------------------------
     fig.update_traces(
         textposition="top right",
@@ -131,7 +147,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     )
 
     st.plotly_chart(fig, use_container_width=True, key=key)
-
 
 def plot_radar(selected_df, available_metrics, group_col=None):
     st.markdown("---")
