@@ -484,11 +484,14 @@ else:
     # -------------------------------
     default_indicators = config.get("indicadores_default", [])
 
+
     selected_indicators = st.sidebar.multiselect(
         "Indicators",
         available_indicators,
-        default=[i for i in default_indicators if i in available_indicators]
+        default=[i for i in default_indicators if i in available_indicators],
+        key="indicators_selector"
     )
+
 
     # -------------------------------
     # Ejecutar pipeline
