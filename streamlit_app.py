@@ -26,8 +26,8 @@ def load_csv(path):
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     import numpy as np
-    import plotly.express as px
     import pandas as pd
+    import plotly.express as px
 
     df = df.copy()
 
@@ -50,7 +50,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     is_discrete = False
 
     if color_col and color_col in df.columns:
-
         if color_col == "group_label":
             is_discrete = True
             df[color_col] = df[color_col].astype(str)
@@ -59,13 +58,10 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             is_discrete = True
             df[color_col] = df[color_col].astype(str)
 
-    # -----------------------------
-    # ✅ CASO 1: CONTINUO + selección → OPACIDAD (CLAVE)
-    # -----------------------------
-    if (not is_discrete) and ("highlight" in df.columns) and df["highlight"].any():
-
-        # mantener colores originales, solo bajar intensidad
-        df["_opacity"] = np.where(df["highlight"], 1.0, 0.25)
+    # ======================================================
+    # ✅ CASO 1: CONTINUO (Weighted, TOPSIS, etc.)
+    # ======================================================
+    if not is_discrete:
 
         fig = px.scatter(
             df,
@@ -78,19 +74,19 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             hover_data=hover_data
         )
 
-        # aplicar opacidad punto a punto
-        fig.update_traces(
-            marker=dict(opacity=df["_opacity"])
-        )
+        # ✅ aplicar opacidad si hay selección
+        if "highlight" in df.columns and df["highlight"].any():
+            opacity_vals = np.where(df["highlight"], 1.0, 0.25)
+            fig.update_traces(marker=dict(opacity=opacity_vals))
 
         fig.update_layout(
             legend_title_text=color_col if color_col else ""
         )
 
-    # -----------------------------
-    # ✅ CASO 2: DISCRETO (clustering / ranking)
-    # -----------------------------
-    elif is_discrete:
+    # ======================================================
+    # ✅ CASO 2: DISCRETO (Clustering, Ranking)
+    # ======================================================
+    else:
 
         unique_vals = sorted(df[color_col].dropna().unique().tolist())
         palette = px.colors.qualitative.Plotly
@@ -110,30 +106,15 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             color_discrete_map=color_map
         )
 
+        # ✅ aplicar opacidad también aquí
+        if "highlight" in df.columns and df["highlight"].any():
+            opacity_vals = np.where(df["highlight"], 1.0, 0.25)
+            fig.update_traces(marker=dict(opacity=opacity_vals))
+
         fig.update_layout(legend_title_text="Groups")
 
     # -----------------------------
-    # ✅ CASO 3: CONTINUO NORMAL (sin selección)
-    # -----------------------------
-    else:
-
-        fig = px.scatter(
-            df,
-            x=x,
-            y=y,
-            size=size,
-            color=color_col,
-            text="label" if show_ids else None,
-            hover_data=hover_data,
-            color_continuous_scale=px.colors.sequential.Viridis
-        )
-
-        fig.update_layout(
-            legend_title_text=color_col if color_col else ""
-        )
-
-    # -----------------------------
-    # Estética general
+    # Estética
     # -----------------------------
     fig.update_traces(
         textposition="top right",
@@ -144,8 +125,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
     st.plotly_chart(fig, use_container_width=True, key=key)
 
-
-    
 def plot_radar(selected_df, available_metrics, group_col=None):
     st.markdown("---")
 
