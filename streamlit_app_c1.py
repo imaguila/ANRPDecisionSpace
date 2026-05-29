@@ -412,90 +412,28 @@ def plot_radar(selected_df, available_metrics, group_col=None):
             c4.markdown("🌲 **Included in the Final Release (Summary Row)**")
 
 # --------------------------------------------
-# DATA SOURCE + DATA PREPARATION
+# DATA SOURCE 
 # --------------------------------------------
+source = st.sidebar.radio("Data source", ["Built-in", "Upload CSV"])
 
-from config import PROBLEMAS
-from problem import run_pipeline, leer_soluciones, REQUISITOS
-
-st.sidebar.markdown("## ⚙️ Data source")
-
-data_mode = st.sidebar.radio(
-    "Select data source",
-    [
-        "📂 Upload CSV (precomputed indicators)",
-        "🧠 Build from problem (pipeline)"
-    ]
-)
-
-# ============================================
-# 1) CSV MODE (TU FLUJO ORIGINAL)
-# ============================================
-if data_mode == "📂 Upload CSV (precomputed indicators)":
-
-    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-
-    if uploaded_file is None:
-        st.warning("Please upload a dataset with indicators.")
+if source == "Built-in":
+    if not os.path.exists(DATA_PATH):
+        st.error("Data folder not found")
         st.stop()
 
-    df = pd.read_csv(uploaded_file)
+    files = [f for f in os.listdir(DATA_PATH) if f.endswith(".csv") and "metrics" not in f]
+    if not files:
+        st.error("No datasets found")
+        st.stop()
 
-    st.sidebar.success(f"{len(df)} solutions loaded from CSV")
+    selected_file = st.sidebar.selectbox("Dataset", files)
+    df = load_csv(os.path.join(DATA_PATH, selected_file))
 
-# ============================================
-# 2) PIPELINE MODE (PREPARADO PARA FUTURO)
-# ============================================
 else:
-
-    st.sidebar.markdown("## ⚙️ Data preparation")
-
-    # -------------------------------
-    # Selección de problema
-    # -------------------------------
-    problem_name = st.sidebar.selectbox(
-        "Problem",
-        list(PROBLEMAS.keys())
-    )
-
-    config = PROBLEMAS[problem_name]
-
-    # -------------------------------
-    # Leer datos base (sin indicadores)
-    # -------------------------------
-    df_base = leer_soluciones(config)
-
-    # -------------------------------
-    # Detectar indicadores posibles
-    # -------------------------------
-    available_indicators = []
-
-    for ind, reqs in REQUISITOS.items():
-        if all(col in df_base.columns for col in reqs):
-            available_indicators.append(ind)
-
-    # -------------------------------
-    # Selección indicadores
-    # -------------------------------
-    default_indicators = config.get("indicadores_default", [])
-
-    selected_indicators = st.sidebar.multiselect(
-        "Indicators",
-        available_indicators,
-        default=[i for i in default_indicators if i in available_indicators]
-    )
-
-    # -------------------------------
-    # Ejecutar pipeline
-    # -------------------------------
-    @st.cache_data
-    def build_df(problem_name, selected_indicators):
-        return run_pipeline(problem_name, selected_indicators)
-
-    df = build_df(problem_name, selected_indicators)
-
-    st.sidebar.success(f"{len(df)} solutions generated")
-
+    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+    if uploaded_file is None:
+        st.stop()
+    df = pd.read_csv(uploaded_file)
 
 # --------------------------------------------
 # METRICS
@@ -527,61 +465,6 @@ if st.sidebar.button("Show/Hide comparison view"):
     st.rerun()
 
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
-
-
-from config import PROBLEMAS
-from problem import run_pipeline, leer_soluciones, REQUISITOS
-
-st.sidebar.markdown("## ⚙️ Data preparation")
-
-# -------------------------------
-# Selección de problema
-# -------------------------------
-problem_name = st.sidebar.selectbox(
-    "Problem",
-    list(PROBLEMAS.keys())
-)
-
-config = PROBLEMAS[problem_name]
-
-# -------------------------------
-# Leer datos base
-# -------------------------------
-df_base = leer_soluciones(config)
-
-# -------------------------------
-# Detectar indicadores posibles
-# -------------------------------
-available_indicators = []
-
-for ind, reqs in REQUISITOS.items():
-    if all(col in df_base.columns for col in reqs):
-        available_indicators.append(ind)
-
-# -------------------------------
-# Selección de indicadores
-# -------------------------------
-default_indicators = config.get("indicadores_default", [])
-
-selected_indicators = st.sidebar.multiselect(
-    "Indicators",
-    available_indicators,
-    default=[i for i in default_indicators if i in available_indicators]
-)
-
-# -------------------------------
-# Generar dataset
-# -------------------------------
-@st.cache_data
-def build_df(problem_name, selected_indicators):
-    return run_pipeline(problem_name, selected_indicators)
-
-df = build_df(problem_name, selected_indicators)
-
-st.sidebar.success(f"{len(df)} solutions loaded")
-
-
-
 
 # --------------------------------------------
 # FILTROS

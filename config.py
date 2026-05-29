@@ -1,0 +1,79 @@
+PROBLEMAS = {
+
+    "THEME": {
+        "path_sol": "data/THEME/themesoluciones.txt",
+        "path_prob": None,
+        "metricas": [
+            "satisfaction", "prevalence", "cost",
+            "dissatisfaction", "inestability", "effort"
+        ],
+        "num_req": 22,
+        "stakeholders_prefix": None
+    },
+
+    "MSLITE": {
+        "path_sol": "data/MSLITE/mslitesoluciones.txt",
+        "path_prob": None,
+        "metricas": ["satisfaction", "effort", "dissatisfaction"],
+        "num_req": 16,
+        "stakeholders_prefix": None
+    },
+
+    "BAGNALL": {
+        "path_sol": "data/BAGNALL/bagnallsoluciones.txt",
+        "path_prob": "data/BAGNALL/bagnalldataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 18,
+        "stakeholders_prefix": "c",
+
+        # ✅ NUEVO: recomendados
+        "indicadores_default": [
+            "throughput",
+            "productivity",
+            "squandering"
+        ]
+    },
+
+    "MOTOROLA": {
+        "path_sol": "data/MOTOROLA/motorolasoluciones.txt",
+        "path_prob": "data/MOTOROLA/motoroladataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 35,
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "throughput",
+            "productivity",
+            "squandering"
+        ]
+    },
+
+    "RALICSREQ": {
+        "path_sol": "data/RALICSreq/ralicsreqsoluciones.txt",
+        "path_prob": "data/RALICSreq/ralicsreqdataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 83,
+        "stakeholders_prefix": "c", 
+        "indicadores_default": [
+            "throughput",
+            "productivity",
+            "squandering"
+        ]
+    },
+
+    "WORDPROC": {
+        "path_sol": "data/WORDPROC/wordprocsoluciones.txt",
+        "path_prob": "data/WORDPROC/wordprocdataset.txt",
+        "metricas": ["satisfaction", "effort", "time"],
+        "num_req": 42,
+        "stakeholders_prefix": "cv"  # 👈 DIFERENTE
+    },
+    "REQ100": {
+        "path_sol": "data/REQ100/req100frente.txt",
+        "path_prob": "data/REQ100/req100dataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 96,
+        "stakeholders_prefix": "c"
+    },
+
+
+}
