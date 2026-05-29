@@ -428,6 +428,10 @@ data_mode = st.sidebar.radio(
     ]
 )
 
+
+if st.sidebar.button("🔄 Reset cache"):
+    st.cache_data.clear()
+
 # ============================================
 # 1) CSV MODE (TU FLUJO ORIGINAL)
 # ============================================
