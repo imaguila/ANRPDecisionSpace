@@ -460,6 +460,7 @@ else:
     problem_name = st.sidebar.selectbox(
         "Problem",
         list(PROBLEMAS.keys())
+        key="problem_selector"
     )
 
     config = PROBLEMAS[problem_name]
