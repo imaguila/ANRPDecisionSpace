@@ -32,7 +32,13 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # ---------------------------------
     if color_col and "highlight" in df.columns:
         if df["highlight"].any():  # solo si hay selección activa
-            df["_color_visual"] = df[color_col].astype(str)
+
+
+            df["_color_visual"] = df[color_col]
+
+            # Solo cambiar los NO seleccionados
+            df.loc[~df["highlight"], "_color_visual"] = np.nan
+
             df.loc[~df["highlight"], "_color_visual"] = "Not selected"
             color_col = "_color_visual"
 
