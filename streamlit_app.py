@@ -32,17 +32,20 @@ def compute_knee(df, x, y):
         distances.append(dist)
 
     
+
     distances = np.array(distances)
 
     if distances.max() > distances.min():
         distances = (distances - distances.min()) / (distances.max() - distances.min())
 
-    # -------------------------------
-    # 🔥 INVERTIR (más alto = mejor knee)
-    # -------------------------------
+    # 🔥 AUMENTAR CONTRASTE (ESTA ES LA MAGIA)
+    distances = distances ** 4
+
+    # invertir para que knee alta = valor alto
     distances = 1.0 - distances
 
     return distances.tolist()
+
 
 
 
