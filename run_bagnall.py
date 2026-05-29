@@ -5,7 +5,7 @@ problema = "BAGNALL"
 
 # 👇 eliges indicadores
 indicadores = [
-    "throughput",
+    "score",
     "productivity",
     "squandering"
 ]

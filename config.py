@@ -28,7 +28,7 @@ PROBLEMAS = {
 
         # ✅ NUEVO: recomendados
         "indicadores_default": [
-            "throughput",
+            "score",
             "productivity",
             "squandering"
         ]
@@ -41,7 +41,7 @@ PROBLEMAS = {
         "num_req": 35,
         "stakeholders_prefix": "c",
         "indicadores_default": [
-            "throughput",
+            "score",
             "productivity",
             "squandering"
         ]
@@ -54,7 +54,7 @@ PROBLEMAS = {
         "num_req": 83,
         "stakeholders_prefix": "c", 
         "indicadores_default": [
-            "throughput",
+            "score",
             "productivity",
             "squandering"
         ]

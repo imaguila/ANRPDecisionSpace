@@ -77,7 +77,7 @@ REQUISITOS = {
     "response": ["time", "effort"],
     "opportunity": ["satisfaction", "time"],
     "usage_efficiency": ["prevalence","cost"],
-    "throughput": []
+    "score": []
 }
 
 
