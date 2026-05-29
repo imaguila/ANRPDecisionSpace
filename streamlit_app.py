@@ -31,15 +31,9 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # Highlight visual → gris para no seleccionados
     # ---------------------------------
     if color_col and "highlight" in df.columns:
-
         if df["highlight"].any():  # solo si hay selección activa
-
-            df["_color_visual"] = df[color_col]
-
+            df["_color_visual"] = df[color_col].astype(str)
             df.loc[~df["highlight"], "_color_visual"] = "Not selected"
-
-            df["_color_visual"] = df["_color_visual"].astype(str)
-
             color_col = "_color_visual"
 
     # -----------------------------
