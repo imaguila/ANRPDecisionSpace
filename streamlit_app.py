@@ -50,14 +50,15 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     is_discrete = False
 
     if color_col and color_col in df.columns:
-        
+
         if color_col == "group_label":
             is_discrete = True
             df[color_col] = df[color_col].astype(str)
 
-        elif df[color_col].nunique() < 20:
+        elif pd.api.types.is_object_dtype(df[color_col]):
             is_discrete = True
             df[color_col] = df[color_col].astype(str)
+
 
 
     # -----------------------------
