@@ -11,7 +11,7 @@ PROBLEMAS = {
         "indicadores_default": [
             "scope",
             "productivity",
-            "squandering"
+            "squandering",
         ]
     },
 
@@ -26,20 +26,7 @@ PROBLEMAS = {
             "productivity",
             "squandering",
             "annoyance",
-            "dirtiness"
-        ]
-    },
-
-    "MOTOROLA": {
-        "path_sol": "data/MOTOROLA/motorolasoluciones.txt",
-        "path_prob": "data/MOTOROLA/motoroladataset.txt",
-        "metricas": ["satisfaction", "effort"],
-        "num_req": 35,
-        "stakeholders_prefix": "c",
-        "indicadores_default": [
-            "scope",
-            "productivity",
-            "squandering"
+            "dirtiness",
         ]
     },
 
@@ -52,7 +39,7 @@ PROBLEMAS = {
         "indicadores_default": [
             "scope",
             "productivity",
-            "squandering"
+            "squandering",
         ]
     },
 
@@ -67,7 +54,7 @@ PROBLEMAS = {
             "productivity",
             "squandering",
             "response",
-            "opportunity"
+            "opportunity",
         ]
     },
     "REQ100": {
@@ -79,7 +66,7 @@ PROBLEMAS = {
         "indicadores_default": [
             "scope",
             "productivity",
-            "squandering"
+            "squandering",
         ]
     },
 
@@ -93,7 +80,7 @@ PROBLEMAS = {
         "num_req": 22,
         "stakeholders_prefix": None,
         "indicadores_default": [
-            "throughput",
+            "scope",
             "productivity",
             "squandering",
             "effectiveness",
@@ -102,7 +89,19 @@ PROBLEMAS = {
             "stickiness",
             "fragility",
             "robustness",
-            "usage_efficiency"
+            "usage_efficiency",
+        ]
+    },
+    "MOTOROLA": {
+        "path_sol": "data/MOTOROLA/motorolasoluciones.txt",
+        "path_prob": "data/MOTOROLA/motoroladataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 35,
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
         ]
     },
 
