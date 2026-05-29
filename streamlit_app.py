@@ -665,36 +665,20 @@ mode_label = st.sidebar.selectbox(
     "Selection mode",
     [
         "None",
-
-        # 🔵 Preference-based
         "🔵 Preference - Weighted-Sum",
         "🔵 Preference - TOPSIS",
-    
-        # 🟢 Diversity
         "🟢 Diversity - Clustering",
-
-        # 🟣 Efficiency
-        "🟣 Efficiency - Knee",
-
-        # 🟠 Problem-specific
+        "🟣 Efficiency - Ratio",
         "🟠 Problem-specific - Ranking-based",
     ]
 )
 
 mode_map = {
     "None": "None",
-
-    # Preference
     "🔵 Preference - Weighted-Sum": "Weighted-Sum",
     "🔵 Preference - TOPSIS": "TOPSIS",
-
-    # Diversity
     "🟢 Diversity - Clustering": "Clustering",
-
-    # Efficiency
-    "🟣 Efficiency - Knee": "Knee",
-
-    # Problem-specific
+    "🟣 Efficiency - Ratio": "Efficiency-Ratio",
     "🟠 Problem-specific - Ranking-based": "Ranking-based",
 }
 
@@ -878,6 +862,32 @@ elif mode == "Clustering":
         color_col = "group_label"
 
 
+# --------------------------------------------
+# EFFICIENCY RATIO (efficiency-based)
+# --------------------------------------------
+elif mode == "Efficiency-Ratio":
+
+    st.sidebar.markdown("### Efficiency (Benefit/Cost)")
+
+    benefit = st.sidebar.selectbox("Benefit (maximize)", available_qual, key="eff_benefit")
+    cost = st.sidebar.selectbox("Cost (minimize)", available_metrics, key="eff_cost")
+
+    df_eff = selected_df.copy()
+
+    # Evitar división por cero
+    df_eff["efficiency_score"] = df_eff[benefit] / (df_eff[cost] + 1e-9)
+
+    n = st.sidebar.slider(
+        "Top N efficient solutions",
+        1,
+        min(50, len(df_eff)),
+        10,
+        key="eff_topn"
+    )
+
+    selected_df = df_eff.sort_values("efficiency_score", ascending=False).head(n)
+
+    color_col = "efficiency_score"
 
 
 # --------------------------------------------
