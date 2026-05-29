@@ -17,7 +17,6 @@ st.set_page_config(layout="wide")
 st.title("Assisted Next Release Problem")
 DATA_PATH = "data"
 
-
 # --------------------------------------------
 # FUNCIONES CORE
 # --------------------------------------------
@@ -47,8 +46,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # (discreto: grupos como ranking/clustering)
     # -----------------------------
     discrete_cols = {"count", "cluster",  "group_label"}
-
-
 
     is_discrete = False
 
@@ -508,7 +505,6 @@ else:
 
     st.sidebar.success(f"{len(df)} solutions generated")
 
-
 # --------------------------------------------
 # METRICS
 # --------------------------------------------
@@ -539,8 +535,6 @@ if st.sidebar.button("Show/Hide comparison view"):
     st.rerun()
 
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
-
-
 
 
 # --------------------------------------------
@@ -597,12 +591,9 @@ for m in available_qual:
                 (filtered_df[m] <= val_range[1])
             ]
 
-
-
 # --------------------------------------------
 # SELECCIÓN
-# --------------------------------------------
-# 
+# -------------------------------------------- 
 
 mode_label = st.sidebar.selectbox(
     "Selection mode",
@@ -654,8 +645,6 @@ if mode == "Weighted-Sum":
         selected_df = selected_df.sort_values("score", ascending=False).head(n)
 
         color_col = "score"   # ✅ solo aquí
-
-
 
 
 # --------------------------------------------
@@ -738,8 +727,6 @@ elif mode == "Clustering":
     )
 
     if cluster_metrics and len(cluster_metrics) >= 2:
-
-
         # -------------------------------
         # Preparar datos
         # -------------------------------
@@ -860,8 +847,6 @@ elif mode == "Ranking-based":
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
         threshold = max(1, len(sel_metrics) - 1)
 
-
-
         selected_df["count"] = selected_df["count"].astype(int)
         selected_df["count_str"] = selected_df["count"].astype(str)
 
@@ -873,14 +858,11 @@ elif mode == "Ranking-based":
         )
         color_col = "group_label"
 
-
-
 # --------------------------------------------
 # NONE
 # --------------------------------------------
 else:
     color_col = None
-
 
 # --------------------------------------------
 # HIGHLIGHT + LABELS
@@ -901,7 +883,6 @@ else:
 # --------------------------------------------
 # GRÁFICOS
 # --------------------------------------------
-# color_col = "count" if "count" in selected_df.columns else None
 
 for i, group in enumerate(st.session_state.groups):
     st.subheader(f"Trade-off Map {i+1}")
@@ -931,10 +912,7 @@ for i, group in enumerate(st.session_state.groups):
 
     st.session_state.groups[i] = [x, y, size]
 
-
-
     df_plot = selected_df.copy()
-
 
     cA, cB = st.columns(2)
     with cA:
