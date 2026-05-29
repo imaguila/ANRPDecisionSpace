@@ -47,9 +47,8 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # -----------------------------
     # Detectar discreto / continuo
     # -----------------------------
-    discrete_cols = {"count", "cluster", "group_label"}
-
     is_discrete = False
+
     if color_col and color_col in df.columns:
 
         if color_col == "group_label":
@@ -61,28 +60,15 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             df[color_col] = df[color_col].astype(str)
 
     # -----------------------------
-    # 🎯 CASO 1: CONTINUO + highlight
-    # → solución correcta: doble capa
+    # ✅ CASO 1: CONTINUO + selección → OPACIDAD (CLAVE)
     # -----------------------------
     if (not is_discrete) and ("highlight" in df.columns) and df["highlight"].any():
 
-        df_sel = df[df["highlight"] == True]
-        df_rest = df[df["highlight"] == False]
+        # mantener colores originales, solo bajar intensidad
+        df["_opacity"] = np.where(df["highlight"], 1.0, 0.25)
 
-        # capa base (gris claro)
         fig = px.scatter(
-            df_rest,
-            x=x,
-            y=y,
-            size=size,
-            color_discrete_sequence=["rgba(180,180,180,0.4)"],  # gris suave
-            text="label" if show_ids else None,
-            hover_data=hover_data
-        )
-
-        # capa seleccionados (colores reales)
-        fig_sel = px.scatter(
-            df_sel,
+            df,
             x=x,
             y=y,
             size=size,
@@ -92,13 +78,17 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
             hover_data=hover_data
         )
 
-        fig.add_traces(fig_sel.data)
+        # aplicar opacidad punto a punto
+        fig.update_traces(
+            marker=dict(opacity=df["_opacity"])
+        )
 
-        fig.update_layout(legend_title_text=color_col if color_col else "")
+        fig.update_layout(
+            legend_title_text=color_col if color_col else ""
+        )
 
     # -----------------------------
-    # 🎯 CASO 2: DISCRETO (clustering/ranking)
-    # → sigue usando mapa de colores
+    # ✅ CASO 2: DISCRETO (clustering / ranking)
     # -----------------------------
     elif is_discrete:
 
@@ -111,7 +101,9 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
         fig = px.scatter(
             df,
-            x=x, y=y, size=size,
+            x=x,
+            y=y,
+            size=size,
             color=color_col,
             text="label" if show_ids else None,
             hover_data=hover_data,
@@ -121,20 +113,24 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         fig.update_layout(legend_title_text="Groups")
 
     # -----------------------------
-    # 🎯 CASO 3: CONTINUO NORMAL (sin selección)
+    # ✅ CASO 3: CONTINUO NORMAL (sin selección)
     # -----------------------------
     else:
 
         fig = px.scatter(
             df,
-            x=x, y=y, size=size,
+            x=x,
+            y=y,
+            size=size,
             color=color_col,
             text="label" if show_ids else None,
             hover_data=hover_data,
             color_continuous_scale=px.colors.sequential.Viridis
         )
 
-        fig.update_layout(legend_title_text=color_col if color_col else "")
+        fig.update_layout(
+            legend_title_text=color_col if color_col else ""
+        )
 
     # -----------------------------
     # Estética general
@@ -148,6 +144,8 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
     st.plotly_chart(fig, use_container_width=True, key=key)
 
+
+    
 def plot_radar(selected_df, available_metrics, group_col=None):
     st.markdown("---")
 
