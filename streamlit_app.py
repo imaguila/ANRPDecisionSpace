@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import os
+import numpy as np
 
 # --------------------------------------------
 # CONFIGURACIÓN
@@ -10,6 +11,29 @@ import os
 st.set_page_config(layout="wide")
 st.title("Assisted Next Release Problem")
 DATA_PATH = "data"
+
+## Funcion auxiliar para knee
+def compute_knee(df, x, y):
+    pts = df[[x, y]].values
+
+    # extremos
+    p1 = pts[np.argmin(pts[:, 0])]
+    p2 = pts[np.argmax(pts[:, 0])]
+
+    # línea
+    line_vec = p2 - p1
+    line_vec = line_vec / np.linalg.norm(line_vec)
+
+    distances = []
+
+    for p in pts:
+        proj = p1 + np.dot(p - p1, line_vec) * line_vec
+        dist = np.linalg.norm(p - proj)
+        distances.append(dist)
+
+    return distances
+
+
 
 # --------------------------------------------
 # FUNCIONES CORE
@@ -615,31 +639,51 @@ for m in available_qual:
 # SELECCIÓN
 # --------------------------------------------
 # 
-# --------------------------------------------
-# SELECCIÓN
-# --------------------------------------------
-# --------------------------------------------
-# SELECCIÓN
-# --------------------------------------------
 
 mode_label = st.sidebar.selectbox(
     "Selection mode",
     [
         "None",
+
+        # 🔵 Preference-based
         "🔵 Preference - Weighted-Sum",
-        "🔵 Preference - Ranking-based",
         "🔵 Preference - TOPSIS",
-        "🟢 Diversity - Clustering"
+
+        # ⚪ No-preference
+        "⚪ No-preference - Closest-to-Ideal",
+
+        # 🟢 Diversity
+        "🟢 Diversity - Clustering",
+
+        # 🟣 Efficiency
+        "🟣 Efficiency - Knee",
+
+        # 🟠 Problem-specific
+        "🟠 Problem-specific - Ranking-based",
     ]
 )
 
 mode_map = {
     "None": "None",
+
+    # Preference
     "🔵 Preference - Weighted-Sum": "Weighted-Sum",
-    "🔵 Preference - Ranking-based": "Ranking-based",
     "🔵 Preference - TOPSIS": "TOPSIS",
+
+    # No-preference
+    "⚪ No-preference - Closest-to-Ideal": "Closest-Ideal",
+
+    # Diversity
     "🟢 Diversity - Clustering": "Clustering",
+
+    # Efficiency
+    "🟣 Efficiency - Knee": "Knee",
+
+    # Problem-specific
+    "🟠 Problem-specific - Ranking-based": "Ranking-based",
 }
+
+
 
 mode = mode_map[mode_label]
 
@@ -669,33 +713,6 @@ if mode == "Weighted-Sum":
         selected_df = selected_df.sort_values("score", ascending=False).head(n)
 
         color_col = "score"   # ✅ solo aquí
-
-
-# --------------------------------------------
-# RANKING BASED (count SIN NORMALIZAR)
-# --------------------------------------------
-elif mode == "Ranking-based":
-    sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
-    n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
-    if sel_metrics:
-        ranks = []
-        for m in sel_metrics:
-            goal = st.sidebar.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"g_{m}")
-            ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
-        counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
-        selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
-        threshold = max(1, len(sel_metrics) - 1)
-
-
-
-        selected_df["count"] = selected_df["count"].astype(int)
-        selected_df["count_str"] = selected_df["count"].astype(str)
-
-        # Tamaño por grupo (Matches)
-        group_sizes = selected_df.groupby("count_str")["id"].transform("size")
-        selected_df["group_label"] = "Matches = " + selected_df["count_str"] + " (n=" + group_sizes.astype(str) + ")"
-
-        color_col = "group_label"
 
 
 
@@ -754,6 +771,74 @@ elif mode == "TOPSIS":
         selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
 
         color_col = "score_topsis"   # ✅ solo aquí
+
+# --------------------------------------------
+# CLOSEST TO IDEAL (no-preference)
+# --------------------------------------------
+elif mode == "Closest-Ideal":
+
+    st.sidebar.markdown("### Closest to Ideal (no-preference)")
+
+    sel_metrics = st.sidebar.multiselect(
+        "Metrics",
+        available_qual,
+        key="ideal_metrics"
+    )
+
+    if sel_metrics:
+
+        goals = {}
+        for m in sel_metrics:
+            goals[m] = st.sidebar.selectbox(
+                f"Goal for {m}",
+                ["Maximize", "Minimize"],
+                key=f"ideal_goal_{m}"
+            )
+
+        df_ideal = selected_df.copy()
+
+        # -------------------------------
+        # Normalización
+        # -------------------------------
+        for m in sel_metrics:
+            mi, ma = df_ideal[m].min(), df_ideal[m].max()
+            if ma > mi:
+                df_ideal[m] = (df_ideal[m] - mi) / (ma - mi)
+            else:
+                df_ideal[m] = 0.0
+
+        # -------------------------------
+        # Ideal point
+        # -------------------------------
+        ideal = {}
+        for m in sel_metrics:
+            if goals[m] == "Maximize":
+                ideal[m] = 1.0
+            else:
+                ideal[m] = 0.0
+
+        # -------------------------------
+        # Distancia al ideal
+        # -------------------------------
+        distances = []
+        for _, row in df_ideal.iterrows():
+            d = sum((row[m] - ideal[m])**2 for m in sel_metrics) ** 0.5
+            distances.append(d)
+
+        df_ideal["ideal_score"] = distances
+
+        # Menor distancia = mejor
+        n = st.sidebar.slider(
+            "Top N",
+            1,
+            min(50, len(df_ideal)),
+            10,
+            key="ideal_topn"
+        )
+
+        selected_df = df_ideal.sort_values("ideal_score").head(n)
+
+        color_col = "ideal_score"
 
 # ----------------------------------
 # DIVERSITY METHODS
@@ -847,6 +932,34 @@ elif mode == "Clustering":
 
 
 
+
+# --------------------------------------------
+# RANKING BASED (count SIN NORMALIZAR)
+# --------------------------------------------
+elif mode == "Ranking-based":
+    sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
+    n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
+    if sel_metrics:
+        ranks = []
+        for m in sel_metrics:
+            goal = st.sidebar.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"g_{m}")
+            ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
+        counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
+        selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
+        threshold = max(1, len(sel_metrics) - 1)
+
+
+
+        selected_df["count"] = selected_df["count"].astype(int)
+        selected_df["count_str"] = selected_df["count"].astype(str)
+
+        # Tamaño por grupo (Matches)
+        group_sizes = selected_df.groupby("count_str")["id"].transform("size")
+        selected_df["group_label"] = "Matches = " + selected_df["count_str"] + " (n=" + group_sizes.astype(str) + ")"
+
+        color_col = "group_label"
+
+
 # --------------------------------------------
 # NONE
 # --------------------------------------------
@@ -902,6 +1015,13 @@ for i, group in enumerate(st.session_state.groups):
         size = st.selectbox(f"Size {i}", s_opts, index=s_opts.index(curr_s), key=f"s_{i}")
 
     st.session_state.groups[i] = [x, y, size]
+
+
+    if mode == "Knee":
+        knee_scores = compute_knee(selected_df, x, y)
+        selected_df["knee_score"] = knee_scores
+        color_col = "knee_score"
+
 
     cA, cB = st.columns(2)
     with cA:
