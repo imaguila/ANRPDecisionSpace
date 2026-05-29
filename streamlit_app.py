@@ -27,6 +27,20 @@ def load_csv(path):
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # Trabajar sobre copia para no ensuciar el DF original
     df = df.copy()
+    # ---------------------------------
+    # Highlight visual → gris para no seleccionados
+    # ---------------------------------
+    if color_col and "highlight" in df.columns:
+
+        if df["highlight"].any():  # solo si hay selección activa
+
+            df["_color_visual"] = df[color_col]
+
+            df.loc[~df["highlight"], "_color_visual"] = "Not selected"
+
+            df["_color_visual"] = df["_color_visual"].astype(str)
+
+            color_col = "_color_visual"
 
     # -----------------------------
     # Hover dinámico
@@ -65,10 +79,18 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # Crear mapa de colores estable para categorías (si es discreto)
     # -----------------------------
     color_map = None
+
     if is_discrete and color_col and color_col in df.columns:
+
         unique_vals = sorted(df[color_col].dropna().unique().tolist())
         palette = px.colors.qualitative.Plotly
-        color_map = {v: palette[i % len(palette)] for i, v in enumerate(unique_vals)}
+
+        color_map = {}
+        for i, v in enumerate(unique_vals):
+            if v == "Not selected":
+                color_map[v] = "#d3d3d3"  # gris fijo
+            else:
+                color_map[v] = palette[i % len(palette)]
 
     # -----------------------------
     # 1) Traza base: TODOS los puntos coloreados por grupo o gradiente
@@ -96,36 +118,6 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
         )
         fig.update_layout(legend_title_text=color_col if color_col else "")
 
-    # -----------------------------
-    # 2) Overlay: SOLO highlights como triángulos con borde negro
-    #    (una única entrada en la leyenda: "Unmasked")
-    # -----------------------------
-    if "highlight" in df.columns and df["highlight"].any():
-        df_hi = df[df["highlight"] == True].copy()
-
-        # Si hay grupos discretos, usar el mismo color del grupo en el triángulo
-        if is_discrete and color_map and color_col in df_hi.columns:
-            tri_colors = df_hi[color_col].astype(str).map(color_map).fillna("#000000")
-        else:
-            # Si es continuo (score), ponemos triángulos negros (o puedes elegir otro)
-            tri_colors = "#000000"
-
-        fig.add_trace(
-            go.Scatter(
-                x=df_hi[x],
-                y=df_hi[y],
-                mode="markers",
-                name="Unmasked",
-                marker=dict(
-                    symbol="triangle-up",
-                    size=14,
-                    color=tri_colors,
-                    line=dict(width=2, color="black")
-                ),
-                showlegend=True,
-                hoverinfo="skip"  # el hover ya lo da la traza base
-            )
-        )
 
     # -----------------------------
     # Estética
