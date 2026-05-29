@@ -48,11 +48,20 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # -----------------------------
     discrete_cols = {"count", "cluster",  "group_label"}
 
+
+
     is_discrete = False
+
     if color_col and color_col in df.columns:
-        if color_col in discrete_cols or pd.api.types.is_object_dtype(df[color_col]):
+        
+        if color_col == "group_label":
             is_discrete = True
             df[color_col] = df[color_col].astype(str)
+
+        elif df[color_col].nunique() < 20:
+            is_discrete = True
+            df[color_col] = df[color_col].astype(str)
+
 
     # -----------------------------
     # Crear mapa de colores estable para categorías (si es discreto)
@@ -791,7 +800,7 @@ elif mode == "Clustering":
             "Cluster " + selected_df["cluster"].astype(str) + 
             " (n=" + cluster_sizes.astype(str) + ")"
         )
-
+        color_col = "group_label"
 
 
 
@@ -862,6 +871,7 @@ elif mode == "Ranking-based":
             "Matches = " + selected_df["count"].astype(str) + 
             " (n=" + group_sizes.astype(str) + ")"
         )
+        color_col = "group_label"
 
 
 
