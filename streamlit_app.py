@@ -7,7 +7,8 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import silhouette_score
-
+from config import PROBLEMAS
+from problem import run_pipeline, leer_soluciones, REQUISITOS
 
 # --------------------------------------------
 # CONFIGURACIÓN
@@ -23,7 +24,6 @@ DATA_PATH = "data"
 @st.cache_data
 def load_csv(path):
     return pd.read_csv(path)
-
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # Trabajar sobre copia para no ensuciar el DF original
@@ -339,8 +339,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         if not req_cols or not st_cols:
             st.info("Required data columns (req_ or stcov_) missing.")
         else:
-            import numpy as np
-            
+          
             alignment_data = []
             # Generamos las filas de los Stakeholders normales
             for st_name in st_cols:
@@ -418,8 +417,6 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 # DATA SOURCE + DATA PREPARATION
 # --------------------------------------------
 
-from config import PROBLEMAS
-from problem import run_pipeline, leer_soluciones, REQUISITOS
 
 st.sidebar.markdown("## ⚙️ Data source")
 
@@ -801,17 +798,28 @@ elif mode == "Clustering":
 
 
 
-# --------------------------------------------
-# EFFICIENCY RATIO (efficiency-based)
-# --------------------------------------------
 elif mode == "Efficiency-Ratio":
 
     st.sidebar.markdown("### Efficiency (Benefit/Cost)")
 
-    benefit = st.sidebar.selectbox("Benefit (maximize)", available_qual, key="eff_benefit")
-    cost = st.sidebar.selectbox("Cost (minimize)", available_metrics, key="eff_cost")
+    benefit = st.sidebar.selectbox(
+        "Benefit (maximize)", 
+        available_qual, 
+        key="eff_benefit"
+    )
 
-    # ✅ 1. PRIMERO el slider
+    cost = st.sidebar.selectbox(
+        "Cost (minimize)", 
+        available_metrics, 
+        key="eff_cost"
+    )
+
+    # protección
+    if benefit == cost:
+        st.warning("Benefit and Cost must be different metrics")
+        st.stop()
+
+    # slider primero
     n = st.sidebar.slider(
         "Top N efficient solutions",
         1,
@@ -820,13 +828,14 @@ elif mode == "Efficiency-Ratio":
         key="eff_topn"
     )
 
-    # ✅ 2. luego calcular
+    # calcular score
     selected_df = selected_df.copy()
     selected_df["efficiency_score"] = selected_df[benefit] / (selected_df[cost] + 1e-9)
 
-    # ✅ 3. luego ordenar y filtrar
+    # ordenar
     selected_df = selected_df.sort_values("efficiency_score", ascending=False).head(n)
 
+    color_col = "efficiency_score"
 
 # --------------------------------------------
 # RANKING BASED (count SIN NORMALIZAR)
