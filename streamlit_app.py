@@ -31,7 +31,19 @@ def compute_knee(df, x, y):
         dist = np.linalg.norm(p - proj)
         distances.append(dist)
 
-    return distances
+    
+    distances = np.array(distances)
+
+    if distances.max() > distances.min():
+        distances = (distances - distances.min()) / (distances.max() - distances.min())
+
+    # -------------------------------
+    # 🔥 INVERTIR (más alto = mejor knee)
+    # -------------------------------
+    distances = 1.0 - distances
+
+    return distances.tolist()
+
 
 
 
@@ -648,10 +660,7 @@ mode_label = st.sidebar.selectbox(
         # 🔵 Preference-based
         "🔵 Preference - Weighted-Sum",
         "🔵 Preference - TOPSIS",
-
-        # ⚪ No-preference
-        "⚪ No-preference - Closest-to-Ideal",
-
+    
         # 🟢 Diversity
         "🟢 Diversity - Clustering",
 
@@ -669,9 +678,6 @@ mode_map = {
     # Preference
     "🔵 Preference - Weighted-Sum": "Weighted-Sum",
     "🔵 Preference - TOPSIS": "TOPSIS",
-
-    # No-preference
-    "⚪ No-preference - Closest-to-Ideal": "Closest-Ideal",
 
     # Diversity
     "🟢 Diversity - Clustering": "Clustering",
@@ -771,74 +777,6 @@ elif mode == "TOPSIS":
         selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
 
         color_col = "score_topsis"   # ✅ solo aquí
-
-# --------------------------------------------
-# CLOSEST TO IDEAL (no-preference)
-# --------------------------------------------
-elif mode == "Closest-Ideal":
-
-    st.sidebar.markdown("### Closest to Ideal (no-preference)")
-
-    sel_metrics = st.sidebar.multiselect(
-        "Metrics",
-        available_qual,
-        key="ideal_metrics"
-    )
-
-    if sel_metrics:
-
-        goals = {}
-        for m in sel_metrics:
-            goals[m] = st.sidebar.selectbox(
-                f"Goal for {m}",
-                ["Maximize", "Minimize"],
-                key=f"ideal_goal_{m}"
-            )
-
-        df_ideal = selected_df.copy()
-
-        # -------------------------------
-        # Normalización
-        # -------------------------------
-        for m in sel_metrics:
-            mi, ma = df_ideal[m].min(), df_ideal[m].max()
-            if ma > mi:
-                df_ideal[m] = (df_ideal[m] - mi) / (ma - mi)
-            else:
-                df_ideal[m] = 0.0
-
-        # -------------------------------
-        # Ideal point
-        # -------------------------------
-        ideal = {}
-        for m in sel_metrics:
-            if goals[m] == "Maximize":
-                ideal[m] = 1.0
-            else:
-                ideal[m] = 0.0
-
-        # -------------------------------
-        # Distancia al ideal
-        # -------------------------------
-        distances = []
-        for _, row in df_ideal.iterrows():
-            d = sum((row[m] - ideal[m])**2 for m in sel_metrics) ** 0.5
-            distances.append(d)
-
-        df_ideal["ideal_score"] = distances
-
-        # Menor distancia = mejor
-        n = st.sidebar.slider(
-            "Top N",
-            1,
-            min(50, len(df_ideal)),
-            10,
-            key="ideal_topn"
-        )
-
-        selected_df = df_ideal.sort_values("ideal_score").head(n)
-
-        color_col = "ideal_score"
 
 # ----------------------------------
 # DIVERSITY METHODS
