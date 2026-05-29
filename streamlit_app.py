@@ -4,6 +4,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import os
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn_extra.cluster import KMedoids
+from sklearn.metrics import silhouette_score
+
 
 # --------------------------------------------
 # CONFIGURACIÓN
@@ -11,43 +15,6 @@ import numpy as np
 st.set_page_config(layout="wide")
 st.title("Assisted Next Release Problem")
 DATA_PATH = "data"
-
-## Funcion auxiliar para knee
-def compute_knee(df, x, y):
-    pts = df[[x, y]].values
-
-    # extremos
-    p1 = pts[np.argmin(pts[:, 0])]
-    p2 = pts[np.argmax(pts[:, 0])]
-
-    # línea
-    line_vec = p2 - p1
-    line_vec = line_vec / np.linalg.norm(line_vec)
-
-    distances = []
-
-    for p in pts:
-        proj = p1 + np.dot(p - p1, line_vec) * line_vec
-        dist = np.linalg.norm(p - proj)
-        distances.append(dist)
-
-    
-
-    distances = np.array(distances)
-
-    if distances.max() > distances.min():
-        distances = (distances - distances.min()) / (distances.max() - distances.min())
-
-    # 🔥 AUMENTAR CONTRASTE (ESTA ES LA MAGIA)
-    distances = distances ** 4
-
-    # invertir para que knee alta = valor alto
-    distances = 1.0 - distances
-
-    return distances.tolist()
-
-
-
 
 
 # --------------------------------------------
@@ -57,11 +24,6 @@ def compute_knee(df, x, y):
 def load_csv(path):
     return pd.read_csv(path)
 
-def normalize_series(series):
-    min_val, max_val = series.min(), series.max()
-    if max_val > min_val:
-        return (series - min_val) / (max_val - min_val)
-    return series * 0.0
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     import pandas as pd
@@ -582,22 +544,6 @@ if st.sidebar.button("Show/Hide comparison view"):
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 
 
-from config import PROBLEMAS
-from problem import run_pipeline, leer_soluciones, REQUISITOS
-
-
-# -------------------------------
-# Generar dataset
-# -------------------------------
-@st.cache_data
-def build_df(problem_name, selected_indicators):
-    return run_pipeline(problem_name, selected_indicators)
-
-df = build_df(problem_name, selected_indicators)
-
-st.sidebar.success(f"{len(df)} solutions loaded")
-
-
 
 
 # --------------------------------------------
@@ -796,9 +742,6 @@ elif mode == "Clustering":
 
     if cluster_metrics and len(cluster_metrics) >= 2:
 
-        from sklearn.preprocessing import StandardScaler
-        from sklearn_extra.cluster import KMedoids
-        from sklearn.metrics import silhouette_score
 
         # -------------------------------
         # Preparar datos
@@ -871,10 +814,11 @@ elif mode == "Efficiency-Ratio":
     benefit = st.sidebar.selectbox("Benefit (maximize)", available_qual, key="eff_benefit")
     cost = st.sidebar.selectbox("Cost (minimize)", available_metrics, key="eff_cost")
 
-    df_eff = selected_df.copy()
 
-    # Evitar división por cero
-    df_eff["efficiency_score"] = df_eff[benefit] / (df_eff[cost] + 1e-9)
+    selected_df = selected_df.copy()
+    selected_df["efficiency_score"] = selected_df[benefit] / (selected_df[cost] + 1e-9)
+
+    selected_df = selected_df.sort_values("efficiency_score", ascending=False).head(n)
 
     n = st.sidebar.slider(
         "Top N efficient solutions",
@@ -886,7 +830,6 @@ elif mode == "Efficiency-Ratio":
 
     selected_df = df_eff.sort_values("efficiency_score", ascending=False).head(n)
 
-    color_col = "efficiency_score"
 
 
 # --------------------------------------------
@@ -976,14 +919,8 @@ for i, group in enumerate(st.session_state.groups):
 
     df_plot = selected_df.copy()
 
-    if mode == "Knee":
-        
-        knee_scores = compute_knee(df_plot, x, y)
-        df_plot["knee_score"] = knee_scores
-        color_col_plot = "knee_score"
-        st.write("DEBUG knee stats:", df_plot["knee_score"].describe())
-    else:
-        color_col_plot = color_col
+
+    color_col_plot = color_col
 
     cA, cB = st.columns(2)
     with cA:
