@@ -112,7 +112,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     if color_col == "knee_score":
         use_continuous = True
 
-    if is_discrete:
+    if is_discrete and not use_continuous:
         fig = px.scatter(
             df,
             x=x, y=y, size=size,
