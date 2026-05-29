@@ -1,24 +1,5 @@
 PROBLEMAS = {
 
-    "THEME": {
-        "path_sol": "data/THEME/themesoluciones.txt",
-        "path_prob": None,
-        "metricas": [
-            "satisfaction", "prevalence", "cost",
-            "dissatisfaction", "inestability", "effort"
-        ],
-        "num_req": 22,
-        "stakeholders_prefix": None
-    },
-
-    "MSLITE": {
-        "path_sol": "data/MSLITE/mslitesoluciones.txt",
-        "path_prob": None,
-        "metricas": ["satisfaction", "effort", "dissatisfaction"],
-        "num_req": 16,
-        "stakeholders_prefix": None
-    },
-
     "BAGNALL": {
         "path_sol": "data/BAGNALL/bagnallsoluciones.txt",
         "path_prob": "data/BAGNALL/bagnalldataset.txt",
@@ -31,6 +12,21 @@ PROBLEMAS = {
             "scope",
             "productivity",
             "squandering"
+        ]
+    },
+
+    "MSLITE": {
+        "path_sol": "data/MSLITE/mslitesoluciones.txt",
+        "path_prob": None,
+        "metricas": ["satisfaction", "effort", "dissatisfaction"],
+        "num_req": 16,
+        "stakeholders_prefix": None,
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+            "annoyance",
+            "dirtiness"
         ]
     },
 
@@ -65,15 +61,49 @@ PROBLEMAS = {
         "path_prob": "data/WORDPROC/wordprocdataset.txt",
         "metricas": ["satisfaction", "effort", "time"],
         "num_req": 42,
-        "stakeholders_prefix": "cv"  # 👈 DIFERENTE
+        "stakeholders_prefix": "cv",  # 👈 DIFERENTE
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+            "response",
+            "opportunity"
+        ]
     },
     "REQ100": {
         "path_sol": "data/REQ100/req100frente.txt",
         "path_prob": "data/REQ100/req100dataset.txt",
         "metricas": ["satisfaction", "effort"],
         "num_req": 96,
-        "stakeholders_prefix": "c"
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering"
+        ]
     },
 
+    "THEME": {
+        "path_sol": "data/THEME/themesoluciones.txt",
+        "path_prob": None,
+        "metricas": [
+            "satisfaction", "prevalence", "cost",
+            "dissatisfaction", "inestability", "effort"
+        ],
+        "num_req": 22,
+        "stakeholders_prefix": None,
+        "indicadores_default": [
+            "throughput",
+            "productivity",
+            "squandering",
+            "effectiveness",
+            "dirtiness",
+            "annoyance",
+            "stickiness",
+            "fragility",
+            "robustness",
+            "usage_efficiency"
+        ]
+    },
 
 }
