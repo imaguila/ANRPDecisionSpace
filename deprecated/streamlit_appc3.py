@@ -46,7 +46,7 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     # Detectar si el color es discreto o continuo
     # (discreto: grupos como ranking/clustering)
     # -----------------------------
-    discrete_cols = {"count", "cluster",  "group_label"}
+    discrete_cols = {"count", "count_str", "cluster", "cluster_str", "group_label"}
 
     is_discrete = False
     if color_col and color_col in df.columns:
@@ -68,7 +68,12 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     #    (NO usamos symbol aquí para no mezclar leyendas)
     # -----------------------------
 
-    if is_discrete:
+    use_continuous = False
+
+    if color_col == "knee_score":
+        use_continuous = True
+
+    if is_discrete and not use_continuous:
         fig = px.scatter(
             df,
             x=x, y=y, size=size,
@@ -785,13 +790,11 @@ elif mode == "Clustering":
         selected_df["cluster"] = labels.astype(int)
         selected_df["cluster_str"] = selected_df["cluster"].astype(str)
 
-        cluster_sizes = selected_df.groupby("cluster")["id"].transform("size")
+        # Tamaño por cluster
+        cluster_sizes = selected_df.groupby("cluster_str")["id"].transform("size")
+        selected_df["group_label"] = "Cluster " + selected_df["cluster_str"] + " (n=" + cluster_sizes.astype(str) + ")"
 
-        selected_df["group_label"] = (
-            "Cluster " + selected_df["cluster"].astype(str) + 
-            " (n=" + cluster_sizes.astype(str) + ")"
-        )
-
+        color_col = "group_label"
 
 
 
@@ -827,9 +830,7 @@ elif mode == "Efficiency-Ratio":
 
     # calcular score
     selected_df = selected_df.copy()
- 
-    cost_safe = selected_df[cost].replace(0, 1e-9)
-    selected_df["efficiency_score"] = selected_df[benefit] / cost_safe
+    selected_df["efficiency_score"] = selected_df[benefit] / (selected_df[cost] + 1e-9)
 
     # ordenar
     selected_df = selected_df.sort_values("efficiency_score", ascending=False).head(n)
@@ -856,13 +857,11 @@ elif mode == "Ranking-based":
         selected_df["count"] = selected_df["count"].astype(int)
         selected_df["count_str"] = selected_df["count"].astype(str)
 
-        group_sizes = selected_df.groupby("count")["id"].transform("size")
+        # Tamaño por grupo (Matches)
+        group_sizes = selected_df.groupby("count_str")["id"].transform("size")
+        selected_df["group_label"] = "Matches = " + selected_df["count_str"] + " (n=" + group_sizes.astype(str) + ")"
 
-        selected_df["group_label"] = (
-            "Matches = " + selected_df["count"].astype(str) + 
-            " (n=" + group_sizes.astype(str) + ")"
-        )
-
+        color_col = "group_label"
 
 
 # --------------------------------------------
@@ -925,6 +924,8 @@ for i, group in enumerate(st.session_state.groups):
 
     df_plot = selected_df.copy()
 
+
+    color_col_plot = color_col
 
     cA, cB = st.columns(2)
     with cA:
