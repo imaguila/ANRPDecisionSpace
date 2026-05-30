@@ -219,7 +219,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         else:
             st.warning("Select at least 3 metrics.")
 
-    # ---------- STAKEHOLDER ----------
+ # ---------- STAKEHOLDER ----------
     with tab2:
         st.subheader("Coverage per Stakeholder")
         
@@ -234,7 +234,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         else:
 
             # ----------------------------------
-            # ✅ ordenar por relevancia (opcional)
+            # ✅ ordenar por relevancia
             # ----------------------------------
             stcov_cols = sorted(
                 stcov_cols,
@@ -243,21 +243,24 @@ def plot_radar(selected_df, available_metrics, group_col=None):
             )
 
             # ----------------------------------
-            # ✅ slider para limitar
+            # ✅ selección manual (clave)
             # ----------------------------------
-            max_st = st.slider(
-                "Number of stakeholders to display",
-                min_value=3,
-                max_value=min(15, len(stcov_cols)),
-                value=min(6, len(stcov_cols)),
-                key="st_limit"
+            selected_st = st.multiselect(
+                "Select stakeholders to display",
+                stcov_cols,
+                default=stcov_cols[:min(6, len(stcov_cols))]
             )
-            stcov_cols = stcov_cols[:max_st]
 
-            st.caption(f"Showing top {len(stcov_cols)} stakeholders")
+            # ✅ aplicar selección
+            if selected_st:
+                stcov_cols = selected_st
+            else:
+                stcov_cols = []
+
+            st.caption(f"Showing {len(stcov_cols)} stakeholders")
 
             # ----------------------------------
-            # ⚠️ asegurar mínimo para radar
+            # ⚠️ asegurar mínimo
             # ----------------------------------
             if len(stcov_cols) < 3:
                 st.warning("Need at least 3 stakeholders to create a radar chart.")
@@ -274,6 +277,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
                         cov_df[c] = 0.5
 
                 fig_cov = go.Figure()
+
                 for _, row in cov_df.iterrows():
                     val = row[stcov_cols].tolist()
                     val.append(val[0])
