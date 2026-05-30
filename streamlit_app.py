@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import os
 import numpy as np
+import hdbscan
 from sklearn.preprocessing import StandardScaler
 from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import silhouette_score
@@ -699,9 +700,18 @@ elif mode == "TOPSIS":
 # ----------------------------------
 # DIVERSITY METHODS
 # ------------------
+
 elif mode == "Clustering":
 
-    st.sidebar.markdown("### Clustering (k-medoids)")
+    st.sidebar.markdown("### Clustering")
+
+    # -------------------------------
+    # Selección de método
+    # -------------------------------
+    cluster_method = st.sidebar.radio(
+        "Clustering method",
+        ["K-Medoids", "HDBSCAN"]
+    )
 
     # -------------------------------
     # Selección de métricas
@@ -712,15 +722,8 @@ elif mode == "Clustering":
         default=available_metrics[:2]
     )
 
-    # -------------------------------
-    # Selección de k
-    # -------------------------------
-    k_mode = st.sidebar.radio(
-        "Number of clusters",
-        ["Manual", "Auto (Silhouette)"]
-    )
-
     if cluster_metrics and len(cluster_metrics) >= 2:
+
         # -------------------------------
         # Preparar datos
         # -------------------------------
@@ -729,60 +732,140 @@ elif mode == "Clustering":
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
-        # -------------------------------
-        # Selección de k
-        # -------------------------------
-        if k_mode == "Manual":
-            k = st.sidebar.slider("k clusters", 2, min(10, len(selected_df)), 3)
+        # ==========================================================
+        # ✅ CASO 1: K-MEDOIDS (tu código actual mejorado)
+        # ==========================================================
+        if cluster_method == "K-Medoids":
 
+            k_mode = st.sidebar.radio(
+                "Number of clusters",
+                ["Manual", "Auto (Silhouette)"]
+            )
+
+            if k_mode == "Manual":
+                k = st.sidebar.slider(
+                    "k clusters",
+                    2,
+                    min(10, len(selected_df)),
+                    3
+                )
+
+            else:
+                best_k = 2
+                best_score = -1
+
+                for k_test in range(2, min(10, len(X_scaled))):
+                    try:
+                        model = KMedoids(
+                            n_clusters=k_test,
+                            method='pam',
+                            random_state=123
+                        )
+                        labels_test = model.fit_predict(X_scaled)
+
+                        if len(set(labels_test)) > 1:
+                            score = silhouette_score(X_scaled, labels_test)
+
+                            if score > best_score:
+                                best_score = score
+                                best_k = k_test
+                    except:
+                        pass
+
+                k = best_k
+                st.sidebar.info(f"Optimal k (silhouette): {k}")
+
+            model = KMedoids(
+                n_clusters=k,
+                method='pam',
+                random_state=123
+            )
+
+            labels = model.fit_predict(X_scaled)
+
+        # ==========================================================
+        # ✅ CASO 2: HDBSCAN (NUEVO MÉTODO)
+        # ==========================================================
         else:
-            best_k = 2
-            best_score = -1
 
-            for k_test in range(2, min(10, len(X_scaled))):
-                try:
-                    model = KMedoids(
-                        n_clusters=k_test,
-                        method='pam',
-                        random_state=123
-                    )
-                    labels_test = model.fit_predict(X_scaled)
+            st.sidebar.markdown("#### HDBSCAN configuration")
 
-                    if len(set(labels_test)) > 1:
-                        score = silhouette_score(X_scaled, labels_test)
+            mode_size = st.sidebar.radio(
+                "Cluster size",
+                ["Auto (recommended)", "Manual"]
+            )
 
-                        if score > best_score:
-                            best_score = score
-                            best_k = k_test
+            N = len(selected_df)
 
-                except:
-                    pass
+            if mode_size == "Auto (recommended)":
 
-            k = best_k
-            st.sidebar.info(f"Optimal k (silhouette): {k}")
+                option = st.sidebar.selectbox(
+                    "Cluster granularity",
+                    ["Small (~5%)", "Medium (~10%)", "Large (~20%)"],
+                    index=1
+                )
+
+                if option == "Small (~5%)":
+                    min_cluster_size = max(2, int(0.05 * N))
+                elif option == "Medium (~10%)":
+                    min_cluster_size = max(2, int(0.10 * N))
+                else:
+                    min_cluster_size = max(2, int(0.20 * N))
+
+                st.sidebar.info(f"min_cluster_size = {min_cluster_size}")
+
+            else:
+                min_cluster_size = st.sidebar.slider(
+                    "Min cluster size",
+                    2,
+                    len(selected_df),
+                    max(2, int(0.1 * N))
+                )
+
+            model = hdbscan.HDBSCAN(
+                min_cluster_size=min_cluster_size
+            )
+
+            labels = model.fit_predict(X_scaled)
+
 
         # -------------------------------
-        # Ejecutar clustering
+        # Métricas de clustering (info)
         # -------------------------------
-        model = KMedoids(
-            n_clusters=k,
-            method='pam',
-            random_state=123
-        )
 
-        labels = model.fit_predict(X_scaled)
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        noise_ratio = (labels == -1).sum() / len(labels)
 
-        selected_df["cluster"] = labels.astype(int)
+        st.sidebar.info(f"Clusters: {n_clusters} | Noise: {noise_ratio:.2%}")
+
+
+        # -------------------------------
+        # Guardar resultados (común)
+        # -------------------------------
+        selected_df["cluster"] = labels
+
+        # Convertir a string para visualización
         selected_df["cluster_str"] = selected_df["cluster"].astype(str)
 
-        cluster_sizes = selected_df.groupby("cluster")["id"].transform("size")
+        # Manejar ruido de HDBSCAN (-1)
+        selected_df["cluster_str"] = selected_df["cluster_str"].replace("-1", "Noise")
+
+        # Tamaño por grupo
+        cluster_sizes = selected_df.groupby("cluster_str")["id"].transform("size")
 
         selected_df["group_label"] = (
-            "Cluster " + selected_df["cluster"].astype(str) + 
-            " (n=" + cluster_sizes.astype(str) + ")"
+            "Cluster " +
+            selected_df["cluster_str"] +
+            " (n=" +
+            cluster_sizes.astype(str) +
+            ")"
         )
+
         color_col = "group_label"
 
+##-------------------
+#   Efficincy based
+#------------------
 
 
 elif mode == "Efficiency-Ratio":
