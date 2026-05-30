@@ -160,9 +160,13 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         return
 
     compare_df = df_for_compare[df_for_compare["id"].isin(compare_ids)].copy()
-    
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Radar", "👥 Stakeholders", "📋 Requirements", "🔗 Alineación"])
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Comparative Profile",
+        "👥 Stakeholder Impact",
+        "📋 Requirement Composition",
+        "🔗 Stakeholder–Requirement Alignment"
+    ])
 
     # ---------- PERFORMANCE ----------
     with tab1:
@@ -443,13 +447,13 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 # --------------------------------------------
 
 
-st.sidebar.markdown("## ⚙️ Input and Preparation")
+st.sidebar.markdown("## :🧩  Input and Preparation")
 
 data_mode = st.sidebar.radio(
     "Select data source",
     [
         "📂 Load enriched solution set",
-        "🧠 Build decision space from NRP instance"
+        "🧱 Build decision space from NRP instance"
     ]
 )
 
@@ -461,7 +465,7 @@ if st.sidebar.button("🔄 Reset all"):
 # ============================================
 # 1) CSV MODE (TU FLUJO ORIGINAL)
 # ============================================
-if data_mode == "📂 Upload CSV (precomputed indicators)":
+if data_mode == "📂 Load enriched solution set":
 
     uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
 
@@ -478,7 +482,7 @@ if data_mode == "📂 Upload CSV (precomputed indicators)":
 # ============================================
 else:
 
-    st.sidebar.markdown("## ⚙️ Data preparation")
+    st.sidebar.markdown("## 🧪 Semantic enrichment")
 
     # -------------------------------
     # Selección de problema
@@ -555,18 +559,19 @@ if len(remaining) >= 2:
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
 
-if st.sidebar.button("Toggle comparative support view"):
+if st.sidebar.button("🆚Toggle comparative support view"):
     st.session_state.show_comparison = not st.session_state.show_comparison
     st.rerun()
 
 
 focus_mode = st.sidebar.checkbox(
     "🎯 SOI Focus Mode",
-    help="Highlight = visual selection | Focus = real filtering",
+    help="Highlight = visual emphasis | Focus = restrict analysis to selected SOI",
     key="focus_mode"
+
 )
 
-st.sidebar.caption("Highlight = visual selection | Focus = real filtering")
+st.sidebar.caption("Highlight = visual emphasis | Focus = restrict analysis to selected SOI")
 
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 
@@ -630,7 +635,7 @@ for m in available_qual:
 # -------------------------------------------- 
 
 mode_label = st.sidebar.selectbox(
-    "ROI Identification Lens",
+    "🔍ROI Identification Lens",
     [
         "Exploratory view",
         "🔵 Preference lens (MCDA)",
@@ -1013,8 +1018,9 @@ else:
 # HIGHLIGHT + LABELS
 # --------------------------------------------
 
+
 selected_ids = st.multiselect(
-    "Select solutions to **unmask** ▲",
+    "Select candidate SOI",
     options=selected_df["id"].tolist(),
     default=st.session_state.selected_ids,
     key="selected_ids"
