@@ -543,8 +543,15 @@ available_qual = [m for m in qual_df.columns if m in df.columns]
 if "groups" not in st.session_state: st.session_state.groups = []
 if "show_comparison" not in st.session_state: st.session_state.show_comparison = False
 
-if st.sidebar.button("Reset graphs"): 
-    st.session_state.groups = []; st.rerun()
+if "selected_ids" not in st.session_state: st.session_state.selected_ids = []
+if "focus_mode" not in st.session_state: st.session_state.focus_mode = False
+
+if st.sidebar.button("🔄 Reset all"):
+    st.session_state.selected_ids = []
+    st.session_state.focus_mode = False
+    st.session_state.groups = []
+    st.rerun()
+
 
 used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
@@ -559,7 +566,13 @@ if st.sidebar.button("Show/Hide comparison view"):
     st.rerun()
 
 
-focus_mode = st.sidebar.checkbox("🎯 Focus on selected solutions")
+focus_mode = st.sidebar.checkbox(
+    "🎯 Focus on selected solutions",
+    help="Highlight = visual selection | Focus = real filtering",
+    key="focus_mode"
+)
+
+st.sidebar.caption("Highlight = visual selection | Focus = real filtering")
 
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 
@@ -1005,7 +1018,16 @@ else:
 # --------------------------------------------
 # HIGHLIGHT + LABELS
 # --------------------------------------------
-selected_ids = st.multiselect("Select solutions to **unmask**  ▲", selected_df["id"].unique())
+
+selected_ids = st.multiselect(
+    "Select solutions to **unmask** ▲",
+    options=selected_df["id"].tolist(),
+    default=st.session_state.selected_ids,
+    key="selected_ids"
+)
+
+
+
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
 if show_ids:
@@ -1024,6 +1046,7 @@ else:
 # ----------------------------------
 if focus_mode and selected_df["highlight"].any():
     selected_df = selected_df[selected_df["highlight"]].copy()
+
 
 if focus_mode:
     st.sidebar.caption(f"{len(selected_df)} solutions in focus")
