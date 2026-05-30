@@ -1124,7 +1124,26 @@ if st.session_state.show_comparison:
 
     plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
-# ----------------------------------
+
+
+# --------------------------------------------
+# PREVIEW
+# --------------------------------------------
+with st.expander("Data preview"):
+    # Hacemos una copia para no alterar los datos reales del programa
+    df_preview = selected_df.copy()
+    
+    # Lista de columnas técnicas creadas por el código que queremos ocultar
+    columnas_a_ocultar = ["id","highlight", "highlight_label", "label"]
+    
+    # Las eliminamos de la vista si existen
+    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
+    
+    # Mostramos la tabla limpia
+    st.dataframe(df_preview.head(100))
+
+
+    # ----------------------------------
 # 🥇 Top solutions (non-intrusive)
 # ----------------------------------
 if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
@@ -1147,20 +1166,17 @@ if len(selected_df) >= 2:
 
     numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
 
-    # quitar columnas que no interesan
     exclude_cols = ["id"]
     numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
 
     if numeric_cols:
 
-        # calcular medias
         means = selected_df[numeric_cols].mean()
 
-        # mostrar 2-3 métricas principales
         top_metrics = means.sort_values(ascending=False).head(3)
 
-        for m, v in top_metrics.items():
-            st.caption(f"{m}: {v:.3f}")
+        items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
+        st.markdown(" | ".join(items))
 
 
 # --------------------------------------------
@@ -1187,19 +1203,3 @@ if "highlight" in selected_df.columns and selected_df["highlight"].any():
     
     )
 st.caption(f"Selected: {(selected_df['highlight']).sum()} solutions")
-
-# --------------------------------------------
-# PREVIEW
-# --------------------------------------------
-with st.expander("Data preview"):
-    # Hacemos una copia para no alterar los datos reales del programa
-    df_preview = selected_df.copy()
-    
-    # Lista de columnas técnicas creadas por el código que queremos ocultar
-    columnas_a_ocultar = ["id","highlight", "highlight_label", "label"]
-    
-    # Las eliminamos de la vista si existen
-    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
-    
-    # Mostramos la tabla limpia
-    st.dataframe(df_preview.head(100))
