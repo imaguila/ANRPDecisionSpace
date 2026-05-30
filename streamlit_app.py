@@ -1051,43 +1051,6 @@ if focus_mode and selected_df["highlight"].any():
 if focus_mode:
     st.sidebar.caption(f"{len(selected_df)} solutions in focus")
 
-# ----------------------------------
-# 🥇 Top solutions (non-intrusive)
-# ----------------------------------
-if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
-
-    top_n = min(3, len(selected_df))
-
-    top_ids = selected_df.head(top_n)["id"].astype(int).tolist()
-
-    st.markdown("### 🥇 Top solutions (current method)")
-    st.caption(", ".join([f"ID {i}" for i in top_ids]))
-
-
-
-# ----------------------------------
-# 📊 Quick insights (non-intrusive)
-# ----------------------------------
-if len(selected_df) >= 2:
-
-    st.markdown("### 📊 Quick insights")
-
-    numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
-
-    # quitar columnas que no interesan
-    exclude_cols = ["id"]
-    numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
-
-    if numeric_cols:
-
-        # calcular medias
-        means = selected_df[numeric_cols].mean()
-
-        # mostrar 2-3 métricas principales
-        top_metrics = means.sort_values(ascending=False).head(3)
-
-        for m, v in top_metrics.items():
-            st.caption(f"{m}: {v:.3f}")
 
 
 # --------------------------------------------
@@ -1161,11 +1124,49 @@ if st.session_state.show_comparison:
 
     plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
+# ----------------------------------
+# 🥇 Top solutions (non-intrusive)
+# ----------------------------------
+if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
+
+    top_n = min(3, len(selected_df))
+
+    top_ids = selected_df.head(top_n)["id"].astype(int).tolist()
+
+    st.caption("### 🥇 Top solutions (current method)")
+    st.caption(", ".join([f"ID {i}" for i in top_ids]))
+
+
+
+# ----------------------------------
+# 📊 Quick insights (non-intrusive)
+# ----------------------------------
+if len(selected_df) >= 2:
+
+    st.caption("📊 Quick insights")
+
+    numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
+
+    # quitar columnas que no interesan
+    exclude_cols = ["id"]
+    numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
+
+    if numeric_cols:
+
+        # calcular medias
+        means = selected_df[numeric_cols].mean()
+
+        # mostrar 2-3 métricas principales
+        top_metrics = means.sort_values(ascending=False).head(3)
+
+        for m, v in top_metrics.items():
+            st.caption(f"{m}: {v:.3f}")
+
 
 # --------------------------------------------
 # 📥 DOWNLOAD RESULTS
 # --------------------------------------------
-st.markdown("### 📥 Export results")
+st.caption("📥 Export results")
 
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
