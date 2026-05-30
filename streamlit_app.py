@@ -623,8 +623,7 @@ mode_label = st.sidebar.selectbox(
     "Selection mode",
     [
         "None",
-        "🔵 Preference - Weighted-Sum",
-        "🔵 Preference - TOPSIS",
+        "🔵 Preference - Multi-criteria",
         "🟢 Diversity - Clustering",
         "🟣 Efficiency - Ratio",
         "🟠 Problem-specific - Ranking-based",
@@ -633,8 +632,7 @@ mode_label = st.sidebar.selectbox(
 
 mode_map = {
     "None": "None",
-    "🔵 Preference - Weighted-Sum": "Weighted-Sum",
-    "🔵 Preference - TOPSIS": "TOPSIS",
+    "🔵 Preference - Multi-criteria": "MCDM",
     "🟢 Diversity - Clustering": "Clustering",
     "🟣 Efficiency - Ratio": "Efficiency-Ratio",
     "🟠 Problem-specific - Ranking-based": "Ranking-based",
@@ -650,89 +648,111 @@ threshold = 0
 color_col = None
 
 # --------------------------------------------
-# WEIGHTED SUM (score)
+# MCDM (Weighted + TOPSIS unificado)
 # --------------------------------------------
-if mode == "Weighted-Sum":
+if mode == "MCDM":
+
+    st.sidebar.markdown("### Multi-criteria Preference")
+
+    # -------------------------------
+    # Método de evaluación
+    # -------------------------------
+    method = st.sidebar.radio(
+        "Method",
+        ["Weighted Sum", "TOPSIS"]
+    )
+
+    # -------------------------------
+    # Selección de criterios
+    # -------------------------------
     m_max = st.sidebar.multiselect("Maximize", available_qual)
-    m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max])
-
-    if m_max or m_min:
-        score = 0
-        for m in m_max + m_min:
-            mi, ma = selected_df[m].min(), selected_df[m].max()
-            norm = (selected_df[m] - mi) / (ma - mi) if ma > mi else 0
-            score = (score + norm) if m in m_max else (score - norm)
-
-        selected_df["score"] = score
-
-        n = st.sidebar.slider("Top N", 1, len(selected_df),min(10, len(selected_df)))
-
-        selected_df = selected_df.sort_values("score", ascending=False).head(n)
-
-        color_col = "score"   # ✅ solo aquí
-
-
-# --------------------------------------------
-# TOPSIS (score propio)
-# --------------------------------------------
-elif mode == "TOPSIS":
-    m_max = st.sidebar.multiselect("Maximize", available_qual, key="topsis_max")
-    m_min = st.sidebar.multiselect("Minimize", [m for m in available_qual if m not in m_max], key="topsis_min")
+    m_min = st.sidebar.multiselect(
+        "Minimize",
+        [m for m in available_qual if m not in m_max]
+    )
 
     criteria = m_max + m_min
 
     if criteria:
-        df_topsis = selected_df.copy()
 
-        # Normalización vectorial
-        norm_df = df_topsis[criteria].copy()
-        for m in criteria:
-            denom = (norm_df[m]**2).sum() ** 0.5
-            if denom != 0:
-                norm_df[m] = norm_df[m] / denom
+        df_temp = selected_df.copy()
 
-        # Ideal y anti-ideal
-        ideal = {}
-        anti_ideal = {}
+        # =====================================================
+        # ✅ WEIGHTED SUM
+        # =====================================================
+        if method == "Weighted Sum":
 
-        for m in criteria:
-            if m in m_max:
-                ideal[m] = norm_df[m].max()
-                anti_ideal[m] = norm_df[m].min()
-            else:
-                ideal[m] = norm_df[m].min()
-                anti_ideal[m] = norm_df[m].max()
+            score = 0
 
-        # Distancias
-        d_plus = []
-        d_minus = []
+            for m in criteria:
+                mi, ma = df_temp[m].min(), df_temp[m].max()
+                norm = (df_temp[m] - mi) / (ma - mi) if ma > mi else 0
 
-        for i in range(len(norm_df)):
-            row = norm_df.iloc[i]
+                if m in m_max:
+                    score += norm
+                else:
+                    score -= norm
 
-            dp = sum((row[m] - ideal[m])**2 for m in criteria) ** 0.5
-            dm = sum((row[m] - anti_ideal[m])**2 for m in criteria) ** 0.5
+            df_temp["score"] = score
+            score_col = "score"
 
-            d_plus.append(dp)
-            d_minus.append(dm)
+        # =====================================================
+        # ✅ TOPSIS
+        # =====================================================
+        else:
 
-        # SCORE TOPSIS
-        df_topsis["score_topsis"] = [
-            dm / (dp + dm) if (dp + dm) != 0 else 0 for dp, dm in zip(d_plus, d_minus)
-        ]
+            norm_df = df_temp[criteria].copy()
 
-        
+            # normalización vectorial
+            for m in criteria:
+                denom = (norm_df[m]**2).sum() ** 0.5
+                if denom != 0:
+                    norm_df[m] = norm_df[m] / denom
+
+            ideal = {}
+            anti_ideal = {}
+
+            for m in criteria:
+                if m in m_max:
+                    ideal[m] = norm_df[m].max()
+                    anti_ideal[m] = norm_df[m].min()
+                else:
+                    ideal[m] = norm_df[m].min()
+                    anti_ideal[m] = norm_df[m].max()
+
+            d_plus = []
+            d_minus = []
+
+            for i in range(len(norm_df)):
+                row = norm_df.iloc[i]
+
+                dp = sum((row[m] - ideal[m])**2 for m in criteria) ** 0.5
+                dm = sum((row[m] - anti_ideal[m])**2 for m in criteria) ** 0.5
+
+                d_plus.append(dp)
+                d_minus.append(dm)
+
+            df_temp["score_topsis"] = [
+                dm / (dp + dm) if (dp + dm) != 0 else 0
+                for dp, dm in zip(d_plus, d_minus)
+            ]
+
+            score_col = "score_topsis"
+
+        # -------------------------------
+        # Top N
+        # -------------------------------
         n = st.sidebar.slider(
             "Top N",
             1,
-            len(df_topsis),
-            min(10, len(df_topsis)),
-            key="topsis_n"
+            len(df_temp),
+            min(10, len(df_temp))
         )
 
-        selected_df = df_topsis.sort_values("score_topsis", ascending=False).head(n)
+        selected_df = df_temp.sort_values(score_col, ascending=False).head(n)
 
-        color_col = "score_topsis"   # ✅ solo aquí
+        color_col = score_col
+
 
 # ----------------------------------
 # DIVERSITY METHODS
