@@ -221,76 +221,76 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 
     # ---------- STAKEHOLDER ----------
     with tab2:
-    st.subheader("Coverage per Stakeholder")
-    
-    stcov_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
-
-    # ----------------------------------
-    # ✅ No hay stakeholders
-    # ----------------------------------
-    if not stcov_cols:
-        st.info("No stakeholder coverage columns (stcov_...) found in dataset.")
-
-    else:
+        st.subheader("Coverage per Stakeholder")
+        
+        stcov_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
 
         # ----------------------------------
-        # ✅ ordenar por relevancia (opcional)
+        # ✅ No hay stakeholders
         # ----------------------------------
-        stcov_cols = sorted(
-            stcov_cols,
-            key=lambda c: selected_df[c].mean(),
-            reverse=True
-        )
+        if not stcov_cols:
+            st.info("No stakeholder coverage columns (stcov_...) found in dataset.")
 
-        # ----------------------------------
-        # ✅ slider para limitar
-        # ----------------------------------
-        max_st = st.slider(
-            "Number of stakeholders to display",
-            min_value=3,
-            max_value=min(15, len(stcov_cols)),
-            value=min(6, len(stcov_cols)),
-            key="st_limit"
-        )
-        st.caption(f"Showing top {len(stcov_cols)} stakeholders")
-        stcov_cols = stcov_cols[:max_st]
-
-        # ----------------------------------
-        # ⚠️ asegurar mínimo para radar
-        # ----------------------------------
-        if len(stcov_cols) < 3:
-            st.warning("Need at least 3 stakeholders to create a radar chart.")
         else:
-            cov_df = compare_df.copy()
-            low, high = 0.1, 0.9
 
-            for c in stcov_cols:
-                mi, ma = cov_df[c].min(), cov_df[c].max()
-                if ma > mi:
-                    norm = (cov_df[c] - mi) / (ma - mi)
-                    cov_df[c] = low + (norm * (high - low))
-                else:
-                    cov_df[c] = 0.5
-
-            fig_cov = go.Figure()
-            for _, row in cov_df.iterrows():
-                val = row[stcov_cols].tolist()
-                val.append(val[0])
-
-                fig_cov.add_trace(go.Scatterpolar(
-                    r=val,
-                    theta=stcov_cols + [stcov_cols[0]],
-                    fill=None,
-                    mode='lines+markers',
-                    name=f"ID {int(row['id'])}"
-                ))
-
-            fig_cov.update_layout(
-                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-                showlegend=True
+            # ----------------------------------
+            # ✅ ordenar por relevancia (opcional)
+            # ----------------------------------
+            stcov_cols = sorted(
+                stcov_cols,
+                key=lambda c: selected_df[c].mean(),
+                reverse=True
             )
 
-            st.plotly_chart(fig_cov, use_container_width=True)
+            # ----------------------------------
+            # ✅ slider para limitar
+            # ----------------------------------
+            max_st = st.slider(
+                "Number of stakeholders to display",
+                min_value=3,
+                max_value=min(15, len(stcov_cols)),
+                value=min(6, len(stcov_cols)),
+                key="st_limit"
+            )
+            st.caption(f"Showing top {len(stcov_cols)} stakeholders")
+            stcov_cols = stcov_cols[:max_st]
+
+            # ----------------------------------
+            # ⚠️ asegurar mínimo para radar
+            # ----------------------------------
+            if len(stcov_cols) < 3:
+                st.warning("Need at least 3 stakeholders to create a radar chart.")
+            else:
+                cov_df = compare_df.copy()
+                low, high = 0.1, 0.9
+
+                for c in stcov_cols:
+                    mi, ma = cov_df[c].min(), cov_df[c].max()
+                    if ma > mi:
+                        norm = (cov_df[c] - mi) / (ma - mi)
+                        cov_df[c] = low + (norm * (high - low))
+                    else:
+                        cov_df[c] = 0.5
+
+                fig_cov = go.Figure()
+                for _, row in cov_df.iterrows():
+                    val = row[stcov_cols].tolist()
+                    val.append(val[0])
+
+                    fig_cov.add_trace(go.Scatterpolar(
+                        r=val,
+                        theta=stcov_cols + [stcov_cols[0]],
+                        fill=None,
+                        mode='lines+markers',
+                        name=f"ID {int(row['id'])}"
+                    ))
+
+                fig_cov.update_layout(
+                    polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                    showlegend=True
+                )
+
+                st.plotly_chart(fig_cov, use_container_width=True)
 # ---------- NUEVA PESTAÑA: REQUISITOS ----------
     with tab3:
         st.subheader("Requirements Included in Selected Solutions")
