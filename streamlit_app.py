@@ -1174,37 +1174,29 @@ if len(selected_df) >= 2:
         top_metrics = means.sort_values(ascending=False).head(3)
 
         items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
-        st.markdown("📊 Quick insights"+" | ".join(items))
+        st.markdown("📊 Quick insights:  "+" | ".join(items))
 
-
-# --------------------------------------------
-# 📥 DOWNLOAD RESULTS
-# --------------------------------------------
 st.caption("📥 Export results")
 
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
-# ✅ crear columnas
 col1, col2 = st.columns(2)
 
-# botón 1
 with col1:
     st.download_button(
-        label="⬇️ All",
+        label="⬇️ Current results",
         data=csv_data.to_csv(index=False),
-        file_name="selected_solutions.csv",
+        file_name="current_results.csv",
         mime="text/csv"
     )
 
-# botón 2 (solo si hay selección)
 with col2:
     if "highlight" in selected_df.columns and selected_df["highlight"].any():
         st.download_button(
-            label="⬇️ Selected",
+            label="⬇️ Highlighted",
             data=selected_df[selected_df["highlight"]].to_csv(index=False),
             file_name="highlighted_solutions.csv",
             mime="text/csv"
         )
 
-# info abajo
-st.caption(f"Selected: {(selected_df['highlight']).sum()} solutions")
+st.caption(f"Highlighted: {(selected_df['highlight']).sum()} solutions")
