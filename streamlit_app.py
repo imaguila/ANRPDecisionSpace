@@ -1162,8 +1162,6 @@ if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
 # ----------------------------------
 if len(selected_df) >= 2:
 
-    st.caption("📊 Quick insights")
-
     numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
 
     exclude_cols = ["id"]
@@ -1176,7 +1174,7 @@ if len(selected_df) >= 2:
         top_metrics = means.sort_values(ascending=False).head(3)
 
         items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
-        st.markdown(" | ".join(items))
+        st.markdown("📊 Quick insights"+" | ".join(items))
 
 
 # --------------------------------------------
@@ -1186,20 +1184,27 @@ st.caption("📥 Export results")
 
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
-st.download_button(
-    label="⬇️ Download current solutions (CSV)",
-    data=csv_data.to_csv(index=False),
-    file_name="selected_solutions.csv",
-    mime="text/csv"
-)
+# ✅ crear columnas
+col1, col2 = st.columns(2)
 
-
-if "highlight" in selected_df.columns and selected_df["highlight"].any():
+# botón 1
+with col1:
     st.download_button(
-        label="⬇️ Download highlighted solutions",
-        data=selected_df[selected_df["highlight"]].to_csv(index=False),
-        file_name="highlighted_solutions.csv",
+        label="⬇️ All",
+        data=csv_data.to_csv(index=False),
+        file_name="selected_solutions.csv",
         mime="text/csv"
-    
     )
+
+# botón 2 (solo si hay selección)
+with col2:
+    if "highlight" in selected_df.columns and selected_df["highlight"].any():
+        st.download_button(
+            label="⬇️ Selected",
+            data=selected_df[selected_df["highlight"]].to_csv(index=False),
+            file_name="highlighted_solutions.csv",
+            mime="text/csv"
+        )
+
+# info abajo
 st.caption(f"Selected: {(selected_df['highlight']).sum()} solutions")
