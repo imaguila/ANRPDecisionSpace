@@ -453,9 +453,10 @@ data_mode = st.sidebar.radio(
     ]
 )
 
-
-if st.sidebar.button("🔄 Reset cache"):
-    st.cache_data.clear()
+if st.sidebar.button("🔄 Reset all"):
+    st.session_state.clear()
+    st.success("App reset ✔️")
+    st.rerun()
 
 # ============================================
 # 1) CSV MODE (TU FLUJO ORIGINAL)
@@ -545,13 +546,6 @@ if "show_comparison" not in st.session_state: st.session_state.show_comparison =
 
 if "selected_ids" not in st.session_state: st.session_state.selected_ids = []
 if "focus_mode" not in st.session_state: st.session_state.focus_mode = False
-
-if st.sidebar.button("🔄 Reset all"):
-    st.session_state.selected_ids = []
-    st.session_state.focus_mode = False
-    st.session_state.groups = []
-    st.rerun()
-
 
 used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
