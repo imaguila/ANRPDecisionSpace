@@ -15,7 +15,7 @@ from problem import run_pipeline, leer_soluciones, REQUISITOS
 # CONFIGURACIÓN
 # --------------------------------------------
 st.set_page_config(layout="wide")
-st.title("Assisted Next Release Problem")
+st.title("ANRP Decision Space Explorer")
 DATA_PATH = "data"
 
 # --------------------------------------------
@@ -443,13 +443,13 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 # --------------------------------------------
 
 
-st.sidebar.markdown("## ⚙️ Data source")
+st.sidebar.markdown("## ⚙️ Input and Preparation")
 
 data_mode = st.sidebar.radio(
     "Select data source",
     [
-        "📂 Upload CSV (precomputed indicators)",
-        "🧠 Build from problem (pipeline)"
+        "📂 Load enriched solution set",
+        "🧠 Build decision space from NRP instance"
     ]
 )
 
@@ -551,17 +551,17 @@ used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
 
 if len(remaining) >= 2:
-    if st.sidebar.button("Add graph"):
+    if st.sidebar.button("Add decision-space map"):
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
 
-if st.sidebar.button("Show/Hide comparison view"):
+if st.sidebar.button("Toggle comparative support view"):
     st.session_state.show_comparison = not st.session_state.show_comparison
     st.rerun()
 
 
 focus_mode = st.sidebar.checkbox(
-    "🎯 Focus on selected solutions",
+    "🎯 SOI Focus Mode",
     help="Highlight = visual selection | Focus = real filtering",
     key="focus_mode"
 )
@@ -575,7 +575,7 @@ show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 # FILTROS
 # --------------------------------------------
 
-st.sidebar.markdown("### Filters")
+st.sidebar.markdown("### Context Framing")
 
 filtered_df = df.copy()
 
@@ -584,7 +584,7 @@ available_opt = [m for m in opt_df.columns if m in df.columns]
 available_qual = [m for m in qual_df.columns if m in df.columns]
 
 # -------- OPTIMIZATION METRICS --------
-st.sidebar.markdown("#### 🔵 :blue[Optimization function]")
+st.sidebar.markdown("#### 🔵 :blue[Optimization objectives]")
 
 for m in available_opt:
     if pd.api.types.is_numeric_dtype(df[m]):
@@ -630,22 +630,22 @@ for m in available_qual:
 # -------------------------------------------- 
 
 mode_label = st.sidebar.selectbox(
-    "Selection mode",
+    "ROI Identification Lens",
     [
-        "None",
-        "🔵 Preference - Multi-criteria",
-        "🟢 Diversity - Clustering",
-        "🟣 Efficiency - Ratio",
-        "🟠 Problem-specific - Ranking-based",
+        "Exploratory view",
+        "🔵 Preference lens (MCDA)",
+        "🟢 Diversity lens",
+        "🟣 Efficiency lens",
+        "🟠 Domain-specific lens",
     ]
 )
 
 mode_map = {
-    "None": "None",
-    "🔵 Preference - Multi-criteria": "MCDM",
-    "🟢 Diversity - Clustering": "Clustering",
-    "🟣 Efficiency - Ratio": "Efficiency-Ratio",
-    "🟠 Problem-specific - Ranking-based": "Ranking-based",
+    "Exploratory view": "None",
+    "🔵 Preference lens (MCDA)": "MCDM",
+    "🟢 Diversity lens": "Clustering",
+    "🟣 Efficiency lens": "Efficiency-Ratio",
+    "🟠 Domain-specific lens": "Ranking-based",
 }
 
 
@@ -1052,7 +1052,7 @@ if focus_mode:
 # --------------------------------------------
 
 for i, group in enumerate(st.session_state.groups):
-    st.subheader(f"Trade-off Map {i+1}")
+    st.subheader(f"Decision-Space Map {i+1}")
     
     others = [m for idx, g in enumerate(st.session_state.groups) if idx != i for m in g if m]
     available_here = [m for m in available_metrics if m not in others]
@@ -1123,7 +1123,7 @@ if st.session_state.show_comparison:
 # --------------------------------------------
 # PREVIEW
 # --------------------------------------------
-with st.expander("Data preview"):
+with st.expander("Current decision subset"):
     # Hacemos una copia para no alterar los datos reales del programa
     df_preview = selected_df.copy()
     
@@ -1178,18 +1178,18 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.download_button(
-        label="⬇️ Current results",
+        label="⬇️ Export current subset",
         data=csv_data.to_csv(index=False),
-        file_name="current_results.csv",
+        file_name="current_subset.csv",
         mime="text/csv"
     )
 
 with col2:
     if "highlight" in selected_df.columns and selected_df["highlight"].any():
         st.download_button(
-            label="⬇️ Highlighted",
+            label="⬇️ Export selected SOI",
             data=selected_df[selected_df["highlight"]].to_csv(index=False),
-            file_name="highlighted_solutions.csv",
+            file_name="SOI.csv",
             mime="text/csv"
         )
 
