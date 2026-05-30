@@ -558,6 +558,9 @@ if st.sidebar.button("Show/Hide comparison view"):
     st.session_state.show_comparison = not st.session_state.show_comparison
     st.rerun()
 
+
+focus_mode = st.sidebar.checkbox("🎯 Focus on selected solutions")
+
 show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 
 
@@ -1014,6 +1017,18 @@ if show_ids:
         selected_df["label"] = selected_df["id"].astype(str)
 else:
     selected_df["label"] = ""
+
+
+# ----------------------------------
+# 🎯 Focus mode → filtrar datos reales
+# ----------------------------------
+if focus_mode and selected_df["highlight"].any():
+    selected_df = selected_df[selected_df["highlight"]].copy()
+
+if focus_mode:
+    st.sidebar.caption(f"{len(selected_df)} solutions in focus")
+
+
 
 # --------------------------------------------
 # GRÁFICOS
