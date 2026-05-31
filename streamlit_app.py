@@ -1129,7 +1129,7 @@ col_titulo, col_btn1, col_btn2 = st.columns([2, 1, 1], vertical_alignment="cente
 
 with col_titulo:
     # Usamos un subheader o markdown en lugar del texto del expander tradicional
-    st.subheader("📋 Current decision subset")
+    st.markdown("📋 Current decision subset")
 
 # Preparamos los datos para la descarga
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
@@ -1159,47 +1159,47 @@ with st.expander("Preview", expanded=True):
     df_preview = selected_df.copy()
     columnas_a_ocultar = ["id", "highlight", "highlight_label", "label"]
     df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
-    st.dataframe(df_preview.head(100), use_container_width=True)
+    st.dataframe(df_preview.head(100))
 
 
 # --------------------------------------------
 # PREVIEW
 # --------------------------------------------
-with st.expander("Current decision subset"):
+# with st.expander("Current decision subset"):
     # Hacemos una copia para no alterar los datos reales del programa
-    df_preview = selected_df.copy()
+#    df_preview = selected_df.copy()
     
     # Lista de columnas técnicas creadas por el código que queremos ocultar
-    columnas_a_ocultar = ["id","highlight", "highlight_label", "label"]
+#    columnas_a_ocultar = ["id","highlight", "highlight_label", "label"]
     
     # Las eliminamos de la vista si existen
-    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
+#    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
     
     # Mostramos la tabla limpia
-    st.dataframe(df_preview.head(100))
+#    st.dataframe(df_preview.head(100))
 
-st.caption("📥 Export results")
+#st.caption("📥 Export results")
 
-csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
+#csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
-col1, col2 = st.columns(2)
+#col1, col2 = st.columns(2)
 
-with col1:
-    st.download_button(
-        label="⬇️ Export current subset",
-        data=csv_data.to_csv(index=False),
-        file_name="current_subset.csv",
-        mime="text/csv"
-    )
+#with col1:
+#    st.download_button(
+#        label="⬇️ Export current subset",
+#        data=csv_data.to_csv(index=False),
+#        file_name="current_subset.csv",
+#        mime="text/csv"
+#    )
 
-with col2:
-    if "highlight" in selected_df.columns and selected_df["highlight"].any():
-        st.download_button(
-            label="⬇️ Export selected SOI",
-            data=selected_df[selected_df["highlight"]].to_csv(index=False),
-            file_name="SOI.csv",
-            mime="text/csv"
-        )
+#with col2:
+#    if "highlight" in selected_df.columns and selected_df["highlight"].any():
+#        st.download_button(
+#            label="⬇️ Export selected SOI",
+#            data=selected_df[selected_df["highlight"]].to_csv(index=False),
+#            file_name="SOI.csv",
+#            mime="text/csv"
+#        )
 
 st.caption(f"Highlighted: {(selected_df['highlight']).sum()} solutions")
     # ----------------------------------
