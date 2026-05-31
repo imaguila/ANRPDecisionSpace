@@ -758,16 +758,21 @@ with col_btn2:
 
 # --------------------------------------------
 # PREVIEW
-# --------------------------------------------
 with st.expander("Preview", expanded=False):
     df_preview = selected_df.copy()
-    columnas_a_ocultar = ["id", "highlight", "highlight_label", "label"]
+    
+    # 1. Si "id" existe, lo ponemos como índice antes de borrar las demás columnas
+    if "id" in df_preview.columns:
+        df_preview = df_preview.set_index("id")
+        
+    # 2. Ocultamos el resto de columnas de control (quitamos "id" de esta lista)
+    columnas_a_ocultar = ["highlight", "highlight_label", "label"]
     df_preview = df_preview.drop(
         columns=[col for col in columnas_a_ocultar if col in df_preview.columns]
     )
+    
     st.dataframe(df_preview.head(100), use_container_width=True)
 
-#st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
 
 
 # --------------------------------------------
