@@ -19,6 +19,7 @@ DATA_PATH = "data"
 # --------------------------------------------
 # DATA SOURCE + DATA PREPARATION
 # --------------------------------------------
+
 df = render_input_panel()
 
 # --------------------------------------------
@@ -41,8 +42,6 @@ if "selected_ids" not in st.session_state:
 if "focus_mode" not in st.session_state:
     st.session_state.focus_mode = False
 
-
-
 # --------------------------------------------
 # VISUAL WORKSPACE
 # --------------------------------------------
@@ -63,11 +62,7 @@ st.sidebar.caption(
 )
 
 
-
-
-# Botones en paralelo
-
-
+# Botones en paralelo de colores
 st.html("""
     <style>
     /* Estilo para el botón de reset usando su clave única */
@@ -104,7 +99,6 @@ with col_add:
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
 
-# Mensajes de ayuda
 if not can_add_map:
     st.sidebar.info("No remaining available metrics")
 
@@ -116,7 +110,6 @@ show_ids = st.sidebar.checkbox(
     value=False,
     help="Display solution identifiers directly on the maps."
 )
-
 
 
 # --------------------------------------------
@@ -202,7 +195,7 @@ threshold = 0
 color_col = None
 
 # --------------------------------------------
-# MCDM (Weighted + TOPSIS unificado)
+# MCDM 
 # --------------------------------------------
 if mode == "MCDM":
 
@@ -304,13 +297,11 @@ if mode == "MCDM":
         )
 
         selected_df = df_temp.sort_values(score_col, ascending=False).head(n)
-
         color_col = score_col
-
 
 # ----------------------------------
 # DIVERSITY METHODS
-# ------------------
+# ----------------------------------
 
 elif mode == "Clustering":
 
@@ -344,15 +335,13 @@ elif mode == "Clustering":
         X_scaled = scaler.fit_transform(X)
 
         # ==========================================================
-        # ✅ CASO 1: K-MEDOIDS (tu código actual mejorado)
+        # ✅ CASO 1: K-MEDOIDS
         # ==========================================================
         if cluster_method == "K-Medoids":
-
             k_mode = st.sidebar.radio(
                 "Number of clusters",
                 ["Manual", "Auto (Silhouette)"]
             )
-
             if k_mode == "Manual":
                 k = st.sidebar.slider(
                     "k clusters",
@@ -391,11 +380,10 @@ elif mode == "Clustering":
                 method='pam',
                 random_state=123
             )
-
             labels = model.fit_predict(X_scaled)
 
         # ==========================================================
-        # ✅ CASO 2: HDBSCAN (NUEVO MÉTODO)
+        # ✅ CASO 2: HDBSCAN  
         # ==========================================================
         else:
 
@@ -443,7 +431,6 @@ elif mode == "Clustering":
         # -------------------------------
         # Métricas de clustering (info)
         # -------------------------------
-
         n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
         noise_ratio = (labels == -1).sum() / len(labels)
 
@@ -474,10 +461,9 @@ elif mode == "Clustering":
 
         color_col = "group_label"
 
-##-------------------
-#   Efficincy based
-#------------------
-
+#--------------------------------------
+#   Efficiency based Ratio
+#-------------------------------------
 
 elif mode == "Efficiency-Ratio":
 
@@ -512,7 +498,7 @@ elif mode == "Efficiency-Ratio":
 
     # calcular score
     selected_df = selected_df.copy()
- 
+
     cost_safe = selected_df[cost].replace(0, 1e-9)
     selected_df["efficiency_score"] = selected_df[benefit] / cost_safe
 
@@ -552,7 +538,6 @@ elif mode == "Ranking-based":
 # --------------------------------------------
 else:
     color_col = None
-
 
 # Guardar explícitamente el subconjunto actual derivado de la lente ROI
 roi_df = selected_df.copy()
@@ -685,7 +670,6 @@ if st.session_state.show_comparison:
     st.markdown("### 🆚 Detailed comparison")
 
     # Si el usuario ha activado focus y hay highlights,
-    # la comparación se hace automáticamente sobre el subconjunto focalizado.
     if focus_mode and roi_df["highlight"].any():
         df_compare_base = selected_df.copy()
         st.caption("Comparison source: focused highlighted subset")
@@ -728,16 +712,14 @@ if st.session_state.show_comparison:
 # CURRENT DECISION SUBSET + EXPORT
 # --------------------------------------------
 
-col_titulo, col_btn1, col_btn2 = st.columns([2, 1, 1], vertical_alignment="center")
+col_titulo, col_btn = st.columns([3, 1], vertical_alignment="center")
 
 with col_titulo:
     st.markdown("📋 Current decision subset")
 
-st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
-
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
-with col_btn1:
+with col_btn:
     st.download_button(
         label="⬇️ Export current subset",
         data=csv_data.to_csv(index=False),
@@ -746,18 +728,9 @@ with col_btn1:
         use_container_width=True
     )
 
-with col_btn2:
-    if "highlight" in selected_df.columns and selected_df["highlight"].any():
-        st.download_button(
-            label="⬇️ Export selected SOI",
-            data=selected_df[selected_df["highlight"]].to_csv(index=False),
-            file_name="SOI.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-
 # --------------------------------------------
 # PREVIEW
+# --------------------------------------------
 with st.expander("Preview", expanded=False):
     df_preview = selected_df.copy()
     
@@ -774,77 +747,24 @@ with st.expander("Preview", expanded=False):
     st.dataframe(df_preview.head(100), use_container_width=True)
 
 
-
-# --------------------------------------------
-# PREVIEW
-# --------------------------------------------
-# with st.expander("Current decision subset"):
-    # Hacemos una copia para no alterar los datos reales del programa
-#    df_preview = selected_df.copy()
-    
-    # Lista de columnas técnicas creadas por el código que queremos ocultar
-#    columnas_a_ocultar = ["id","highlight", "highlight_label", "label"]
-    
-    # Las eliminamos de la vista si existen
-#    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
-    
-    # Mostramos la tabla limpia
-#    st.dataframe(df_preview.head(100))
-
-#st.caption("📥 Export results")
-
-#csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
-
-#col1, col2 = st.columns(2)
-
-#with col1:
-#    st.download_button(
-#        label="⬇️ Export current subset",
-#        data=csv_data.to_csv(index=False),
-#        file_name="current_subset.csv",
-#        mime="text/csv"
-#    )
-
-#with col2:
-#    if "highlight" in selected_df.columns and selected_df["highlight"].any():
-#        st.download_button(
-#            label="⬇️ Export selected SOI",
-#            data=selected_df[selected_df["highlight"]].to_csv(index=False),
-#            file_name="SOI.csv",
-#            mime="text/csv"
-#        )
-
-# st.caption(f"Highlighted: {(selected_df['highlight']).sum()} solutions")
-    # ----------------------------------
+# ----------------------------------
 # 🥇 Top solutions (non-intrusive)
 # ----------------------------------
 #if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
-
 #    top_n = min(3, len(selected_df))
-
 #    top_ids = selected_df.head(top_n)["id"].astype(int).tolist()
-
 #    st.caption("### 🥇 Top solutions (current method)")
 #    st.caption(", ".join([f"ID {i}" for i in top_ids]))
-
-
 
 # ----------------------------------
 # 📊 Quick insights (non-intrusive)
 # ----------------------------------
 #if len(selected_df) >= 2:
-#
 #    numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
-
 #    exclude_cols = ["id"]
 #    numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
-
 #    if numeric_cols:
-
 #        means = selected_df[numeric_cols].mean()
-
 #        top_metrics = means.sort_values(ascending=False).head(3)
-
 #        items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
 #        st.markdown("📊 Quick insights:  "+" | ".join(items))
-
