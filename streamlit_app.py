@@ -580,7 +580,7 @@ show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 # FILTROS
 # --------------------------------------------
 
-st.sidebar.markdown("### Context Framing")
+st.sidebar.markdown("### 🎛️ Context Framing")
 
 filtered_df = df.copy()
 
@@ -633,7 +633,7 @@ for m in available_qual:
 # --------------------------------------------
 # SELECCIÓN
 # -------------------------------------------- 
-
+st.sidebar.markdown("🔍 ROI Identification Lens")
 mode_label = st.sidebar.selectbox(
     "🔍ROI Identification Lens",
     [
@@ -642,7 +642,8 @@ mode_label = st.sidebar.selectbox(
         "🟢 Diversity lens",
         "🟣 Efficiency lens",
         "🟠 Domain-specific lens",
-    ]
+    ],
+    label_visibility="collapsed"
 )
 
 mode_map = {
@@ -1155,11 +1156,11 @@ with col_btn2:
 
 # --- DESPLEGABLE CON LOS DATOS ---
 # Ahora el expander solo envuelve a la tabla y queda justo debajo de los botones
-with st.expander("Preview", expanded=True):
+with st.expander("Preview", expanded=False):
     df_preview = selected_df.copy()
     columnas_a_ocultar = ["id", "highlight", "highlight_label", "label"]
     df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
-    st.dataframe(df_preview.head(100))
+    st.dataframe(df_preview.head(100), use_container_width=True)
 
 
 # --------------------------------------------
