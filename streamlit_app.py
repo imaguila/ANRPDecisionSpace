@@ -553,22 +553,38 @@ elif mode == "Ranking-based":
 else:
     color_col = None
 
+
+# Guardar explícitamente el subconjunto actual derivado de la lente ROI
+roi_df = selected_df.copy()
+
 # --------------------------------------------
 # HIGHLIGHT + LABELS
 # --------------------------------------------
 
+# Guardamos explícitamente el subconjunto actual derivado del framing + lens.
+# Esto representa la ROI/subset estructural actual antes de aplicar foco manual.
+roi_df = selected_df.copy()
 
 selected_ids = st.multiselect(
     "Highlight candidate solutions",
-    options=selected_df["id"].tolist(),
+    options=roi_df["id"].tolist(),
     default=st.session_state.selected_ids,
     key="selected_ids",
-    help="Manually mark solutions of interest for visual tracking or focused analysis."
+    help="Manually mark solutions for visual tracking or focused analysis."
 )
 
+roi_df["highlight"] = roi_df["id"].isin(selected_ids)
 
-selected_df["highlight"] = selected_df["id"].isin(selected_ids)
-
+if show_ids:
+    if mode == "Ranking-based":
+        roi_df["label"] = roi_df.apply(
+            lambda r: str(int(r["id"])) if (r["highlight"] or int(r.get("count", 0)) >= threshold) else "",
+            axis=1
+        )
+    else:
+        roi_df["label"] = roi_df["id"].astype(str)
+else:
+    roi_df["label"] = ""
 
 # --------------------------------------------
 # SOI FOCUS + COMPARATIVE SUPPORT
@@ -586,34 +602,21 @@ st.sidebar.caption(
     "Highlight marks candidate solutions visually. Focus restricts maps, preview, and comparison to the highlighted subset."
 )
 
-if st.sidebar.button("🆚 Open detailed comparison"):
-    st.session_state.show_comparison = not st.session_state.show_comparison
-    st.rerun()
-
-
-
-if show_ids:
-    if mode == "Ranking-based":
-        selected_df["label"] = selected_df.apply(
-            lambda r: str(int(r["id"])) if (r["highlight"] or int(r.get("count", 0)) >= threshold) else "", axis=1
-        )
-    else:
-        selected_df["label"] = selected_df["id"].astype(str)
-else:
-    selected_df["label"] = ""
-
+st.sidebar.checkbox(
+    "Open detailed comparison",
+    key="show_comparison"
+)
 
 # ----------------------------------
-# 🎯 Focus mode → filtrar datos reales
+# Focus mode → filtrar datos reales
 # ----------------------------------
-if focus_mode and selected_df["highlight"].any():
-    selected_df = selected_df[selected_df["highlight"]].copy()
+selected_df = roi_df.copy()
 
+if focus_mode and roi_df["highlight"].any():
+    selected_df = roi_df[roi_df["highlight"]].copy()
 
 if focus_mode:
     st.sidebar.caption(f"{len(selected_df)} solutions in focus")
-
-
 
 # --------------------------------------------
 # GRÁFICOS
@@ -633,17 +636,32 @@ for i, group in enumerate(st.session_state.groups):
     
     with col1:
         curr_x = group[0] if group[0] in available_here else available_here[0]
-        x = st.selectbox(f"X Axis {i}", available_here, index=available_here.index(curr_x), key=f"x_{i}")
+        x = st.selectbox(
+            f"X Axis {i}",
+            available_here,
+            index=available_here.index(curr_x),
+            key=f"x_{i}"
+        )
     
     with col2:
         y_opts = [m for m in available_here if m != x]
         curr_y = group[1] if group[1] in y_opts else y_opts[0]
-        y = st.selectbox(f"Y Axis {i}", y_opts, index=y_opts.index(curr_y), key=f"y_{i}")
+        y = st.selectbox(
+            f"Y Axis {i}",
+            y_opts,
+            index=y_opts.index(curr_y),
+            key=f"y_{i}"
+        )
     
     with col3:
         s_opts = [None] + [m for m in available_here if m not in [x, y]]
         curr_s = group[2] if group[2] in s_opts else None
-        size = st.selectbox(f"Size {i}", s_opts, index=s_opts.index(curr_s), key=f"s_{i}")
+        size = st.selectbox(
+            f"Size {i}",
+            s_opts,
+            index=s_opts.index(curr_s),
+            key=f"s_{i}"
+        )
 
     st.session_state.groups[i] = [x, y, size]
 
@@ -658,26 +676,46 @@ for i, group in enumerate(st.session_state.groups):
         else:
             st.info("Select a metric in 'Size' to enable comparison.")
 
-# RADAR
+# --------------------------------------------
+# RADAR / DETAILED COMPARISON
+# --------------------------------------------
 
 if st.session_state.show_comparison:
 
-    # 1) Base para comparar: si hay "unmask", usar solo highlight=True
-    if "highlight" in selected_df.columns and selected_df["highlight"].any():
-        df_compare_base = selected_df[selected_df["highlight"] == True].copy()
-    else:
-        df_compare_base = selected_df.copy()
+    st.markdown("### 🆚 Detailed comparison")
 
-    # 2) Detectar columna de agrupación (cluster o count)
+    # Si el usuario ha activado focus y hay highlights,
+    # la comparación se hace automáticamente sobre el subconjunto focalizado.
+    if focus_mode and roi_df["highlight"].any():
+        df_compare_base = selected_df.copy()
+        st.caption("Comparison source: focused highlighted subset")
+
+    else:
+        compare_options = ["Current ROI subset"]
+
+        if roi_df["highlight"].any():
+            compare_options.append("Highlighted candidates")
+
+        compare_source = st.radio(
+            "Comparison source",
+            compare_options,
+            horizontal=True,
+            key="comparison_source"
+        )
+
+        if compare_source == "Highlighted candidates":
+            df_compare_base = roi_df[roi_df["highlight"] == True].copy()
+        else:
+            df_compare_base = roi_df.copy()
+
+    # Detectar columna de agrupación (cluster o count)
     group_col = None
 
-    # Clustering (preferimos cluster_str si existe)
     if "cluster_str" in df_compare_base.columns:
         group_col = "cluster_str"
     elif "cluster" in df_compare_base.columns:
         group_col = "cluster"
 
-    # Ranking (si no hay clustering)
     if group_col is None:
         if "count_str" in df_compare_base.columns:
             group_col = "count_str"
@@ -686,14 +724,15 @@ if st.session_state.show_comparison:
 
     plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
+# --------------------------------------------
+# CURRENT DECISION SUBSET + EXPORT
+# --------------------------------------------
 
 col_titulo, col_btn1, col_btn2 = st.columns([2, 1, 1], vertical_alignment="center")
 
 with col_titulo:
-    # Usamos un subheader o markdown en lugar del texto del expander tradicional
     st.markdown("📋 Current decision subset")
 
-# Preparamos los datos para la descarga
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
 with col_btn1:
@@ -702,7 +741,7 @@ with col_btn1:
         data=csv_data.to_csv(index=False),
         file_name="current_subset.csv",
         mime="text/csv",
-        use_container_width=True # Para que se adapte bien al tamaño de la columna
+        use_container_width=True
     )
 
 with col_btn2:
@@ -715,13 +754,18 @@ with col_btn2:
             use_container_width=True
         )
 
-# --- DESPLEGABLE CON LOS DATOS ---
-# Ahora el expander solo envuelve a la tabla y queda justo debajo de los botones
+# --------------------------------------------
+# PREVIEW
+# --------------------------------------------
 with st.expander("Preview", expanded=False):
     df_preview = selected_df.copy()
     columnas_a_ocultar = ["id", "highlight", "highlight_label", "label"]
-    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
+    df_preview = df_preview.drop(
+        columns=[col for col in columnas_a_ocultar if col in df_preview.columns]
+    )
     st.dataframe(df_preview.head(100), use_container_width=True)
+
+st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
 
 
 # --------------------------------------------
