@@ -50,7 +50,7 @@ used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
 
 st.sidebar.markdown("## 🗺️ Visual Workspace")
-st.sidebar.caption("Create, reset, and manage 2D views of the current decision space.")
+st.sidebar.caption("Manage 2D views of the decision space")
 
 # Estado del workspace
 n_maps = len(st.session_state.groups)
@@ -67,7 +67,7 @@ col_reset, col_add = st.sidebar.columns(2)
 
 with col_reset:
     if st.button(
-        "🧹 Reset workspace",
+        "Reset",
         use_container_width=True,
         disabled=not can_reset_workspace,
         key="reset_workspace_btn"
@@ -78,7 +78,7 @@ with col_reset:
 
 with col_add:
     if st.button(
-        "➕ Add map",
+        "New decision map",
         use_container_width=True,
         disabled=not can_add_map,
         key="add_map_btn"
@@ -88,10 +88,10 @@ with col_add:
 
 # Mensajes de ayuda
 if not can_add_map:
-    st.sidebar.info("No additional maps can be created with the remaining available metrics.")
+    st.sidebar.info("No remaining available metrics.")
 
 if can_reset_workspace:
-    st.sidebar.caption("Reset clears the current workspace maps and closes comparative views, but keeps the loaded data and current enrichment.")
+    st.sidebar.caption("Reset to clear maps, but keeps data")
 
 show_ids = st.sidebar.checkbox(
     "Show IDs on plots",
