@@ -576,6 +576,16 @@ else:
     st.sidebar.success(f"{len(df)} solutions enriched")
 
 
+opt_cols = get_all_metricas()
+
+numeric_cols = df.select_dtypes(include="number").columns.tolist()
+
+available_opt = [c for c in numeric_cols if c in opt_cols]
+available_qual = [c for c in numeric_cols if c not in opt_cols]
+
+available_metrics = available_opt + available_qual
+
+
 # --------------------------------------------
 # METRICS
 # --------------------------------------------
@@ -605,7 +615,7 @@ if len(remaining) >= 2:
     if st.sidebar.button("Add decision-space map"):
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
-        
+
 ### Explicación de lo no incluido
 
 with st.sidebar.expander("Why some indicators are unavailable"):
@@ -641,8 +651,8 @@ st.sidebar.markdown("## 🎛️ Context Framing")
 filtered_df = df.copy()
 
 # Separar métricas
-available_opt = [m for m in opt_df.columns if m in df.columns]
-available_qual = [m for m in qual_df.columns if m in df.columns]
+#available_opt = [m for m in opt_df.columns if m in df.columns]
+#available_qual = [m for m in qual_df.columns if m in df.columns]
 
 # -------- OPTIMIZATION METRICS --------
 st.sidebar.markdown("#### 🔵 :blue[Optimization objectives]")
