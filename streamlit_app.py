@@ -1125,6 +1125,42 @@ if st.session_state.show_comparison:
     plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
 
+col_titulo, col_btn1, col_btn2 = st.columns([2, 1, 1], vertical_alignment="center")
+
+with col_titulo:
+    # Usamos un subheader o markdown en lugar del texto del expander tradicional
+    st.subheader("📋 Current decision subset")
+
+# Preparamos los datos para la descarga
+csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
+
+with col_btn1:
+    st.download_button(
+        label="⬇️ Export current subset",
+        data=csv_data.to_csv(index=False),
+        file_name="current_subset.csv",
+        mime="text/csv",
+        use_container_width=True # Para que se adapte bien al tamaño de la columna
+    )
+
+with col_btn2:
+    if "highlight" in selected_df.columns and selected_df["highlight"].any():
+        st.download_button(
+            label="⬇️ Export selected SOI",
+            data=selected_df[selected_df["highlight"]].to_csv(index=False),
+            file_name="SOI.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+# --- DESPLEGABLE CON LOS DATOS ---
+# Ahora el expander solo envuelve a la tabla y queda justo debajo de los botones
+with st.expander("Preview", expanded=True):
+    df_preview = selected_df.copy()
+    columnas_a_ocultar = ["id", "highlight", "highlight_label", "label"]
+    df_preview = df_preview.drop(columns=[col for col in columnas_a_ocultar if col in df_preview.columns])
+    st.dataframe(df_preview.head(100), use_container_width=True)
+
 
 # --------------------------------------------
 # PREVIEW
@@ -1141,40 +1177,6 @@ with st.expander("Current decision subset"):
     
     # Mostramos la tabla limpia
     st.dataframe(df_preview.head(100))
-
-
-    # ----------------------------------
-# 🥇 Top solutions (non-intrusive)
-# ----------------------------------
-if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
-
-    top_n = min(3, len(selected_df))
-
-    top_ids = selected_df.head(top_n)["id"].astype(int).tolist()
-
-    st.caption("### 🥇 Top solutions (current method)")
-    st.caption(", ".join([f"ID {i}" for i in top_ids]))
-
-
-
-# ----------------------------------
-# 📊 Quick insights (non-intrusive)
-# ----------------------------------
-if len(selected_df) >= 2:
-
-    numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
-
-    exclude_cols = ["id"]
-    numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
-
-    if numeric_cols:
-
-        means = selected_df[numeric_cols].mean()
-
-        top_metrics = means.sort_values(ascending=False).head(3)
-
-        items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
-        st.markdown("📊 Quick insights:  "+" | ".join(items))
 
 st.caption("📥 Export results")
 
@@ -1200,3 +1202,36 @@ with col2:
         )
 
 st.caption(f"Highlighted: {(selected_df['highlight']).sum()} solutions")
+    # ----------------------------------
+# 🥇 Top solutions (non-intrusive)
+# ----------------------------------
+#if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
+
+#    top_n = min(3, len(selected_df))
+
+#    top_ids = selected_df.head(top_n)["id"].astype(int).tolist()
+
+#    st.caption("### 🥇 Top solutions (current method)")
+#    st.caption(", ".join([f"ID {i}" for i in top_ids]))
+
+
+
+# ----------------------------------
+# 📊 Quick insights (non-intrusive)
+# ----------------------------------
+#if len(selected_df) >= 2:
+#
+#    numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
+
+#    exclude_cols = ["id"]
+#    numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
+
+#    if numeric_cols:
+
+#        means = selected_df[numeric_cols].mean()
+
+#        top_metrics = means.sort_values(ascending=False).head(3)
+
+#        items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
+#        st.markdown("📊 Quick insights:  "+" | ".join(items))
+
