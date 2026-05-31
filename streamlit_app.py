@@ -575,6 +575,7 @@ else:
 # SOI FOCUS + COMPARATIVE SUPPORT
 # --------------------------------------------
 
+
 st.sidebar.markdown("## 🎯 Candidate Focus and Comparison")
 
 focus_mode = st.sidebar.checkbox(
@@ -583,14 +584,11 @@ focus_mode = st.sidebar.checkbox(
     key="focus_mode"
 )
 
-st.sidebar.caption(
-    "Highlight marks candidate solutions visually. Focus restricts maps, preview, and comparison to the highlighted subset."
-)
-
 st.sidebar.checkbox(
     "Open detailed comparison",
     key="show_comparison"
 )
+
 
 # ----------------------------------
 # Focus mode → filtrar datos reales
