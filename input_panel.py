@@ -26,8 +26,8 @@ def render_input_panel():
     data_mode = st.sidebar.radio(
         "Select data source",
         [
-            "🧱 Build from NRP instance"
-            "📂 Load enriched solution set",
+            "🧱 Build from NRP instance",
+            "📂 Load enriched solution set"
         ],
         label_visibility="collapsed"
     )
