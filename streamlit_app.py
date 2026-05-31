@@ -559,11 +559,13 @@ else:
 
 
 selected_ids = st.multiselect(
-    "Select candidate SOI",
+    "Highlight candidate solutions",
     options=selected_df["id"].tolist(),
     default=st.session_state.selected_ids,
-    key="selected_ids"
+    key="selected_ids",
+    help="Manually mark solutions of interest for visual tracking or focused analysis."
 )
+
 
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 
@@ -571,22 +573,22 @@ selected_df["highlight"] = selected_df["id"].isin(selected_ids)
 # --------------------------------------------
 # SOI FOCUS + COMPARATIVE SUPPORT
 # --------------------------------------------
-st.sidebar.markdown("## 🎯 SOI and Comparative Support")
+
+st.sidebar.markdown("## 🎯 Candidate Focus and Comparison")
 
 focus_mode = st.sidebar.checkbox(
-    "SOI Focus Mode",
-    help="Highlight = visual emphasis | Focus = restrict analysis to selected SOI",
+    "Focus on highlighted solutions",
+    help="Keep candidates highlighted in context, or restrict analysis to them.",
     key="focus_mode"
 )
 
 st.sidebar.caption(
-    "Highlight keeps candidates visible in context; Focus restricts the analysis to the selected SOI."
+    "Highlight marks candidate solutions visually. Focus restricts maps, preview, and comparison to the highlighted subset."
 )
 
-if st.sidebar.button("🆚 Enable comparative views"):
+if st.sidebar.button("🆚 Open detailed comparison"):
     st.session_state.show_comparison = not st.session_state.show_comparison
     st.rerun()
-
 
 
 
