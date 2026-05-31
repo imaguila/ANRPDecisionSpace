@@ -23,7 +23,6 @@ Narrowing down alternatives through interactive filtering and selection
 The system supports two data acquisition modes:
 
 
-
 CSV Upload Mode
 Users can upload precomputed datasets containing solutions and performance indicators.
 
