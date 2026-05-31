@@ -42,6 +42,7 @@ if "focus_mode" not in st.session_state:
     st.session_state.focus_mode = False
 
 
+
 # --------------------------------------------
 # VISUAL WORKSPACE
 # --------------------------------------------
@@ -49,18 +50,56 @@ used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
 
 st.sidebar.markdown("## 🗺️ Visual Workspace")
-st.sidebar.caption("Create additional 2D views of the current decision space.")
+st.sidebar.caption("Create, reset, and manage 2D views of the current decision space.")
 
-if len(remaining) >= 2:
-    if st.sidebar.button("Add decision-space map"):
+# Estado del workspace
+n_maps = len(st.session_state.groups)
+can_add_map = len(remaining) >= 2
+can_reset_workspace = n_maps > 0
+
+# Texto de ayuda contextual
+st.sidebar.caption(
+    f"Active maps: {n_maps} · Remaining metrics available for new maps: {len(remaining)}"
+)
+
+# Botones en paralelo
+col_reset, col_add = st.sidebar.columns(2)
+
+with col_reset:
+    if st.button(
+        "🧹 Reset workspace",
+        use_container_width=True,
+        disabled=not can_reset_workspace,
+        key="reset_workspace_btn"
+    ):
+        st.session_state.groups = []
+        st.session_state.show_comparison = False
+        st.rerun()
+
+with col_add:
+    if st.button(
+        "➕ Add map",
+        use_container_width=True,
+        disabled=not can_add_map,
+        key="add_map_btn"
+    ):
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
+
+# Mensajes de ayuda
+if not can_add_map:
+    st.sidebar.info("No additional maps can be created with the remaining available metrics.")
+
+if can_reset_workspace:
+    st.sidebar.caption("Reset clears the current workspace maps and closes comparative views, but keeps the loaded data and current enrichment.")
 
 show_ids = st.sidebar.checkbox(
     "Show IDs on plots",
     value=False,
     help="Display solution identifiers directly on the maps."
 )
+
+
 
 # --------------------------------------------
 # CONTEXT FRAMING
