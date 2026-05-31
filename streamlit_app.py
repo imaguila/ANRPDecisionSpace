@@ -10,6 +10,7 @@ from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import silhouette_score
 from config import PROBLEMAS
 from problem import run_pipeline, leer_soluciones, REQUISITOS
+from problem import INDICADORES,  calcular_indicadores
 
 # --------------------------------------------
 # CONFIGURACIÓN
@@ -24,6 +25,8 @@ DATA_PATH = "data"
 @st.cache_data
 def load_csv(path):
     return pd.read_csv(path)
+
+
 
 def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
     import numpy as np
@@ -447,6 +450,15 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 # --------------------------------------------
 
 
+def detectar_indicadores_posibles(df):
+    posibles = []
+    for nombre, requisitos in REQUISITOS.items():
+        if all(col in df.columns for col in requisitos):
+            posibles.append(nombre)
+    return posibles
+
+
+
 st.sidebar.markdown("## 🧩  Input and Preparation")
 
 # 1. Creamos dos columnas dentro de la barra lateral
@@ -477,16 +489,37 @@ data_mode = st.sidebar.radio(
 # 1) CSV MODE (TU FLUJO ORIGINAL)
 # ============================================
 if data_mode == "📂 Load enriched solution set":
-
-    uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
-
-    if uploaded_file is None:
-        st.warning("Please upload a dataset with indicators.")
+    uploaded_file = st.sidebar.file_uploader(
+        "Upload solution set (CSV)",
+        type="csv"
+    )
+    if uploaded_file is not None:
+        df = load_csv(uploaded_file)
+    else:
+        st.warning("Upload a CSV file to continue")
         st.stop()
 
-    df = pd.read_csv(uploaded_file)
-
     st.sidebar.success(f"{len(df)} solutions loaded from CSV")
+
+    indicadores_posibles = detectar_indicadores_posibles(df)
+
+    if indicadores_posibles:
+        
+        st.sidebar.markdown("## 🧪 Semantic enrichment")
+
+        selected_indicators = st.sidebar.multiselect(
+            "Derived indicators",
+            indicadores_posibles,
+            default=[]
+        )
+
+        if selected_indicators:
+            from problem import calcular_indicadores
+            df = calcular_indicadores(df, selected_indicators)
+    else:
+        st.sidebar.info("No derived indicators can be computed with current data")
+
+
 
 # ============================================
 # 2) PIPELINE MODE (PREPARADO PARA FUTURO)
