@@ -447,21 +447,32 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 # --------------------------------------------
 
 
-st.sidebar.markdown("## :🧩  Input and Preparation")
+st.sidebar.markdown("## 🧩  Input and Preparation")
 
+# 1. Creamos dos columnas dentro de la barra lateral
+# La primera columna es más ancha para el texto; la segunda es para el botón
+col_texto, col_btn = st.sidebar.columns([2.5, 1], vertical_alignment="center")
+
+with col_texto:
+    # Usamos el markdown con el tamaño de texto que te gusta
+    st.markdown("Select data source")
+
+with col_btn:
+    # Un botón pequeño de reset justo al lado
+    if st.button("🔄 Reset", use_container_width=True):
+        st.session_state.clear()
+        st.success("Reset ✔️")
+        st.rerun()
+
+# 2. Creamos el radio button ocultando su label nativo
 data_mode = st.sidebar.radio(
-    "Select data source",
+    "Select data source", # Se mantiene por accesibilidad
     [
         "📂 Load enriched solution set",
-        "🧱 Build decision space from NRP instance"
-    ]
+        "🧱 Build from NRP instance"
+    ],
+    label_visibility="collapsed" # <--- Oculta el título gigante nativo
 )
-
-if st.sidebar.button("🔄 Reset all"):
-    st.session_state.clear()
-    st.success("App reset ✔️")
-    st.rerun()
-
 # ============================================
 # 1) CSV MODE (TU FLUJO ORIGINAL)
 # ============================================
@@ -580,7 +591,7 @@ show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
 # FILTROS
 # --------------------------------------------
 
-st.sidebar.markdown("### 🎛️ Context Framing")
+st.sidebar.markdown("## 🎛️ Context Framing")
 
 filtered_df = df.copy()
 
@@ -633,7 +644,7 @@ for m in available_qual:
 # --------------------------------------------
 # SELECCIÓN
 # -------------------------------------------- 
-st.sidebar.markdown("### 🔍 ROI Identification Lens")
+st.sidebar.markdown("## 🔍 ROI Identification Lens")
 mode_label = st.sidebar.selectbox(
     "🔍ROI Identification Lens",
     [
