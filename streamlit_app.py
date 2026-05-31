@@ -493,6 +493,36 @@ def get_all_metricas():
     return list(metricas)
 
 
+def separar_columnas(df):
+    columnas = df.columns.tolist()
+
+    # -----------------------
+    # EXCLUSIONES
+    # -----------------------
+    exclude_patterns = ["req_", "stcov_"]
+    exclude_exact = ["id"]
+
+    columnas_validas = []
+
+    for c in columnas:
+        if c in exclude_exact:
+            continue
+        if any(c.startswith(pref) for pref in exclude_patterns):
+            continue
+        columnas_validas.append(c)
+
+    # -----------------------
+    # SOLO NUMÉRICAS
+    # -----------------------
+    columnas_validas = [
+        c for c in columnas_validas 
+        if pd.api.types.is_numeric_dtype(df[c])
+    ]
+
+    return columnas_validas
+
+
+
 st.sidebar.markdown("## 🧩 Input and Preparation")
 
 col_texto, col_btn = st.sidebar.columns([2.5, 1], vertical_alignment="center")
@@ -539,6 +569,18 @@ if data_mode == "📂 Load enriched solution set":
     df, _ = aplicar_enrichment(df)
 
 
+    with st.sidebar.expander("Advanced column selection"):
+
+        columnas_analisis = separar_columnas(df)
+
+        selected_cols = st.multiselect(
+            "Columns used for analysis",
+            columnas_analisis,
+            default=columnas_analisis
+        )
+    columnas_analisis = selected_cols
+
+
 # ============================================
 # 2) PIPELINE MODE
 # ============================================
@@ -578,12 +620,16 @@ else:
 
 opt_cols = get_all_metricas()
 
-numeric_cols = df.select_dtypes(include="number").columns.tolist()
 
-available_opt = [c for c in numeric_cols if c in opt_cols]
-available_qual = [c for c in numeric_cols if c not in opt_cols]
+columnas_analisis = separar_columnas(df)
+
+opt_cols = get_all_metricas()
+
+available_opt = [c for c in columnas_analisis if c in opt_cols]
+available_qual = [c for c in columnas_analisis if c not in opt_cols]
 
 available_metrics = available_opt + available_qual
+
 
 
 # --------------------------------------------
