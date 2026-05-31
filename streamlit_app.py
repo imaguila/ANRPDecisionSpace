@@ -19,6 +19,8 @@ st.set_page_config(layout="wide")
 st.title("ANRP Decision Space Explorer")
 DATA_PATH = "data"
 
+
+
 # --------------------------------------------
 # FUNCIONES CORE
 # --------------------------------------------
@@ -458,6 +460,16 @@ def detectar_indicadores_posibles(df):
     return posibles
 
 
+def get_all_metricas():
+    metricas = set()
+    from config import PROBLEMAS
+
+    for p in PROBLEMAS.values():
+        metricas.update(p["metricas"])
+
+    return list(metricas)
+
+
 
 st.sidebar.markdown("## 🧩  Input and Preparation")
 
@@ -581,10 +593,17 @@ else:
 # --------------------------------------------
 # METRICS
 # --------------------------------------------
-opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
-qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
-available_metrics = [m for m in list(opt_df.columns) + list(qual_df.columns) if m in df.columns]
-available_qual = [m for m in qual_df.columns if m in df.columns]
+
+
+opt_cols = get_all_metricas()
+
+available_opt = [c for c in df.columns if c in opt_cols]
+available_qual = [c for c in df.columns if c not in opt_cols]
+
+#opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
+#qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
+#available_metrics = [m for m in list(opt_df.columns) + list(qual_df.columns) if m in df.columns]
+#available_qual = [m for m in qual_df.columns if m in df.columns]
 
 # --------------------------------------------
 # SESSION STATE
