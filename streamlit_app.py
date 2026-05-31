@@ -79,10 +79,6 @@ st.html("""
 """)
 
 
-
-
-
-
 # col_reset, col_add = st.sidebar.columns(2)
 col_reset, col_add = st.sidebar.columns([0.35, 0.65])
 with col_reset:
@@ -102,7 +98,8 @@ with col_add:
         "New decision map",
         use_container_width=True,
         disabled=not can_add_map,
-        key="add_map_btn"
+        key="add_map_btn",
+        type="primary"
     ):
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
