@@ -733,6 +733,8 @@ col_titulo, col_btn1, col_btn2 = st.columns([2, 1, 1], vertical_alignment="cente
 with col_titulo:
     st.markdown("📋 Current decision subset")
 
+st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
+
 csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
 
 with col_btn1:
@@ -765,7 +767,7 @@ with st.expander("Preview", expanded=False):
     )
     st.dataframe(df_preview.head(100), use_container_width=True)
 
-st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
+#st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
 
 
 # --------------------------------------------
@@ -807,7 +809,7 @@ st.caption(f"Highlighted: {(roi_df['highlight']).sum()} solutions")
 #            mime="text/csv"
 #        )
 
-st.caption(f"Highlighted: {(selected_df['highlight']).sum()} solutions")
+# st.caption(f"Highlighted: {(selected_df['highlight']).sum()} solutions")
     # ----------------------------------
 # 🥇 Top solutions (non-intrusive)
 # ----------------------------------
