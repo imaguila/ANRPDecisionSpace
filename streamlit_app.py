@@ -452,6 +452,10 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 # --------------------------------------------
 
 
+from problem import calcular_indicadores, REQUISITOS
+from config import PROBLEMAS
+
+
 def detectar_indicadores_posibles(df):
     posibles = []
     for nombre, requisitos in REQUISITOS.items():
@@ -460,89 +464,88 @@ def detectar_indicadores_posibles(df):
     return posibles
 
 
+def aplicar_enrichment(df, default=None):
+    posibles = detectar_indicadores_posibles(df)
+
+    if posibles:
+        st.sidebar.markdown("## 🧪 Semantic enrichment")
+
+        selected = st.sidebar.multiselect(
+            "Indicators",
+            posibles,
+            default=default or []
+        )
+
+        if selected:
+            df = calcular_indicadores(df, selected)
+
+        return df, posibles
+
+    else:
+        st.sidebar.info("No derived indicators available with current data")
+        return df, []
+
+
 def get_all_metricas():
     metricas = set()
-    from config import PROBLEMAS
-
     for p in PROBLEMAS.values():
         metricas.update(p["metricas"])
-
     return list(metricas)
 
 
+st.sidebar.markdown("## 🧩 Input and Preparation")
 
-st.sidebar.markdown("## 🧩  Input and Preparation")
-
-# 1. Creamos dos columnas dentro de la barra lateral
-# La primera columna es más ancha para el texto; la segunda es para el botón
 col_texto, col_btn = st.sidebar.columns([2.5, 1], vertical_alignment="center")
 
 with col_texto:
-    # Usamos el markdown con el tamaño de texto que te gusta
     st.markdown("Select data source")
 
 with col_btn:
-    # Un botón pequeño de reset justo al lado
     if st.button("🔄 Reset", use_container_width=True):
         st.session_state.clear()
         st.success("Reset ✔️")
         st.rerun()
 
-# 2. Creamos el radio button ocultando su label nativo
+
 data_mode = st.sidebar.radio(
-    "Select data source", # Se mantiene por accesibilidad
+    "Select data source",
     [
         "📂 Load enriched solution set",
         "🧱 Build from NRP instance"
     ],
-    label_visibility="collapsed" # <--- Oculta el título gigante nativo
+    label_visibility="collapsed"
 )
+
+
 # ============================================
-# 1) CSV MODE (TU FLUJO ORIGINAL)
+# 1) CSV MODE
 # ============================================
 if data_mode == "📂 Load enriched solution set":
+
     uploaded_file = st.sidebar.file_uploader(
         "Upload solution set (CSV)",
         type="csv"
     )
+
     if uploaded_file is not None:
         df = load_csv(uploaded_file)
     else:
         st.warning("Upload a CSV file to continue")
         st.stop()
 
-    st.sidebar.success(f"{len(df)} solutions loaded from CSV")
+    st.sidebar.success(f"{len(df)} solutions loaded")
 
-    indicadores_posibles = detectar_indicadores_posibles(df)
-
-    if indicadores_posibles:
-        
-        st.sidebar.markdown("## 🧪 Semantic enrichment")
-
-        selected_indicators = st.sidebar.multiselect(
-            "Derived indicators",
-            indicadores_posibles,
-            default=[]
-        )
-
-        if selected_indicators:
-            from problem import calcular_indicadores
-            df = calcular_indicadores(df, selected_indicators)
-    else:
-        st.sidebar.info("No derived indicators can be computed with current data")
-
+    # ✅ Enrichment dinámico
+    df, _ = aplicar_enrichment(df)
 
 
 # ============================================
-# 2) PIPELINE MODE (PREPARADO PARA FUTURO)
+# 2) PIPELINE MODE
 # ============================================
 else:
 
     st.sidebar.markdown("## 🧪 Semantic enrichment")
 
-    # -------------------------------
-    # Selección de problema
-    # -------------------------------
     problem_name = st.sidebar.selectbox(
         "NRP dataset from literature",
         list(PROBLEMAS.keys()),
@@ -551,25 +554,11 @@ else:
 
     config = PROBLEMAS[problem_name]
 
-    # -------------------------------
-    # Leer datos base (sin indicadores)
-    # -------------------------------
     df_base = leer_soluciones(config)
 
-    # -------------------------------
-    # Detectar indicadores posibles
-    # -------------------------------
-    available_indicators = []
+    available_indicators = detectar_indicadores_posibles(df_base)
 
-    for ind, reqs in REQUISITOS.items():
-        if all(col in df_base.columns for col in reqs):
-            available_indicators.append(ind)
-
-    # -------------------------------
-    # Selección indicadores
-    # -------------------------------
     default_indicators = config.get("indicadores_default", [])
-
 
     selected_indicators = st.sidebar.multiselect(
         "Indicators",
@@ -578,10 +567,6 @@ else:
         key="indicators_selector"
     )
 
-
-    # -------------------------------
-    # Ejecutar pipeline
-    # -------------------------------
     @st.cache_data
     def build_df(problem_name, selected_indicators):
         return run_pipeline(problem_name, selected_indicators)
@@ -590,20 +575,19 @@ else:
 
     st.sidebar.success(f"{len(df)} solutions enriched")
 
+
 # --------------------------------------------
 # METRICS
 # --------------------------------------------
 
-
 opt_cols = get_all_metricas()
 
-available_opt = [c for c in df.columns if c in opt_cols]
-available_qual = [c for c in df.columns if c not in opt_cols]
+numeric_cols = df.select_dtypes(include="number").columns.tolist()
 
-#opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
-#qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
-#available_metrics = [m for m in list(opt_df.columns) + list(qual_df.columns) if m in df.columns]
-#available_qual = [m for m in qual_df.columns if m in df.columns]
+available_opt = [c for c in numeric_cols if c in opt_cols]
+available_qual = [c for c in numeric_cols if c not in opt_cols]
+
+available_metrics = available_opt + available_qual
 
 # --------------------------------------------
 # SESSION STATE
@@ -621,6 +605,15 @@ if len(remaining) >= 2:
     if st.sidebar.button("Add decision-space map"):
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
+        
+### Explicación de lo no incluido
+
+with st.sidebar.expander("Why some indicators are unavailable"):
+    for nombre, requisitos in REQUISITOS.items():
+        missing = [r for r in requisitos if r not in df.columns]
+        if missing:
+            st.caption(f"{nombre}: missing {missing}")
+
 
 if st.sidebar.button("🆚Toggle comparative support view"):
     st.session_state.show_comparison = not st.session_state.show_comparison
