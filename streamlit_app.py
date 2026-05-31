@@ -633,7 +633,7 @@ for m in available_qual:
 # --------------------------------------------
 # SELECCIÓN
 # -------------------------------------------- 
-st.sidebar.markdown("🔍 ROI Identification Lens")
+st.sidebar.markdown("### 🔍 ROI Identification Lens")
 mode_label = st.sidebar.selectbox(
     "🔍ROI Identification Lens",
     [
