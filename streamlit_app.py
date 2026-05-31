@@ -29,37 +29,89 @@ available_opt, available_qual, available_metrics = get_metric_sets(df, DATA_PATH
 # --------------------------------------------
 # SESSION STATE
 # --------------------------------------------
-if "groups" not in st.session_state: st.session_state.groups = []
-if "show_comparison" not in st.session_state: st.session_state.show_comparison = False
+if "groups" not in st.session_state:
+    st.session_state.groups = []
 
-if "selected_ids" not in st.session_state: st.session_state.selected_ids = []
-if "focus_mode" not in st.session_state: st.session_state.focus_mode = False
+if "show_comparison" not in st.session_state:
+    st.session_state.show_comparison = False
 
+if "selected_ids" not in st.session_state:
+    st.session_state.selected_ids = []
+
+if "focus_mode" not in st.session_state:
+    st.session_state.focus_mode = False
+
+
+# --------------------------------------------
+# VISUAL WORKSPACE
+# --------------------------------------------
 used_now = [m for g in st.session_state.groups for m in g if m]
 remaining = [m for m in available_metrics if m not in used_now]
+
+st.sidebar.markdown("## 🗺️ Visual Workspace")
+st.sidebar.caption("Create additional 2D views of the current decision space.")
 
 if len(remaining) >= 2:
     if st.sidebar.button("Add decision-space map"):
         st.session_state.groups.append([remaining[0], remaining[1], None])
         st.rerun()
 
-if st.sidebar.button("🆚Toggle comparative support view"):
-    st.session_state.show_comparison = not st.session_state.show_comparison
-    st.rerun()
-
-
-focus_mode = st.sidebar.checkbox(
-    "🎯 SOI Focus Mode",
-    help="Highlight = visual emphasis | Focus = restrict analysis to selected SOI",
-    key="focus_mode"
-
+show_ids = st.sidebar.checkbox(
+    "Show IDs on plots",
+    value=False,
+    help="Display solution identifiers directly on the maps."
 )
 
-st.sidebar.caption("Highlight = visual emphasis | Focus = restrict analysis to selected SOI")
 
-show_ids = st.sidebar.checkbox("Show IDs on plots", value=False)
+# --------------------------------------------
+# FILTROS
+# --------------------------------------------
 
+st.sidebar.markdown("## 🎛️ Context Framing")
 
+filtered_df = df.copy()
+
+# -------- OPTIMIZATION METRICS --------
+st.sidebar.markdown("#### 🔵 :blue[Optimization objectives]")
+
+for m in available_opt:
+    if pd.api.types.is_numeric_dtype(df[m]):
+        min_v, max_v = float(df[m].min()), float(df[m].max())
+        if min_v != max_v:
+
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_v,
+                max_v,
+                (min_v, max_v),
+                key=f"opt_{m}"
+            )
+
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
+
+# -------- QUALITY METRICS --------
+st.sidebar.markdown("#### 🟢 :green[Quality Indicators]")
+
+for m in available_qual:
+    if pd.api.types.is_numeric_dtype(df[m]):
+        min_v, max_v = float(df[m].min()), float(df[m].max())
+        if min_v != max_v:
+
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_v,
+                max_v,
+                (min_v, max_v),
+                key=f"qual_{m}"
+            )
+
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
 # --------------------------------------------
 # FILTROS
 # --------------------------------------------
@@ -113,6 +165,9 @@ for m in available_qual:
                 (filtered_df[m] >= val_range[0]) &
                 (filtered_df[m] <= val_range[1])
             ]
+
+
+
 
 # --------------------------------------------
 # SELECCIÓN
@@ -511,9 +566,30 @@ selected_ids = st.multiselect(
     key="selected_ids"
 )
 
-
-
 selected_df["highlight"] = selected_df["id"].isin(selected_ids)
+
+
+# --------------------------------------------
+# SOI FOCUS + COMPARATIVE SUPPORT
+# --------------------------------------------
+st.sidebar.markdown("## 🎯 SOI and Comparative Support")
+
+focus_mode = st.sidebar.checkbox(
+    "SOI Focus Mode",
+    help="Highlight = visual emphasis | Focus = restrict analysis to selected SOI",
+    key="focus_mode"
+)
+
+st.sidebar.caption(
+    "Highlight keeps candidates visible in context; Focus restricts the analysis to the selected SOI."
+)
+
+if st.sidebar.button("🆚 Enable comparative views"):
+    st.session_state.show_comparison = not st.session_state.show_comparison
+    st.rerun()
+
+
+
 
 if show_ids:
     if mode == "Ranking-based":
