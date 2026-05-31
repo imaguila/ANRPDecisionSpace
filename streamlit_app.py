@@ -62,15 +62,36 @@ st.sidebar.caption(
     f"Active maps: {n_maps} · Remaining metrics available for new maps: {len(remaining)}"
 )
 
-# Botones en paralelo
-col_reset, col_add = st.sidebar.columns(2)
 
+
+
+# Botones en paralelo
+
+
+st.html("""
+    <style>
+    /* Estilo para el botón de reset usando su clave única */
+    div[data-testid="stActionButtonElement"] button[key="reset_workspace_btn"] {
+        color: #ff4b4b;
+        border-color: #ff4b4b;
+    }
+    </style>
+""")
+
+
+
+
+
+
+# col_reset, col_add = st.sidebar.columns(2)
+col_reset, col_add = st.sidebar.columns([0.35, 0.65])
 with col_reset:
     if st.button(
         "Reset",
         use_container_width=True,
         disabled=not can_reset_workspace,
-        key="reset_workspace_btn"
+        key="reset_workspace_btn",
+        type="secondary"
     ):
         st.session_state.groups = []
         st.session_state.show_comparison = False
@@ -88,10 +109,10 @@ with col_add:
 
 # Mensajes de ayuda
 if not can_add_map:
-    st.sidebar.info("No remaining available metrics.")
+    st.sidebar.info("No remaining available metrics")
 
 if can_reset_workspace:
-    st.sidebar.caption("Reset to clear maps, but keeps data")
+    st.sidebar.caption("'Reset' clears maps, but keeps data")
 
 show_ids = st.sidebar.checkbox(
     "Show IDs on plots",
