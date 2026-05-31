@@ -499,7 +499,7 @@ else:
     # Selección de problema
     # -------------------------------
     problem_name = st.sidebar.selectbox(
-        "Problem",
+        "NRP dataset from literature",
         list(PROBLEMAS.keys()),
         key="problem_selector"
     )
@@ -543,12 +543,12 @@ else:
 
     df = build_df(problem_name, selected_indicators)
 
-    st.sidebar.success(f"{len(df)} solutions generated")
+    st.sidebar.success(f"{len(df)} solutions enriched")
 
 # --------------------------------------------
 # METRICS
 # --------------------------------------------
-opt_df = load_csv(os.path.join(DATA_PATH, "optimization_metrics.csv"))
+opt_df = load_csv(os.path.join(DATA_PATH, "optimizati   on_metrics.csv"))
 qual_df = load_csv(os.path.join(DATA_PATH, "quality_metrics.csv"))
 available_metrics = [m for m in list(opt_df.columns) + list(qual_df.columns) if m in df.columns]
 available_qual = [m for m in qual_df.columns if m in df.columns]
