@@ -69,8 +69,8 @@ st.sidebar.markdown("## 🎛️ Context Framing")
 filtered_df = df.copy()
 
 # Separar métricas
-available_opt = [m for m in opt_df.columns if m in df.columns]
-available_qual = [m for m in qual_df.columns if m in df.columns]
+#available_opt = [m for m in opt_df.columns if m in df.columns]
+#available_qual = [m for m in qual_df.columns if m in df.columns]
 
 # -------- OPTIMIZATION METRICS --------
 st.sidebar.markdown("#### 🔵 :blue[Optimization objectives]")
