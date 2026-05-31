@@ -62,60 +62,6 @@ show_ids = st.sidebar.checkbox(
     help="Display solution identifiers directly on the maps."
 )
 
-
-
-# --------------------------------------------
-# CONTEXT FRAMING  - FILTROS
-# --------------------------------------------
-
-st.sidebar.markdown("## 🎛️ Context Framing")
-
-filtered_df = df.copy()
-
-# -------- OPTIMIZATION METRICS --------
-st.sidebar.markdown("#### 🔵 :blue[Optimization objectives]")
-
-for m in available_opt:
-    if pd.api.types.is_numeric_dtype(df[m]):
-        min_v, max_v = float(df[m].min()), float(df[m].max())
-        if min_v != max_v:
-
-            val_range = st.sidebar.slider(
-                f"{m}",
-                min_v,
-                max_v,
-                (min_v, max_v),
-                key=f"opt_{m}"
-            )
-
-            filtered_df = filtered_df[
-                (filtered_df[m] >= val_range[0]) &
-                (filtered_df[m] <= val_range[1])
-            ]
-
-# -------- QUALITY METRICS --------
-st.sidebar.markdown("#### 🟢 :green[Quality Indicators]")
-
-for m in available_qual:
-    if pd.api.types.is_numeric_dtype(df[m]):
-        min_v, max_v = float(df[m].min()), float(df[m].max())
-        if min_v != max_v:
-
-            val_range = st.sidebar.slider(
-                f"{m}",
-                min_v,
-                max_v,
-                (min_v, max_v),
-                key=f"qual_{m}"
-            )
-
-            filtered_df = filtered_df[
-                (filtered_df[m] >= val_range[0]) &
-                (filtered_df[m] <= val_range[1])
-            ]
-# --------------------------------------------
-# FILTROS
-# --------------------------------------------
 # --------------------------------------------
 # CONTEXT FRAMING
 # --------------------------------------------
