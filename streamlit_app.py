@@ -510,28 +510,38 @@ elif mode == "Efficiency-Ratio":
 # --------------------------------------------
 # RANKING BASED (count SIN NORMALIZAR)
 # --------------------------------------------
+
 elif mode == "Ranking-based":
     sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
     n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
+
     if sel_metrics:
         ranks = []
         for m in sel_metrics:
-            goal = st.sidebar.selectbox(f"Goal for {m}", ["Maximize", "Minimize"], key=f"g_{m}")
-            ranks.append(filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top))
+            goal = st.sidebar.selectbox(
+                f"Goal for {m}",
+                ["Maximize", "Minimize"],
+                key=f"g_{m}"
+            )
+            ranks.append(
+                filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top)
+            )
+
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
+
+        # Mantener todo el subconjunto actual, pero marcando las no candidatas con count=0
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
-        threshold = max(1, len(sel_metrics) - 1)
-
         selected_df["count"] = selected_df["count"].astype(int)
-        selected_df["count_str"] = selected_df["count"].astype(str)
 
-        group_sizes = selected_df.groupby("count")["id"].transform("size")
-
-        selected_df["group_label"] = (
-            "Matches = " + selected_df["count"].astype(str) + 
-            " (n=" + group_sizes.astype(str) + ")"
+        # Etiqueta de grupo para la visualización
+        selected_df["group_label"] = selected_df["count"].apply(
+            lambda c: "No match" if c == 0 else f"Matches = {c}"
         )
+
         color_col = "group_label"
+
+        # Umbral orientativo para etiquetado posterior, si lo sigues usando
+        threshold = max(1, len(sel_metrics) - 1)
 
 # --------------------------------------------
 # NONE
