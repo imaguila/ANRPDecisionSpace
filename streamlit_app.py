@@ -164,9 +164,9 @@ for m in available_qual:
 # --------------------------------------------
 # SELECCIÓN
 # -------------------------------------------- 
-st.sidebar.markdown("## 🔍 ROI Identification Lens")
+st.sidebar.markdown("## 🔍 SOI Identification Lens")
 mode_label = st.sidebar.selectbox(
-    "🔍ROI Identification Lens",
+    "🔍Analytical Lens",
     [
         "Exploratory view",
         "🔵 Preference lens (MCDA)",
@@ -689,10 +689,10 @@ if st.session_state.show_comparison:
     # Si el usuario ha activado focus y hay highlights,
     if focus_mode and roi_df["highlight"].any():
         df_compare_base = selected_df.copy()
-        st.caption("Comparison source: focused highlighted subset")
+        st.caption("Comparison source: focused candidate set")
 
     else:
-        compare_options = ["Current ROI subset"]
+        compare_options = ["Current subset"]
 
         if roi_df["highlight"].any():
             compare_options.append("Highlighted candidates")
