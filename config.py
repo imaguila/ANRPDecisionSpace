@@ -72,13 +72,14 @@ PROBLEMAS = {
 
     "THEME": {
         "path_sol": "data/THEME/themesoluciones.txt",
+        "path_prob": "data/THEME/themereqdataset.txt",
         "path_prob": None,
         "metricas": [
             "satisfaction", "prevalence", "cost",
             "dissatisfaction", "inestability", "effort"
         ],
         "num_req": 22,
-        "stakeholders_prefix": None,
+        "stakeholders_prefix": "c",
         "indicadores_default": [
             "scope",
             "productivity",
