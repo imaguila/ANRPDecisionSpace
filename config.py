@@ -70,7 +70,7 @@ PROBLEMAS = {
 
     "THEME": {
         "path_sol": "data/THEME/themesoluciones.txt",
-        "path_prob": "data/THEME/themereqdataset.txt",
+        "path_prob": "data/THEME/themedataset.txt",
         "metricas": [
             "satisfaction", "prevalence", "cost",
             "dissatisfaction", "inestability", "effort"
