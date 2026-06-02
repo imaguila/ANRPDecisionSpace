@@ -530,18 +530,18 @@ elif mode == "Ranking-based":
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
 
         # Mantener todo el subconjunto actual, pero marcando las no candidatas con count=0
+
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
         selected_df["count"] = selected_df["count"].astype(int)
 
-        # Etiqueta de grupo para la visualización
+        # Crear grupos explícitos para la visualización
         selected_df["group_label"] = selected_df["count"].apply(
             lambda c: "No match" if c == 0 else f"Matches = {c}"
         )
 
         color_col = "group_label"
-
-        # Umbral orientativo para etiquetado posterior, si lo sigues usando
         threshold = max(1, len(sel_metrics) - 1)
+
 
 # --------------------------------------------
 # NONE
