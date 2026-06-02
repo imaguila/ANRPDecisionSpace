@@ -70,14 +70,15 @@ def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
 
 
 
+
         unique_vals = sorted(df[color_col].dropna().unique().tolist())
         palette = px.colors.qualitative.Plotly
         color_map = {}
 
         palette_idx = 0
         for v in unique_vals:
-            if str(v) == "No match":
-                color_map[v] = "#b0b0b0"   # gris
+            if str(v).startswith("No match"):
+                color_map[v] = "#b0b0b0"   # gris para las no coincidencias
             else:
                 color_map[v] = palette[palette_idx % len(palette)]
                 palette_idx += 1

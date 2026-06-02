@@ -511,32 +511,41 @@ elif mode == "Efficiency-Ratio":
 # RANKING BASED (count SIN NORMALIZAR)
 # --------------------------------------------
 
+
 elif mode == "Ranking-based":
     sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
     n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
 
     if sel_metrics:
         ranks = []
+        goals = {}
+
         for m in sel_metrics:
             goal = st.sidebar.selectbox(
                 f"Goal for {m}",
                 ["Maximize", "Minimize"],
                 key=f"g_{m}"
             )
+            goals[m] = goal
             ranks.append(
                 filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top)
             )
 
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
 
-        # Mantener todo el subconjunto actual, pero marcando las no candidatas con count=0
-
+        # Mantener todo el subconjunto actual y marcar count=0 si no aparece en ningún top-N
         selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
         selected_df["count"] = selected_df["count"].astype(int)
 
-        # Crear grupos explícitos para la visualización
-        selected_df["group_label"] = selected_df["count"].apply(
+        # Etiqueta base sin conteo agregado todavía
+        selected_df["group_base"] = selected_df["count"].apply(
             lambda c: "No match" if c == 0 else f"Matches = {c}"
+        )
+
+        # Añadir el n de cada grupo para que salga en la leyenda
+        group_sizes = selected_df["group_base"].value_counts().to_dict()
+        selected_df["group_label"] = selected_df["group_base"].apply(
+            lambda g: f"{g} (n={group_sizes[g]})"
         )
 
         color_col = "group_label"
