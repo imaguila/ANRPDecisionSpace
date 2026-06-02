@@ -6,8 +6,6 @@ PROBLEMAS = {
         "metricas": ["satisfaction", "effort"],
         "num_req": 18,
         "stakeholders_prefix": "c",
-
-        # ✅ NUEVO: recomendados
         "indicadores_default": [
             "scope",
             "productivity",
@@ -73,7 +71,6 @@ PROBLEMAS = {
     "THEME": {
         "path_sol": "data/THEME/themesoluciones.txt",
         "path_prob": "data/THEME/themereqdataset.txt",
-        "path_prob": None,
         "metricas": [
             "satisfaction", "prevalence", "cost",
             "dissatisfaction", "inestability", "effort"
