@@ -66,7 +66,7 @@ def render_input_panel():
     # ============================================
     # 2) PIPELINE MODE
     # ============================================
-    st.sidebar.markdown("## 🎨 Semantic enrichment")
+    st.sidebar.markdown("## 🎨 Semantic Enrichment")
 
     problem_name = st.sidebar.selectbox(
         "NRP dataset from literature",
@@ -76,6 +76,12 @@ def render_input_panel():
     )
 
     config = PROBLEMAS[problem_name]
+    if "paper" in config:
+            with st.sidebar.expander("📄 Dataset Reference", expanded=False):
+                st.caption(config["paper"])
+
+
+
     df_base = leer_soluciones(config)
 
     available_indicators = detectar_indicadores_posibles(df_base)
