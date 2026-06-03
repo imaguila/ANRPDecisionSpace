@@ -68,17 +68,38 @@ def render_input_panel():
     # ============================================
     st.sidebar.markdown("## 🎨 Semantic Enrichment")
 
+    #problem_name = st.sidebar.selectbox(
+    #    "NRP dataset from literature",
+    #    list(PROBLEMAS.keys()),
+    #    key="problem_selector"
+    #)
+    # 1. Obtenemos la lista de llaves de los problemas
+    lista_problemas = list(PROBLEMAS.keys())
+
+    # 2. Averiguamos de forma segura qué problema está seleccionado actualmente
+    if "problem_selector" in st.session_state:
+        problema_actual = st.session_state["problem_selector"]
+    else:
+        problema_actual = lista_problemas[0] # El primero por defecto (BAGNALL)
+
+    # 3. Extraemos el paper correspondiente de forma segura
+    texto_ayuda = PROBLEMAS[problema_actual].get("paper", "No bibliographic reference available.")
+
+    # 4. Renderizamos el selectbox usando la ayuda dinámica corregida
     problem_name = st.sidebar.selectbox(
         "NRP dataset from literature",
-        list(PROBLEMAS.keys()),
-        key="problem_selector"
-      #  help=PROBLEMAS[st.session_state.get("problem_selector", list(PROBLEMAS.keys())[0])].get("paper", "No bibliographic reference available.")
+        lista_problemas,
+        key="problem_selector",
+        help=texto_ayuda
     )
 
+
+    
+
     config = PROBLEMAS[problem_name]
-    if "paper" in config:
-            with st.sidebar.expander("📄 Dataset Reference", expanded=False):
-                st.caption(config["paper"])
+ #   if "paper" in config:
+ #           with st.sidebar.expander("📄 Dataset Reference", expanded=False):
+ #               st.caption(config["paper"])
 
 
 
