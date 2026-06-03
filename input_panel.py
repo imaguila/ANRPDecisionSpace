@@ -12,7 +12,7 @@ def render_input_panel():
     st.sidebar.markdown("## 🏷️  Input and Preparation")
 
     # Reset button aligned with title
-    col_texto, col_btn = st.sidebar.columns([2.5, 1], vertical_alignment="center")
+    col_texto, col_btn = st.sidebar.columns([2, 1.5], vertical_alignment="center")
 
     with col_texto:
         st.markdown("Select data source")
