@@ -78,7 +78,7 @@ st.html("""
 col_reset, col_add = st.sidebar.columns([0.35, 0.65])
 with col_reset:
     if st.button(
-        "Reset",
+        "Reset maps",
         use_container_width=True,
         disabled=not can_reset_workspace,
         key="reset_workspace_btn",

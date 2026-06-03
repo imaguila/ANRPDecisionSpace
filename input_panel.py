@@ -18,7 +18,7 @@ def render_input_panel():
         st.markdown("Select data source")
 
     with col_btn:
-        if st.button("🔄 Reset", use_container_width=True):
+        if st.button("🔄 Reset data", use_container_width=True):
             st.session_state.clear()
             st.success("Reset ✔️")
             st.rerun()
@@ -72,6 +72,7 @@ def render_input_panel():
         "NRP dataset from literature",
         list(PROBLEMAS.keys()),
         key="problem_selector"
+        help=PROBLEMAS[st.session_state.get("problem_selector", list(PROBLEMAS.keys())[0])].get("paper", "No bibliographic reference available.")
     )
 
     config = PROBLEMAS[problem_name]

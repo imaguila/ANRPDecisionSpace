@@ -10,7 +10,8 @@ PROBLEMAS = {
             "scope",
             "productivity",
             "squandering",
-        ]
+        ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
     },
 
     "MSLITE": {
@@ -25,7 +26,8 @@ PROBLEMAS = {
             "squandering",
             "annoyance",
             "dirtiness",
-        ]
+          ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
     },
 
     "RALICSREQ": {
@@ -38,7 +40,8 @@ PROBLEMAS = {
             "scope",
             "productivity",
             "squandering",
-        ]
+        ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
     },
 
     "WORDPROC": {
@@ -53,7 +56,8 @@ PROBLEMAS = {
             "squandering",
             "response",
             "opportunity",
-        ]
+        ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
     },
     "REQ100": {
         "path_sol": "data/REQ100/req100frente.txt",
@@ -65,9 +69,9 @@ PROBLEMAS = {
             "scope",
             "productivity",
             "squandering",
-        ]
+         ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
     },
-
     "THEME": {
         "path_sol": "data/THEME/themesoluciones.txt",
         "path_prob": "data/THEME/themedataset.txt",
@@ -88,7 +92,8 @@ PROBLEMAS = {
             "fragility",
             "robustness",
             "usage_efficiency",
-        ]
+        ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
     },
     "MOTOROLA": {
         "path_sol": "data/MOTOROLA/motorolasoluciones.txt",
@@ -100,7 +105,7 @@ PROBLEMAS = {
             "scope",
             "productivity",
             "squandering",
-        ]
-    },
-
+        ],
+        "paper": "Bagnall, A. J., Rayward-Smith, V. J., & Whittley, I. M. (2001). The next release problem. Information and software technology, 43(14), 883-890.",
+    }
 }
