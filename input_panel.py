@@ -94,16 +94,9 @@ def render_input_panel():
         help=texto_ayuda
     )
 
-
-    
+   
 
     config = PROBLEMAS[problem_name]
- #   if "paper" in config:
- #           with st.sidebar.expander("📄 Dataset Reference", expanded=False):
- #               st.caption(config["paper"])
-
-
-
     df_base = leer_soluciones(config)
 
     available_indicators = detectar_indicadores_posibles(df_base)
@@ -114,7 +107,8 @@ def render_input_panel():
         "Indicators",
         available_indicators,
         default=[i for i in default_indicators if i in available_indicators],
-        key="indicators_selector"
+        key="indicators_selector",
+        help="Select the attributes to include; only those with a recognized calculation method based on the loaded data are displayed."
     )
 
     @st.cache_data
