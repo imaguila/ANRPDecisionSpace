@@ -54,7 +54,7 @@ def render_input_panel():
             selected_indicators = st.sidebar.multiselect(
                 "Indicators",
                 possible_indicators,
-                default=[]
+                default=[],
                 help="Select the attributes to include; only those with a recognized calculation method based on the loaded data are displayed."
             )
 
