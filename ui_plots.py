@@ -140,7 +140,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
     # Selección de IDs SOLO dentro del grupo elegido
     # -------------------------------
     opciones_id = df_for_compare["id"].unique()
-    compare_ids = st.multiselect("Pick solutions to compare in Radar", opciones_id)
+    compare_ids = st.multiselect("👆 Pick solutions to compare", opciones_id)
 
     if len(compare_ids) < 2:
         st.info("Select at least 2 solutions to compare")
@@ -152,7 +152,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         "📊 Comparative Profile",
         "👥 Stakeholder Impact",
         "📋 Requirement Composition",
-        "🔗 Stakeholder–Requirement Alignment"
+        "🤝 Stakeholder–Requirement Alignment"
     ])
 
     # ---------- PERFORMANCE ----------
