@@ -340,7 +340,7 @@ elif mode == "Clustering":
         if cluster_method == "K-Medoids":
             k_mode = st.sidebar.radio(
                 "Number of clusters",
-                ["Manual", "Auto (Silhouette)"]
+                ["Manual", "Auto"]
             )
             if k_mode == "Manual":
                 k = st.sidebar.slider(
