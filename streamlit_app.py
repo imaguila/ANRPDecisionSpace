@@ -120,7 +120,7 @@ st.sidebar.markdown("## 🎛️ Context Framing")
 filtered_df = df.copy()
 
 # -------- OPTIMIZATION METRICS --------
-st.sidebar.markdown("#### 🔘 [Optimization objectives]")
+st.sidebar.markdown("#### 🔘 Optimization objectives")
 
 for m in available_opt:
     if pd.api.types.is_numeric_dtype(df[m]):
