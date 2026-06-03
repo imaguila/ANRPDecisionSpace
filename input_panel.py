@@ -9,7 +9,7 @@ from enrichment import detectar_indicadores_posibles, aplicar_enrichment
 def render_input_panel():
     """Render the input/preparation sidebar and return the active dataframe."""
 
-    st.sidebar.markdown("## 🧩  Input and Preparation")
+    st.sidebar.markdown("## 🏷️  Input and Preparation")
 
     # Reset button aligned with title
     col_texto, col_btn = st.sidebar.columns([2.5, 1], vertical_alignment="center")
@@ -26,7 +26,7 @@ def render_input_panel():
     data_mode = st.sidebar.radio(
         "Select data source",
         [
-            "🧱 Build from NRP instance",
+            "📥 Build from NRP instance",
             "📂 Load enriched solution set"
         ],
         label_visibility="collapsed"
@@ -49,7 +49,7 @@ def render_input_panel():
         possible_indicators = detectar_indicadores_posibles(df)
 
         if possible_indicators:
-            st.sidebar.markdown("## 🧪 Semantic enrichment")
+            st.sidebar.markdown("## 🎨 Semantic enrichment")
 
             selected_indicators = st.sidebar.multiselect(
                 "Indicators",
@@ -66,7 +66,7 @@ def render_input_panel():
     # ============================================
     # 2) PIPELINE MODE
     # ============================================
-    st.sidebar.markdown("## 🧪 Semantic enrichment")
+    st.sidebar.markdown("## 🎨 Semantic enrichment")
 
     problem_name = st.sidebar.selectbox(
         "NRP dataset from literature",

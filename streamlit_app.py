@@ -168,21 +168,21 @@ st.sidebar.markdown("## 🔍 SOI Identification Lens")
 mode_label = st.sidebar.selectbox(
     "🔍Analytical Lens",
     [
-        "Exploratory view",
-        "🔵 Preference lens (MCDA)",
-        "🟢 Diversity lens",
-        "🟣 Efficiency lens",
-        "🟠 Domain-specific lens",
+        " Exploratory view",
+        "👁️ Preference lens (MCDA)",
+        "✨ Diversity lens",
+        "⚡ Efficiency lens",
+        "💡 Domain-specific lens",
     ],
     label_visibility="collapsed"
 )
 
 mode_map = {
-    "Exploratory view": "None",
-    "🔵 Preference lens (MCDA)": "MCDM",
-    "🟢 Diversity lens": "Clustering",
-    "🟣 Efficiency lens": "Efficiency-Ratio",
-    "🟠 Domain-specific lens": "Ranking-based",
+    " Exploratory view": "None",
+    "👁️ Preference lens (MCDA)": "MCDM",
+    "✨ Diversity lens": "Clustering",
+    "⚡ Efficiency lens": "Efficiency-Ratio",
+    "💡 Domain-specific lens": "Ranking-based",
 }
 
 
