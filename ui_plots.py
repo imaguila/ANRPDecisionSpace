@@ -237,7 +237,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
             # ✅ selección manual (clave)
             # ----------------------------------
             selected_st = st.multiselect(
-                "Select stakeholders to display",
+                "👆 Select stakeholders to display",
                 stcov_cols,
                 default=stcov_cols[:min(6, len(stcov_cols))]
             )

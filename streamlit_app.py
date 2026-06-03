@@ -570,7 +570,7 @@ roi_df = selected_df.copy()
 roi_df = selected_df.copy()
 
 selected_ids = st.multiselect(
-    "Highlight candidate solutions",
+    " 👆 Highlight candidate solutions",
     options=roi_df["id"].tolist(),
     default=st.session_state.selected_ids,
     key="selected_ids",
@@ -595,7 +595,7 @@ else:
 # --------------------------------------------
 
 
-st.sidebar.markdown("## 🎯 Candidate Focus and Comparison")
+st.sidebar.markdown("## 🎯 Candidate Solution Set focus and Comparison")
 
 focus_mode = st.sidebar.checkbox(
     "Focus on highlighted solutions",
