@@ -9,7 +9,10 @@ from enrichment import detectar_indicadores_posibles, aplicar_enrichment
 def render_input_panel():
     """Render the input/preparation sidebar and return the active dataframe."""
 
-    st.sidebar.markdown("## 🏷️  Input and Preparation")
+    st.sidebar.markdown(
+        "## 🏷️  Input and Preparation",
+        help="Load precomputed Pareto fronts, including requirements and objetive functions values."
+        )
 
     # Reset button aligned with title
     col_texto, col_btn = st.sidebar.columns([2, 1.5], vertical_alignment="center")
@@ -29,7 +32,8 @@ def render_input_panel():
             "📥 Build from NRP instance",
             "📂 Load enriched solution set"
         ],
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        help="• Build from NRP instance: Parses a raw literature benchmark dataset and prepares it for custom indicator generation.\n\n• Load enriched solution set: Directly loads an already processed and structured CSV file containing pre-calculated metrics."
     )
 
     # ============================================
@@ -67,14 +71,17 @@ def render_input_panel():
     # ============================================
     # 2) PIPELINE MODE
     # ============================================
-    st.sidebar.markdown("## 🎨 Semantic Enrichment")
+    st.sidebar.markdown(
+        "## 🎨 Semantic Enrichment",
+        help="Allows adding computed metrics dynamically to the current dataset."
+    )
 
     #problem_name = st.sidebar.selectbox(
     #    "NRP dataset from literature",
     #    list(PROBLEMAS.keys()),
     #    key="problem_selector"
     #)
-    # 1. Obtenemos la lista de llaves de los problemas
+    # 1. Obtenemos la lista de llaves de los problemas  
     lista_problemas = list(PROBLEMAS.keys())
 
     # 2. Averiguamos de forma segura qué problema está seleccionado actualmente
