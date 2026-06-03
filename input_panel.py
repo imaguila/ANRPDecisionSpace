@@ -18,7 +18,10 @@ def render_input_panel():
     col_texto, col_btn = st.sidebar.columns([2, 1.5], vertical_alignment="center")
 
     with col_texto:
-        st.markdown("Select data source")
+        st.markdown(
+            "Select data source",        
+            help="• Build from NRP instance: Parses a raw literature benchmark dataset and prepares it for custom indicator generation.\n\n• Load enriched solution set: Directly loads an already processed and structured CSV file containing pre-calculated metrics."
+        )
 
     with col_btn:
         if st.button("🔄 Reset data", use_container_width=True):
@@ -33,8 +36,7 @@ def render_input_panel():
             "📂 Load enriched solution set"
         ],
         label_visibility="collapsed",
-        help="• Build from NRP instance: Parses a raw literature benchmark dataset and prepares it for custom indicator generation.\n\n• Load enriched solution set: Directly loads an already processed and structured CSV file containing pre-calculated metrics."
-    )
+        )
 
     # ============================================
     # 1) CSV MODE
@@ -76,11 +78,6 @@ def render_input_panel():
         help="Allows adding computed metrics dynamically to the current dataset."
     )
 
-    #problem_name = st.sidebar.selectbox(
-    #    "NRP dataset from literature",
-    #    list(PROBLEMAS.keys()),
-    #    key="problem_selector"
-    #)
     # 1. Obtenemos la lista de llaves de los problemas  
     lista_problemas = list(PROBLEMAS.keys())
 
