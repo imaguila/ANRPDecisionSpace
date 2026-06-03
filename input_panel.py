@@ -55,6 +55,7 @@ def render_input_panel():
                 "Indicators",
                 possible_indicators,
                 default=[]
+                help="Select the attributes to include; only those with a recognized calculation method based on the loaded data are displayed."
             )
 
             df = aplicar_enrichment(df, selected_indicators)
