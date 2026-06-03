@@ -11,7 +11,7 @@ PROBLEMAS = {
             "productivity",
             "squandering",
         ],
-        "paper": "Software release planning: an evolutionary and iterative approach.",
+        "paper": "Greer, D., & Ruhe, G. (2004). Software release planning: an evolutionary and iterative approach. Information and software technology, 46(4), 243-253.",
     },
 
 }
