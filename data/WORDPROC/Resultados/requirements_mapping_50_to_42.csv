@@ -1,0 +1,51 @@
+original_id,name_en,description_en,name_es,coupling_or_group_info,mapped_req_42,reduced_name,reduced_effort,original_effort
+File-1,New File,Crete a New File,Archivo nuevo,,1,New File,66,66
+File-2,Open File,Open an Existing File,Abrir archivo,File-4;File-5,2,Open+Save(+SaveAs),204,76
+File-3,Close File,Close Current File,Cerrar archivo,,3,Close File,11,11
+File-4,Save File,Save a File,Guardar archivo,merged into File-2 group,2,Open+Save(+SaveAs),204,63
+File-5,Save as Different File Format,Save a File as a Different File Type,Guardar como,merged into File-2 group,2,Open+Save(+SaveAs),204,65
+File-6,Search File,Search for a File in The Entire PC containing some Text,Buscar archivo,,4,Search File,81,81
+File-7,Protect File,Make a File Password Protected,Proteger archivo,,5,Protect File,19,19
+File-8,Print Preview,Print Preview a File,Imprimir archivo previsualizado,,6,Print Preview,52,52
+File-9,Print File,Print Current File,Imprimir Archivo,,7,Print File,42,42
+File-10,Send To,Send File To Email/FAX,Enviar a,,8,Send To,60,60
+File-11,Set Properties,Set File Header Inform ton,Propiedades,,9,Set Properties,19,19
+File-12,Exit,Save and Exit from Word Processing Application,Exit,,10,Exit,12,12
+Edit-1,Undo a Task,Undo a Task and goes back to previous state,Deshacer,,11,Undo a Task,25,25
+Edit-2,Redo a Task,Redo the most recent Change,Rehacer,,12,Redo a Task,25,25
+Edit-3,Cut,Delete a Text and Copy to Clipboard,Cortar,Edit-4;Edit-5,13,Cut+Copy+Paste,63,25
+Edit-4,Copy,Copy a Text,Copiar,merged into Edit-3 group,13,Cut+Copy+Paste,63,15
+Edit-5,Paste,Paste a Text from Clipboard,Pegar,merged into Edit-3 group,13,Cut+Copy+Paste,63,23
+Edit-6,Paste Special,External Linking and Embedding,Pegado especial,,14,Paste Special,63,63
+Edit-7,Go To,Go to a specific location in the current file,Ir a,,15,Go To,23,23
+Edit-8,Find,Search for a Text in the current Document,Buscar,,16,Find,19,19
+Edit-9,Replace,Search and Replace a Text,Reemplazar,,17,Replace,16,16
+Edit-10,Select All,Select All From Current File,Seleccionar todo,,18,Select All,16,16
+View-1,Default,Switch to Default View,Vista por defecto,,19,Default,12,12
+View-2,Print Layout,Print Layout View of Current File,Mostrar vista archivo,,20,Print Layout,13,13
+View-3,Web layout,Web Page Layout View of Current File,Vista Web,,21,Web layout,13,13
+View-4,Zoom,Zoom In/Out,Zoom,,22,Zoom,25,25
+View-5,Header/Footer,Show Healer/Footer of Current File,Cabecera/Pie de página,Insert-1,23,Header/Footer/PageNumber,18,9
+Insert-1,Page Numbers,Insert Page Numbers in Footer,Numeros de página,merged with View-5,23,Header/Footer/PageNumber,18,9
+Insert-2,Date/Time,Insert Date/Time in the File Footer,Fecha/hora,,24,Date/Time,9,9
+Insert-3,Symbol,Insert Symbol to the Cursor Location,Simbolos,,25,Symbol,9,9
+Insert-4,Bookmark,Set/Update File Bookmark,Marcador,,26,Bookmark,6,6
+Insert-5,Hyperlink,Insert a Hyperlinked Text,Hipervinculo,,27,Hyperlink,5,5
+Format-1,Font,Change Font Setting of Selected Text,Fuente,,28,Font,13,13
+Format-2,Paragraph,Set the Paragraph Formatting,Formato de parrafo,,29,Paragraph,23,23
+Format-3,Bullets/Numbering,Insert Bullets/Numbering to Selected Text,Viñetas/Numeros,,30,Bullets/Numbering,19,19
+Format-4,Change Case,Change to Upper/Lower/Mixed Case for the Selected Text,Mayusculas/minusculas,,31,Change Case,19,19
+Format-5,Background,Change Background of the Document,Fondo,,32,Background,19,19
+Tools-1,Check Spell,Spelling Check Tool,Corrector ortográfico,,33,Check Spell,36,36
+Tools-2,Check Grammer,Grammar Check Tool,Corrector gramatical,,34,Check Grammer,38,38
+Tools-3,Speech,Read the Text of The Document,Leer documento,,35,Speech,17,17
+Tools-4,Mail Merge,Mail Merge with Existing Customer Database,Generar correspondencia,,36,Mail Merge,80,80
+Tools-5,Macro,Create/Apply Automated Document Processing Faction,Macro,,37,Macro,61,61
+Tools-6,Set Options,Configure Documents Options,Opciones,,38,Set Options,13,13
+Data-1,Insert Table,Insert a Table,Insertar datos,Data-2;Data-3,39,Table functions,59,19
+Data-2,Delete Table,Delete an Existing Table,Borrar datos,merged into Data-1 group,39,Table functions,59,15
+Data-3,Table Format,Format a Existing Table,Formato de datos,merged into Data-1 group,39,Table functions,59,25
+Data-4,Sort,Sort Selected Data,Ordenar,,40,Sort,23,23
+Data-5,Import Data,Import Data from External Database,Importar datos,,41,Import Data,53,53
+Help-1,Help,Loads Applicant Help File,Help,Help-2,42,Help + Search,18,11
+Help-2,Search,Searches a Text in the Document Help File,Buscar,merged with Help-1,42,Help + Search,18,7
