@@ -1,0 +1,51 @@
+original_id,name_en,description_en,name_es,al1,al2,al3,al4,al5,al6,al7,al8,al9,al10,al11,al12,total_m,total_s,total_c,total_w,effort
+File-1,New File,Crete a New File,Archivo nuevo,1,1,1,1,1,1,1,1,1,1,1,1,12,0,0,0,66
+File-2,Open File,Open an Existing File,Abrir archivo,1,1,1,1,1,1,2,1,1,1,1,1,11,1,0,0,76
+File-3,Close File,Close Current File,Cerrar archivo,1,1,3,1,2,1,1,1,1,1,1,1,10,1,1,0,11
+File-4,Save File,Save a File,Guardar archivo,1,1,1,1,1,1,1,1,1,1,1,1,12,0,0,0,63
+File-5,Save as Different File Format,Save a File as a Different File Type,Guardar como,1,2,1,2,1,1,2,1,2,4,2,2,5,6,0,1,65
+File-6,Search File,Search for a File in The Entire PC containing some Text,Buscar archivo,4,1,3,3,3,2,4,2,2,3,3,4,1,3,5,3,81
+File-7,Protect File,Make a File Password Protected,Proteger archivo,3,3,4,3,4,3,4,3,1,4,4,4,1,0,5,6,19
+File-8,Print Preview,Print Preview a File,Imprimir archivo previsualizado,1,3,2,3,3,3,3,3,1,2,2,2,2,4,6,0,52
+File-9,Print File,Print Current File,Imprimir Archivo,1,2,1,1,1,2,1,1,1,2,1,2,8,4,0,0,42
+File-10,Send To,Send File To Email/FAX,Enviar a,1,3,3,3,4,3,4,2,2,3,2,4,1,3,5,3,60
+File-11,Set Properties,Set File Header Inform ton,Propiedades,4,2,3,4,4,3,4,2,2,4,3,1,1,3,3,5,19
+File-12,Exit,Save and Exit from Word Processing Application,Exit,1,1,1,1,2,2,2,1,1,1,1,2,8,4,0,0,12
+Edit-1,Undo a Task,Undo a Task and goes back to previous state,Deshacer,1,1,1,2,2,2,3,1,1,1,2,2,6,5,1,0,25
+Edit-2,Redo a Task,Redo the most recent Change,Rehacer,1,1,1,2,2,2,3,1,1,1,2,2,6,5,1,0,25
+Edit-3,Cut,Delete a Text and Copy to Clipboard,Cortar,1,1,1,1,2,1,3,1,2,3,2,2,6,4,2,0,25
+Edit-4,Copy,Copy a Text,Copiar,1,1,1,1,2,1,3,1,2,1,1,2,8,3,1,0,15
+Edit-5,Paste,Paste a Text from Clipboard,Pegar,1,1,1,1,2,1,3,1,2,1,1,2,8,3,1,0,23
+Edit-6,Paste Special,External Linking and Embedding,Pegado especial,2,3,2,2,3,2,4,3,3,2,3,3,0,5,6,1,63
+Edit-7,Go To,Go to a specific location in the current file,Ir a,2,1,3,3,3,2,4,1,3,2,4,3,2,3,5,2,23
+Edit-8,Find,Search for a Text in the current Document,Buscar,2,1,1,3,2,2,3,1,2,1,4,3,4,4,3,1,19
+Edit-9,Replace,Search and Replace a Text,Reemplazar,3,1,1,4,3,3,4,1,2,2,3,3,3,2,5,2,16
+Edit-10,Select All,Select All From Current File,Seleccionar todo,1,1,1,3,3,2,2,1,2,2,2,3,4,5,3,0,16
+View-1,Default,Switch to Default View,Vista por defecto,1,3,3,3,3,3,3,3,3,2,2,3,1,2,9,0,12
+View-2,Print Layout,Print Layout View of Current File,Mostrar vista archivo,2,2,2,3,3,3,2,3,2,2,1,3,1,6,5,0,13
+View-3,Web layout,Web Page Layout View of Current File,Vista Web,2,4,3,4,4,3,3,4,3,3,3,4,0,1,6,5,13
+View-4,Zoom,Zoom In/Out,Zoom,1,3,1,3,4,3,4,1,3,4,1,4,4,0,4,4,25
+View-5,Header/Footer,Show Healer/Footer of Current File,Cabecera/Pie de página,1,2,1,2,2,3,2,2,3,3,1,4,3,5,3,1,9
+Insert-1,Page Numbers,Insert Page Numbers in Footer,Numeros de página,1,1,2,2,3,3,2,2,3,1,2,2,3,6,3,0,9
+Insert-2,Date/Time,Insert Date/Time in the File Footer,Fecha/hora,3,3,2,3,4,3,3,2,4,2,3,4,0,3,6,3,9
+Insert-3,Symbol,Insert Symbol to the Cursor Location,Simbolos,1,2,4,2,2,4,4,3,3,3,3,4,1,3,4,4,9
+Insert-4,Bookmark,Set/Update File Bookmark,Marcador,3,1,3,3,4,2,4,3,2,1,1,4,3,2,4,3,6
+Insert-5,Hyperlink,Insert a Hyperlinked Text,Hipervinculo,1,3,1,2,3,2,4,3,2,2,1,4,3,4,3,2,5
+Format-1,Font,Change Font Setting of Selected Text,Fuente,1,1,1,2,2,3,2,3,2,1,1,4,5,4,2,1,13
+Format-2,Paragraph,Set the Paragraph Formatting,Formato de parrafo,3,2,1,2,2,3,2,2,3,3,1,3,2,5,5,0,23
+Format-3,Bullets/Numbering,Insert Bullets/Numbering to Selected Text,Viñetas/Numeros,2,3,2,3,2,2,4,2,4,4,1,4,1,5,2,4,19
+Format-4,Change Case,Change to Upper/Lower/Mixed Case for the Selected Text,Mayusculas/minusculas,2,1,3,3,2,2,1,2,4,1,2,1,4,5,2,1,19
+Format-5,Background,Change Background of the Document,Fondo,4,4,4,3,4,3,4,4,4,2,2,2,0,3,2,7,19
+Tools-1,Check Spell,Spelling Check Tool,Corrector ortográfico,1,1,1,2,4,2,3,1,4,3,3,4,4,2,3,3,36
+Tools-2,Check Grammer,Grammar Check Tool,Corrector gramatical,1,1,1,3,4,1,3,1,3,3,3,4,5,0,5,2,38
+Tools-3,Speech,Read the Text of The Document,Leer documento,4,4,3,4,3,2,4,1,3,4,4,1,2,1,3,6,17
+Tools-4,Mail Merge,Mail Merge with Existing Customer Database,Generar correspondencia,2,3,3,4,4,4,3,3,3,4,3,4,0,1,6,5,80
+Tools-5,Macro,Create/Apply Automated Document Processing Faction,Macro,3,4,4,4,4,3,4,2,2,4,2,4,0,3,2,7,61
+Tools-6,Set Options,Configure Documents Options,Opciones,2,2,3,3,2,2,2,2,1,2,1,1,3,7,2,0,13
+Data-1,Insert Table,Insert a Table,Insertar datos,1,2,1,2,2,2,4,3,1,3,1,3,4,4,3,1,19
+Data-2,Delete Table,Delete an Existing Table,Borrar datos,1,2,1,2,2,2,4,3,1,1,1,3,5,4,2,1,15
+Data-3,Table Format,Format a Existing Table,Formato de datos,1,2,1,2,3,2,4,3,1,1,1,3,5,3,3,1,25
+Data-4,Sort,Sort Selected Data,Ordenar,2,1,2,3,4,2,4,3,2,2,1,3,2,5,3,2,23
+Data-5,Import Data,Import Data from External Database,Importar datos,3,1,3,3,3,3,4,3,2,3,3,3,1,1,9,1,53
+Help-1,Help,Loads Applicant Help File,Help,4,1,3,3,2,3,2,1,2,3,4,4,2,3,4,3,11
+Help-2,Search,Searches a Text in the Document Help File,Buscar,4,1,3,3,4,3,2,1,2,3,4,4,2,2,4,4,7
