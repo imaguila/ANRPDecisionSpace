@@ -373,7 +373,7 @@ elif mode == "Clustering":
                         pass
 
                 k = best_k
-                st.sidebar.info(f"Optimal k (silhouette): {k}")
+                st.sidebar.info(f"Suggested k : {k}")
 
             model = KMedoids(
                 n_clusters=k,
