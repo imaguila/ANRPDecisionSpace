@@ -1,185 +1,80 @@
-# ReqDasboard
+# 🚀 ANRP Decision Space Explorer
 
+[Streamlit App](https://anrpdecision.streamlit.app/)
 
-https://anrpdecision.streamlit.app/
+##  Overview
+The **Assisted Next Release Problem (ANRP) Decision Space Explorer** is an interactive decision-support dashboard designed to help software engineers, product managers, and stakeholders explore, analyze, and compare candidate solutions for software release planning. 
 
+By integrating multi-objective optimization insights, multi-criteria decision-making (MCDM), clustering techniques, and rich interactive visualizations, the application facilitates informed and strategic decision-making in complex requirement selection scenarios.
 
+## 🎯 Purpose
+The primary goal of this application is to support decision-makers in:
+* **Evaluating trade-offs** among competing objectives (e.g., maximizing satisfaction vs. minimizing cost).
+* **Identifying high-quality solutions** based on specific business preferences or domain rules.
+* **Discovering structural patterns** and taxonomies in the solution space through clustering.
+* **Comparing alternatives** across multiple dimensions (performance, stakeholder coverage, and requirement alignment).
+* **Narrowing down the decision space** through interactive filtering and focused analysis.
 
-✅ ✅ Functional Description of the Application
-🧠 Overview
-The Assisted Next Release Problem (ANRP) Dashboard is an interactive decision-support tool designed to help users explore, analyze, and compare candidate solutions for software release planning problems. The application integrates multi-objective optimization, multi-criteria decision-making (MCDM), clustering techniques, and interactive visualization to facilitate informed decision-making.
+---
 
-🎯 Purpose
-The goal of the application is to support decision-makers in:
+## 🏷️ Data Input, Preparation & Enrichment
+The system provides a robust foundational pipeline with two main data acquisition modes and a dynamic enrichment engine:
 
-Evaluating trade-offs among competing objectives
-Identifying high-quality solutions based on preferences
-Discovering structural patterns (e.g., clusters) in the solution space
-Comparing solutions across multiple dimensions (performance, stakeholders, requirements)
-Narrowing down alternatives through interactive filtering and selection
+### 1. Data Source Selection
+* **📥 Build from NRP instance:** Parses a raw literature benchmark dataset (e.g., Bagnall, MSLite) and prepares it dynamically for custom indicator generation.
+* **📂 Load enriched solution set:** Directly loads an already processed and structured CSV file containing pre-calculated metrics.
 
+### 2. 🎨 Semantic Enrichment
+Allows users to dynamically inject computed software engineering proxy metrics into the current dataset. Only attributes with a recognized calculation method based on the loaded data are displayed.
+* **🔵 Quality indicators:** Select attributes to calculate derived quality metrics dynamically.
 
-📊 Data Input and Preparation
-The system supports two data acquisition modes:
+---
 
+## 🔍 Analytical Lenses (Decision-Support Methods)
+The application moves away from basic filtering to offer advanced "Lenses" that structure the solution space according to different analytical needs:
 
-CSV Upload Mode
-Users can upload precomputed datasets containing solutions and performance indicators.
+* **Exploratory view:** The baseline mode for manual exploration and threshold-based filtering.
+* **👁️ Preference lens (MCDA):** A multi-criteria decision-making module (Weighted Sum Model, TOPSIS) that allows users to rank solutions by weighing specific criteria to maximize or minimize.
+* **✨ Diversity lens (Clustering):** Explores structural diversity to find natural solution groupings or taxonomies using K-Medoids or HDBSCAN (density-based clustering with noise detection).
+* **⚡ Efficiency lens:** A ratio-based approach computing Return on Investment (ROI) by defining a specific Benefit metric to maximize and a Cost metric to minimize.
+* **💡 Domain-specific lens:** Ranks solutions based on their frequency of appearance in top-N sets across multiple individual criteria (expert-rule heuristics).
 
+---
 
-Pipeline Mode
-The application dynamically builds the dataset from a predefined problem configuration, computing selected indicators via an internal pipeline.
+## 📊 Interactive Visual Analytics
+### 📍 Trade-off Maps (Scatter Plots)
+* 2D relationships between user-selected optimization metrics.
+* Optional point sizing utilizing a third metric (e.g., effort or cost).
+* Dynamic coloring representing the active Analytical Lens (e.g., clusters, MCDA scores).
 
+### 🎯 Selection & Focus Mode
+* **Selection Highlighting:** Users can manually select specific solutions. Selected points remain fully visible, while non-selected solutions fade via reduced opacity to preserve global context.
+* **Focus Mode:** Restricts all subsequent analyses, ranking algorithms, and clustering **only** to the manually selected subset, enabling deep, localized inspection.
 
-The dataset typically contains:
+---
 
-Optimization metrics (e.g., cost, effort)
-Quality indicators (e.g., satisfaction, coverage)
-Stakeholder coverage values (stcov_*)
-Requirement inclusion (req_*)
+## 🆚 Detailed Comparison View
+A dedicated comparison layout enables an in-depth analysis of the filtered or selected solutions (Toggle between *All current solutions* or *☑️ Pick solutions to compare*).
 
+* **📊 Performance Radar:** A customizable normalized radar chart evaluating user-defined metrics and optimization directions.
+* **👥 Stakeholder Coverage:** Radar visualization analyzing stakeholder satisfaction, automatically normalized for fair comparison.
+* **📋 Requirements View:** A binary-encoded heatmap displaying the exact composition of included vs. excluded requirements across candidate solutions.
+* **🤝 Stakeholder–Requirement Alignment:** A matrix visualization linking stakeholders' requested features with the final release composition, acting as a traceability matrix.
 
-⚙️ Core Functionalities
-1. Filtering Mechanism
-Users can filter the solution space using:
+---
 
-Numeric sliders for optimization metrics
-Numeric sliders for quality indicators
+## 🛠️ Extensibility & Architecture
+Designed with scalability in mind, the architecture easily supports the integration of:
+* Additional MCDA algorithms (e.g., PROMETHEE, VIKOR).
+* Alternative unsupervised learning techniques.
+* Custom problem configurations and new Semantic Enrichment indicators.
 
-Filtering dynamically updates all visualizations and subsequent analyses.
+## 💻 Running Locally
 
-2. Selection Modes
-The application provides multiple decision-support methods, grouped into conceptual categories:
+To run this dashboard on your local machine:
 
-🔵 Preference-based Methods (MCDM)
-A unified multi-criteria decision-making module allows users to rank solutions using:
-
-Weighted Sum Model
-TOPSIS
-
-Users can:
-
-Select criteria to maximize or minimize
-Rank solutions based on computed scores
-Restrict the analysis to the top-N alternatives
-
-
-🟢 Diversity-based Methods (Clustering)
-The application supports clustering to explore structural diversity in the solution space:
-
-K-Medoids (manual or silhouette-based selection of k)
-HDBSCAN (density-based clustering with automatic detection of cluster structure)
-
-Features:
-
-Identification of natural solution groupings
-Detection of noise (outliers) in HDBSCAN
-Visualization of cluster sizes and structure
-
-
-🟣 Efficiency-based Method
-A ratio-based approach computes:
-Efficiency = Benefit / Cost
-
-Users can define:
-
-Benefit metric (maximize)
-Cost metric (minimize)
-
-
-🟠 Ranking-based Method
-Solutions are ranked based on their frequency of appearance in top-N sets across multiple criteria.
-
-3. Interactive Visualization
-📍 Trade-off Maps
-
-Scatter plots displaying relationships between pairs of metrics
-Optional point sizing using a third metric
-Dynamic coloring based on the selected method
-
-🎯 Selection Highlighting
-Users can manually select solutions:
-
-Selected solutions remain fully visible
-Non-selected solutions are visually de-emphasized via reduced opacity
-Supports both exploration and focused analysis
-
-
-4. Focus Mode
-An optional focus mode allows users to:
-
-Restrict all analyses to the manually selected subset
-Recompute rankings and clustering on the selected solutions
-
-This enables deep inspection of specific regions of the solution space.
-
-5. Comparative Analysis (Radar and Tabs)
-A dedicated comparison view enables detailed analysis of selected solutions across four dimensions:
-
-📊 Performance Radar
-
-Customizable radar chart
-User-defined metrics and optimization direction (maximize/minimize)
-Normalized values for fair comparison
-
-
-👥 Stakeholder Coverage
-
-Radar visualization of stakeholder satisfaction
-Users can manually select which stakeholders to analyze
-Automatic normalization and scaling
-
-
-📋 Requirements View
-
-Heatmap showing which requirements are included in each solution
-Binary encoding with high-contrast visualization
-
-
-🔗 Stakeholder–Requirement Alignment
-
-Matrix visualization linking stakeholders and requirements
-Highlights:
-
-requested vs included features
-final release composition
-
-
-Includes an additional summary row representing the selected solution
-
-
-6. User Interaction and State Management
-The application supports:
-
-Persistent session state
-Dynamic UI updates based on user actions
-Manual solution selection across visualizations
-
-A “Reset All” control allows users to restore the application to its initial state.
-
-🎨 Visualization Features
-
-Adaptive color schemes (continuous vs categorical)
-Opacity-based highlighting for selection
-Multi-layered plots preserving data context
-Interactive Plotly charts with hover information
-
-
-🧩 Extensibility
-The architecture supports:
-
-Additional MCDM methods (e.g., PROMETHEE, VIKOR)
-Alternative clustering techniques
-New indicators and problem configurations
-Enhanced comparison metrics
-
-
-✅ Summary
-The ANRP Dashboard provides a comprehensive framework for analyzing complex release planning problems by combining:
-
-Multi-objective optimization insights
-Multi-criteria decision models
-Clustering-based exploration
-Rich, interactive visual analytics
-
-The tool enables both global exploration and focused decision-making, making it suitable for research, teaching, and practical decision-support scenarios.
+1. Clone the repository.
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
