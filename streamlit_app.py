@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import hdbscan
 from sklearn.preprocessing import StandardScaler
-from sklearn_extra.cluster import KMeans
+from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
 from input_panel import render_input_panel
