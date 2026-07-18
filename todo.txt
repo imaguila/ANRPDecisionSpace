@@ -1,0 +1,1794 @@
+____________________________________________________________
+column_rules.py
+____________________________________________________________
+
+
+EXCLUDE_EXACT = {
+    "id",
+    "highlight",
+    "label",
+    "highlight_label"
+}
+
+EXCLUDE_PREFIXES = (
+    "req_",
+    "stcov_"
+)
+
+
+def is_excluded_column(col_name, extra_exact=None, extra_prefixes=None):
+    extra_exact = set(extra_exact or [])
+    extra_prefixes = tuple(extra_prefixes or [])
+
+    if col_name in EXCLUDE_EXACT or col_name in extra_exact:
+        return True
+
+    if any(col_name.startswith(p) for p in EXCLUDE_PREFIXES):
+        return True
+
+    if any(col_name.startswith(p) for p in extra_prefixes):
+        return True
+
+    return False
+
+
+
+____________________________________________________________
+
+config.py
+____________________________________________________________
+
+PROBLEMAS = {
+
+    "CLASSIC Dataset": {
+        "path_sol": "data/BAGNALL/bagnallsoluciones.txt",
+        "path_prob": "data/BAGNALL/bagnalldataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 18,
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+        ],
+        "paper": "Greer, D., & Ruhe, G. (2004). Software release planning: an evolutionary and iterative approach. Information and software technology, 46(4), 243-253.",
+    },
+    "MSLite System": {
+        "path_sol": "data/MSLITE/mslitesoluciones.txt",
+        "path_prob": None,
+        "metricas": ["satisfaction", "effort", "dissatisfaction"],
+        "num_req": 16,
+        "stakeholders_prefix": None,
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+            "annoyance",
+            "dirtiness",
+        ],
+        "paper": "Sangwan, R. S., Negahban, A., Nord, R. L., & Ozkaya, I. (2020). Optimization of software release planning considering architectural dependencies, cost, and value. IEEE Transactions on Software Engineering, 48(4), 1369-1384.",
+    },
+
+
+    "Replacement Access, Library and ID Card (RALIC)": {
+        "path_sol": "data/RALICSreq/ralicsreqsoluciones.txt",
+        "path_prob": "data/RALICSreq/ralicsreqdataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 83,
+        "stakeholders_prefix": "c", 
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+        ],
+        "paper": "Lim, S. L., & Finkelstein, A. (2011). StakeRare: using social networks and collaborative filtering for large-scale requirements elicitation. IEEE transactions on software engineering, 38(3), 707-735.",
+    },
+
+    "Word processing software project": {
+        "path_sol": "data/WORDPROC/wordprocsoluciones.txt",
+        "path_prob": "data/WORDPROC/wordprocdataset.txt",
+        "metricas": ["satisfaction", "effort", "time"],
+        "num_req": 42,
+        "stakeholders_prefix": "cv",  # 👈 DIFERENTE
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+            "response",
+            "opportunity",
+        ],
+        "paper": "Agarwal, N., Karimpour, R., & Ruhe, G. (2014, January). Theme-based product release planning: An analytical approach. In 2014 47th Hawaii International Conference on System Sciences (pp. 4739-4748). IEEE.",
+    },
+    "Large dataset": {
+        "path_sol": "data/REQ100/req100frente.txt",
+        "path_prob": "data/REQ100/req100dataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 96,
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+        ],
+        "paper": "Del Sagrado, J., Del Águila, I. M., & Orellana, F. J. (2015). Multi-objective ant colony optimization for requirements selection. Empirical Software Engineering, 20(3), 577-610.",
+    },
+    "ReleasePlanner™ dataset": {
+        "path_sol": "data/THEME/themesoluciones.txt",
+        "path_prob": "data/THEME/themedataset.txt",
+        "metricas": [
+            "satisfaction", "prevalence", "cost",
+            "dissatisfaction", "inestability", "effort"
+        ],
+        "num_req": 22,
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+            "effectiveness",
+            "dirtiness",
+            "annoyance",
+            "stickiness",
+            "fragility",
+            "robustness",
+            "usage_efficiency",
+        ],
+        "paper": "Karim, M. R., & Ruhe, G. (2014, August). Bi-objective genetic search for release planning in support of themes. In International Symposium on Search Based Software Engineering (pp. 123-137). Cham: Springer International Publishing.",
+    },
+    "Motorola Dataset": {
+        "path_sol": "data/MOTOROLA/motorolasoluciones.txt",
+        "path_prob": "data/MOTOROLA/motoroladataset.txt",
+        "metricas": ["satisfaction", "effort"],
+        "num_req": 35,
+        "stakeholders_prefix": "c",
+        "indicadores_default": [
+            "scope",
+            "productivity",
+            "squandering",
+        ],
+        "paper": "Baker, P., Harman, M., Steinhofel, K., & Skaliotis, A. (2006, September). Search based approaches to component selection and prioritization for the next release problem. In 2006 22nd IEEE International Conference on Software Maintenance (pp. 176-185). IEEE.",
+    }
+}
+
+____________________________________________________________
+enrichement.py
+____________________________________________________________
+from problem import calcular_indicadores, REQUISITOS
+
+
+def detectar_indicadores_posibles(df):
+    posibles = []
+
+    for nombre, requisitos in REQUISITOS.items():
+        if all(col in df.columns for col in requisitos):
+            posibles.append(nombre)
+
+    return posibles
+
+
+def aplicar_enrichment(df, selected_indicators):
+    if not selected_indicators:
+        return df
+
+    return calcular_indicadores(df, selected_indicators)
+
+____________________________________________________________
+input_panel.py
+_________________________________________________________________
+import streamlit as st
+import pandas as pd
+from config import PROBLEMAS
+from problem import run_pipeline, leer_soluciones
+from enrichment import detectar_indicadores_posibles, aplicar_enrichment
+
+
+def render_input_panel():
+    """Render the input/preparation sidebar and return the active dataframe."""
+
+    st.sidebar.markdown(
+        "## 🏷️  Input and Preparation",
+        help="Load precomputed Pareto fronts, including requirements and objetive functions values."
+        )
+
+    # Reset button aligned with title
+    col_texto, col_btn = st.sidebar.columns([2, 1.5], vertical_alignment="center")
+
+    with col_texto:
+        st.markdown(
+            "Select data source",        
+            help="• Build from NRP instance: Parses a raw literature benchmark dataset and prepares it for custom indicator generation.\n\n• Load enriched solution set: Directly loads an already processed and structured CSV file containing pre-calculated metrics."
+        )
+
+    with col_btn:
+        if st.button("🔄 Reset data", use_container_width=True):
+            st.session_state.clear()
+            st.success("Reset ✔️")
+            st.rerun()
+
+    data_mode = st.sidebar.radio(
+        "Select data source",
+        [
+            "📥 Build from NRP instance",
+            "📂 Load enriched solution set"
+        ],
+        label_visibility="collapsed",
+        )
+
+    # ============================================
+    # 1) CSV MODE
+    # ============================================
+    if data_mode == "📂 Load enriched solution set":
+        uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
+
+        if uploaded_file is None:
+            st.warning("Please upload a dataset with indicators.")
+            st.stop()
+
+        df = pd.read_csv(uploaded_file)
+        st.sidebar.success(f"{len(df)} solutions loaded from CSV")
+
+        # Enrichment for uploaded datasets
+        possible_indicators = detectar_indicadores_posibles(df)
+
+        if possible_indicators:
+            st.sidebar.markdown("## 🎨 Semantic enrichment")
+
+            selected_indicators = st.sidebar.multiselect(
+                "Indicators",
+                possible_indicators,
+                default=[],
+                help="Select the attributes to include; only those with a recognized calculation method based on the loaded data are displayed."
+            )
+
+            df = aplicar_enrichment(df, selected_indicators)
+        else:
+            st.sidebar.info("No derived indicators can be computed from the uploaded data.")
+
+        return df
+
+    # ============================================
+    # 2) PIPELINE MODE
+    # ============================================
+    st.sidebar.markdown(
+        "## 🎨 Semantic Enrichment",
+        help="Allows adding computed metrics dynamically to the current dataset."
+    )
+
+    # 1. Obtenemos la lista de llaves de los problemas  
+    lista_problemas = list(PROBLEMAS.keys())
+
+    # 2. Averiguamos de forma segura qué problema está seleccionado actualmente
+    if "problem_selector" in st.session_state:
+        problema_actual = st.session_state["problem_selector"]
+    else:
+        problema_actual = lista_problemas[0] # El primero por defecto (BAGNALL)
+
+    # 3. Extraemos el paper correspondiente de forma segura
+    texto_ayuda = PROBLEMAS[problema_actual].get("paper", "No bibliographic reference available.")
+
+    # 4. Renderizamos el selectbox usando la ayuda dinámica corregida
+    problem_name = st.sidebar.selectbox(
+        "NRP dataset from literature",
+        lista_problemas,
+        key="problem_selector",
+        help=texto_ayuda
+    )
+
+   
+
+    config = PROBLEMAS[problem_name]
+    df_base = leer_soluciones(config)
+
+    available_indicators = detectar_indicadores_posibles(df_base)
+
+    default_indicators = config.get("indicadores_default", [])
+
+    selected_indicators = st.sidebar.multiselect(
+        "Indicators",
+        available_indicators,
+        default=[i for i in default_indicators if i in available_indicators],
+        key="indicators_selector",
+        help="Select the attributes to include; only those with a recognized calculation method based on the loaded data are displayed."
+    )
+
+    @st.cache_data
+    def build_df(problem_name, selected_indicators):
+        return run_pipeline(problem_name, selected_indicators)
+
+    df = build_df(problem_name, selected_indicators)
+    st.sidebar.success(f"{len(df)} solutions enriched")
+
+    return df
+
+    ____________________________________________________________
+    metrics_catalog.py
+    _________________________________________________________________
+    import os
+import pandas as pd
+import streamlit as st
+from column_rules import is_excluded_column
+
+
+@st.cache_data
+def load_csv(path):
+    return pd.read_csv(path)
+
+
+def get_metric_sets(df, data_path):
+    """
+    Returns:
+        - available_opt: optimization objectives present in df
+        - available_qual: quality attributes present in df
+        - available_metrics: union of both
+    """
+
+    opt_df = load_csv(os.path.join(data_path, "optimization_metrics.csv"))
+    qual_df = load_csv(os.path.join(data_path, "quality_metrics.csv"))
+
+    opt_catalog = list(opt_df.columns)
+    qual_catalog = list(qual_df.columns)
+
+    # Keep only numeric, non-structural columns
+    analysis_cols = [
+        c for c in df.columns
+        if pd.api.types.is_numeric_dtype(df[c]) and not is_excluded_column(c)
+    ]
+
+    # Optimization objectives explicitly listed in the catalog
+    available_opt = [c for c in analysis_cols if c in opt_catalog]
+
+    # Known quality attributes from the catalog
+    available_qual_catalog = [c for c in analysis_cols if c in qual_catalog]
+
+    # Extra uploaded numeric attributes not in any catalog:
+    # treat them as custom quality attributes
+    available_qual_extra = [
+        c for c in analysis_cols
+        if c not in opt_catalog and c not in qual_catalog
+    ]
+
+    available_qual = available_qual_catalog + available_qual_extra
+    available_metrics = available_opt + available_qual
+
+    return available_opt, available_qual, available_metrics
+    ____________________________________________________________
+
+    problem.py
+    ____________________________________________________________
+    import pandas as pd
+import numpy as np
+from config import PROBLEMAS
+
+EPS = 1e-9
+
+
+INDICADORES = {
+
+    "productivity": lambda df:
+        df["satisfaction"] / np.maximum(df["effort"], EPS),
+
+    "effectiveness": lambda df:
+        df["satisfaction"] / np.maximum(df["cost"], EPS),
+
+    "squandering": lambda df:
+        (df["effort"].max() - df["effort"]) / np.maximum(df["effort"].max(), EPS),
+
+    "dirtiness": lambda df:
+        np.where(
+            df.get("dissatisfaction", 0) == 0,
+            0,
+            df["dissatisfaction"] / np.maximum(df["effort"], EPS)
+        ),
+
+    "annoyance": lambda df:
+        np.where(
+            df.get("dissatisfaction", 0) == 0,
+            0,
+            df["dissatisfaction"] / np.maximum(df["satisfaction"], EPS)
+        ),
+
+    "stickiness": lambda df:
+        df["prevalence"] / np.maximum(df["effort"], EPS),
+
+    "robustness": lambda df:
+        df["satisfaction"] / np.maximum(df["inestability"], EPS),
+
+    "fragility": lambda df:
+        (df["prevalence"] * df["inestability"]) /
+        np.maximum(df["effort"], EPS),
+
+    "response": lambda df:
+        np.where(
+            df["time"] == 0,
+            0,
+            df["time"] / np.maximum(df["effort"], EPS)
+        ),
+
+    "opportunity": lambda df:
+        np.where(
+            df["satisfaction"] == 0,
+            0,
+            df["satisfaction"] / np.maximum(df["time"], EPS)
+        ),
+    "usage_efficiency": lambda df:
+        (df["prevalence"] / df["cost"].replace(0, np.nan)).fillna(0),
+    
+    "scope": lambda df:
+        df.filter(like="req_").sum(axis=1) /
+        np.maximum(len(df.filter(like="req_").columns), EPS)
+
+
+}
+
+
+
+
+REQUISITOS = {
+    "productivity": ["satisfaction", "effort"],
+    "effectiveness": ["satisfaction", "cost"],
+    "dirtiness": ["dissatisfaction", "effort"],
+    "annoyance": ["dissatisfaction", "satisfaction"],
+    "stickiness": ["prevalence", "effort"],
+    "robustness": ["satisfaction", "inestability"],
+    "fragility": ["prevalence", "inestability", "effort"],    
+    "response": ["time", "effort"],
+    "opportunity": ["satisfaction", "time"],
+    "usage_efficiency": ["prevalence","cost"],
+    "scope": [],
+    "squandering": ["effort"]
+}
+
+
+
+def leer_soluciones(config):
+    import pandas as pd
+    import numpy as np
+
+    # 1️⃣ Leer fichero
+    df = pd.read_csv(
+        config["path_sol"],
+        header=None,
+        sep=r"\s+",
+        engine="python"
+    )
+
+    # 2️⃣ Eliminar columnas completamente vacías
+    df = df.dropna(axis=1, how='all')
+
+    # 3️⃣ Eliminar columnas basura (como | o \)
+    df = df.loc[:, ~(df.astype(str).apply(lambda col: col.str.contains(r"[|\\]")).any())]
+
+    # 4️⃣ Asegurar que todo lo posible es numérico
+    df = df.apply(pd.to_numeric, errors='coerce')
+
+    # 5️⃣ Definir columnas esperadas
+    columnas_metricas = config["metricas"]
+    columnas_req = [f"req_{i+1}" for i in range(config["num_req"])]
+
+    total_cols = len(columnas_metricas) + len(columnas_req)
+
+    # 6️⃣ Si hay columnas extra → cortar
+    if df.shape[1] > total_cols:
+        print(f"[INFO] Columnas extra detectadas: {df.shape[1]} → {total_cols}")
+        df = df.iloc[:, :total_cols]
+
+    # 7️⃣ Validación
+    if df.shape[1] < total_cols:
+        raise ValueError(f"Faltan columnas: {df.shape[1]} < {total_cols}")
+
+    # 8️⃣ Asignar nombres
+    df.columns = columnas_metricas + columnas_req
+
+    # 9️⃣ ID
+    df["id"] = range(1, len(df) + 1)
+    df.reset_index(drop=True, inplace=True)
+
+    return df
+
+
+def leer_problema(config):
+    if config["path_prob"] is None:
+        return None
+
+    return pd.read_csv(
+        config["path_prob"],
+        sep=r"\s+",
+        engine="python"
+    )
+
+
+def calcular_stakeholders(df, problema, prefix):
+
+    if problema is None or prefix is None:
+        return df
+
+    clientes = [c for c in problema.columns if c.startswith(prefix)]
+    cols_req = [c for c in df.columns if c.startswith('req_')]
+
+    # ✅ convertir a números (CLAVE)
+    matriz_req = df[cols_req].apply(pd.to_numeric, errors='coerce').values
+    matriz_val = problema[clientes].apply(pd.to_numeric, errors='coerce').values
+
+    valor = np.dot(matriz_req, matriz_val)
+
+    total = problema[clientes].apply(pd.to_numeric, errors='coerce').sum()
+
+    for i, c in enumerate(clientes):
+        df[f"stcov_{c}"] = valor[:, i] / (total[c] + 1e-9)
+
+    return df
+
+
+
+def calcular_indicadores(df, indicadores_a_usar):
+    nuevas = {}
+
+    for nombre in indicadores_a_usar:
+
+        if nombre not in INDICADORES:
+            print(f"{nombre} no existe")
+            continue
+
+        requisitos = REQUISITOS.get(nombre, [])
+
+        if all(col in df.columns for col in requisitos):
+            try:
+                nuevas[nombre] = INDICADORES[nombre](df)
+            except Exception:
+                print(f"Error en {nombre}")
+        else:
+            print(f"Saltando {nombre} (faltan columnas)")
+
+    return pd.concat([df, pd.DataFrame(nuevas)], axis=1)
+
+
+
+def run_pipeline(nombre_problema, indicadores):
+    config = PROBLEMAS[nombre_problema]
+
+    df = leer_soluciones(config)
+    problema = leer_problema(config)
+
+    df = calcular_indicadores(df, indicadores)
+    df = calcular_stakeholders(df, problema, config["stakeholders_prefix"])
+
+    return df
+_________________________________________________________________
+streamlit_app.py
+__________________________________________________________________
+import streamlit as st
+import pandas as pd
+#import hdbscan
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn_extra.cluster import KMedoids
+from sklearn.metrics import silhouette_score
+from sklearn.cluster import HDBSCAN
+
+from input_panel import render_input_panel
+from metrics_catalog import get_metric_sets
+from ui_plots import render_scatter_plot, plot_radar
+
+# --------------------------------------------
+# CONFIGURACIÓN
+# --------------------------------------------
+st.set_page_config(layout="wide")
+st.title("ANRP Decision Space Explorer")
+DATA_PATH = "data"
+
+# --------------------------------------------
+# DATA SOURCE + DATA PREPARATION
+# --------------------------------------------
+
+df = render_input_panel()
+
+# --------------------------------------------
+# METRICS
+# --------------------------------------------
+available_opt, available_qual, available_metrics = get_metric_sets(df, DATA_PATH)
+
+# --------------------------------------------
+# SESSION STATE
+# --------------------------------------------
+if "groups" not in st.session_state:
+    st.session_state.groups = []
+
+if "show_comparison" not in st.session_state:
+    st.session_state.show_comparison = False
+
+if "selected_ids" not in st.session_state:
+    st.session_state.selected_ids = []
+
+if "focus_mode" not in st.session_state:
+    st.session_state.focus_mode = False
+
+# --------------------------------------------
+# VISUAL WORKSPACE
+# --------------------------------------------
+used_now = [m for g in st.session_state.groups for m in g if m]
+remaining = [m for m in available_metrics if m not in used_now]
+
+st.sidebar.markdown("## 🗺️ Visual Workspace")
+st.sidebar.caption("Manage 2D views of the decision space")
+
+# Estado del workspace
+n_maps = len(st.session_state.groups)
+can_add_map = len(remaining) >= 2
+can_reset_workspace = n_maps > 0
+
+# Texto de ayuda contextual
+st.sidebar.caption(
+    f"Active maps: {n_maps} · Remaining metrics available for new maps: {len(remaining)}"
+)
+
+
+# Botones en paralelo de colores
+st.html("""
+    <style>
+    /* Estilo para el botón de reset usando su clave única */
+    div[data-testid="stActionButtonElement"] button[key="reset_workspace_btn"] {
+        color: #ff4b4b;
+        border-color: #ff4b4b;
+    }
+    </style>
+""")
+
+
+# col_reset, col_add = st.sidebar.columns(2)
+col_reset, col_add = st.sidebar.columns([0.35, 0.65])
+with col_reset:
+    if st.button(
+        "Reset maps",
+        use_container_width=True,
+        disabled=not can_reset_workspace,
+        key="reset_workspace_btn",
+        type="secondary"
+    ):
+        st.session_state.groups = []
+        st.session_state.show_comparison = False
+        st.rerun()
+
+with col_add:
+    if st.button(
+        "New decision map",
+        use_container_width=True,
+        disabled=not can_add_map,
+        key="add_map_btn",
+        type="primary"
+    ):
+        st.session_state.groups.append([remaining[0], remaining[1], None])
+        st.rerun()
+
+if not can_add_map:
+    st.sidebar.info("No remaining available metrics")
+
+if can_reset_workspace:
+    st.sidebar.caption("'Reset' clears maps, but keeps data")
+
+show_ids = st.sidebar.checkbox(
+    "Show IDs on plots",
+    value=False,
+    help="Display solution identifiers directly on the maps."
+)
+
+
+# --------------------------------------------
+# CONTEXT FRAMING
+# --------------------------------------------
+st.sidebar.markdown("## 🎛️ Context Framing")
+
+filtered_df = df.copy()
+
+# -------- OPTIMIZATION METRICS --------
+st.sidebar.markdown("#### 🔘 Optimization objectives")
+
+for m in available_opt:
+    if pd.api.types.is_numeric_dtype(df[m]):
+        min_v, max_v = float(df[m].min()), float(df[m].max())
+
+        if min_v != max_v:
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_v,
+                max_v,
+                (min_v, max_v),
+                key=f"opt_{m}"
+            )
+
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
+
+# -------- QUALITY METRICS --------
+st.sidebar.markdown("#### 🔵 :blue[Quality Indicators]")
+
+for m in available_qual:
+    if pd.api.types.is_numeric_dtype(df[m]):
+        min_v, max_v = float(df[m].min()), float(df[m].max())
+
+        if min_v != max_v:
+            val_range = st.sidebar.slider(
+                f"{m}",
+                min_v,
+                max_v,
+                (min_v, max_v),
+                key=f"qual_{m}"
+            )
+
+            filtered_df = filtered_df[
+                (filtered_df[m] >= val_range[0]) &
+                (filtered_df[m] <= val_range[1])
+            ]
+
+# --------------------------------------------
+# SELECCIÓN
+# -------------------------------------------- 
+st.sidebar.markdown("## 🔍 SOI Identification Lens")
+mode_label = st.sidebar.selectbox(
+    "🔍Analytical Lens",
+    [
+        " Exploratory view",
+        "👁️ Preference lens (MCDA)",
+        "✨ Diversity lens",
+        "⚡ Efficiency lens",
+        "💡 Domain-specific lens",
+    ],
+    label_visibility="collapsed"
+)
+
+mode_map = {
+    " Exploratory view": "None",
+    "👁️ Preference lens (MCDA)": "MCDM",
+    "✨ Diversity lens": "Clustering",
+    "⚡ Efficiency lens": "Efficiency-Ratio",
+    "💡 Domain-specific lens": "Ranking-based",
+}
+
+
+mode = mode_map[mode_label]
+
+selected_df = filtered_df.copy()
+threshold = 0
+
+# IMPORTANTE: esta variable controla el color en los plots
+color_col = None
+
+# --------------------------------------------
+# MCDM 
+# --------------------------------------------
+if mode == "MCDM":
+
+    st.sidebar.markdown("### Multi-criteria Preference")
+
+    # -------------------------------
+    # Método de evaluación
+    # -------------------------------
+    method = st.sidebar.radio(
+        "Method",
+        ["Weighted Sum", "TOPSIS"]
+    )
+
+    # -------------------------------
+    # Selección de criterios
+    # -------------------------------
+    m_max = st.sidebar.multiselect("Maximize", available_qual)
+    m_min = st.sidebar.multiselect(
+        "Minimize",
+        [m for m in available_qual if m not in m_max]
+    )
+
+    criteria = m_max + m_min
+
+    if criteria:
+
+        df_temp = selected_df.copy()
+
+        # =====================================================
+        # ✅ WEIGHTED SUM
+        # =====================================================
+        if method == "Weighted Sum":
+
+            score = 0
+
+            for m in criteria:
+                mi, ma = df_temp[m].min(), df_temp[m].max()
+                norm = (df_temp[m] - mi) / (ma - mi) if ma > mi else 0
+
+                if m in m_max:
+                    score += norm
+                else:
+                    score -= norm
+
+            df_temp["score"] = score
+            score_col = "score"
+
+        # =====================================================
+        # ✅ TOPSIS
+        # =====================================================
+        else:
+
+            norm_df = df_temp[criteria].copy()
+
+            # normalización vectorial
+            for m in criteria:
+                denom = (norm_df[m]**2).sum() ** 0.5
+                if denom != 0:
+                    norm_df[m] = norm_df[m] / denom
+
+            ideal = {}
+            anti_ideal = {}
+
+            for m in criteria:
+                if m in m_max:
+                    ideal[m] = norm_df[m].max()
+                    anti_ideal[m] = norm_df[m].min()
+                else:
+                    ideal[m] = norm_df[m].min()
+                    anti_ideal[m] = norm_df[m].max()
+
+            d_plus = []
+            d_minus = []
+
+            for i in range(len(norm_df)):
+                row = norm_df.iloc[i]
+
+                dp = sum((row[m] - ideal[m])**2 for m in criteria) ** 0.5
+                dm = sum((row[m] - anti_ideal[m])**2 for m in criteria) ** 0.5
+
+                d_plus.append(dp)
+                d_minus.append(dm)
+
+            df_temp["score_topsis"] = [
+                dm / (dp + dm) if (dp + dm) != 0 else 0
+                for dp, dm in zip(d_plus, d_minus)
+            ]
+
+            score_col = "score_topsis"
+
+        # -------------------------------
+        # Top N
+        # -------------------------------
+        n = st.sidebar.slider(
+            "Top N",
+            1,
+            len(df_temp),
+            min(10, len(df_temp))
+        )
+
+        selected_df = df_temp.sort_values(score_col, ascending=False).head(n)
+        color_col = score_col
+
+# ----------------------------------
+# DIVERSITY METHODS
+# ----------------------------------
+
+elif mode == "Clustering":
+
+    st.sidebar.markdown("### Clustering")
+
+    # -------------------------------
+    # Selección de método
+    # -------------------------------
+    cluster_method = st.sidebar.radio(
+        "Clustering method",
+        ["K-Medoids", "HDBSCAN"]
+    )
+
+    # -------------------------------
+    # Selección de métricas
+    # -------------------------------
+    cluster_metrics = st.sidebar.multiselect(
+        "Metrics for clustering",
+        available_metrics,
+        default=available_metrics[:2]
+    )
+
+    if cluster_metrics and len(cluster_metrics) >= 2:
+
+        # -------------------------------
+        # Preparar datos
+        # -------------------------------
+        X = selected_df[cluster_metrics].values
+
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # ==========================================================
+        # ✅ CASO 1: K-MEDOIDS
+        # ==========================================================
+        if cluster_method == "K-Medoids":
+            k_mode = st.sidebar.radio(
+                "Number of clusters",
+                ["Manual", "Auto"]
+            )
+            if k_mode == "Manual":
+                k = st.sidebar.slider(
+                    "k clusters",
+                    2,
+                    min(10, len(selected_df)),
+                    3
+                )
+
+            else:
+                best_k = 2
+                best_score = -1
+
+                for k_test in range(2, min(10, len(X_scaled))):
+                    try:
+                        model = KMedoids(
+                            n_clusters=k_test,
+                            method='pam',
+                            random_state=123
+                        )
+                        labels_test = model.fit_predict(X_scaled)
+
+                        if len(set(labels_test)) > 1:
+                            score = silhouette_score(X_scaled, labels_test)
+
+                            if score > best_score:
+                                best_score = score
+                                best_k = k_test
+                    except:
+                        pass
+
+                k = best_k
+                st.sidebar.info(f"Suggested k : {k}")
+
+            model = KMedoids(
+                n_clusters=k,
+                method='pam',
+                random_state=123
+            )
+            labels = model.fit_predict(X_scaled)
+
+        # ==========================================================
+        # ✅ CASO 2: HDBSCAN  
+        # ==========================================================
+        else:
+
+            st.sidebar.markdown("#### HDBSCAN configuration")
+
+            mode_size = st.sidebar.radio(
+                "Cluster size",
+                ["Auto (recommended)", "Manual"]
+            )
+
+            N = len(selected_df)
+
+            if mode_size == "Auto (recommended)":
+
+                option = st.sidebar.selectbox(
+                    "Cluster granularity",
+                    ["Small (~5%)", "Medium (~10%)", "Large (~20%)"],
+                    index=1
+                )
+
+                if option == "Small (~5%)":
+                    min_cluster_size = max(2, int(0.05 * N))
+                elif option == "Medium (~10%)":
+                    min_cluster_size = max(2, int(0.10 * N))
+                else:
+                    min_cluster_size = max(2, int(0.20 * N))
+
+                st.sidebar.info(f"min_cluster_size = {min_cluster_size}")
+
+            else:
+                min_cluster_size = st.sidebar.slider(
+                    "Min cluster size",
+                    2,
+                    len(selected_df),
+                    max(2, int(0.1 * N))
+                )
+
+            model = HDBSCAN(
+                min_cluster_size=min_cluster_size
+            )
+
+            labels = model.fit_predict(X_scaled)
+
+
+        # -------------------------------
+        # Métricas de clustering (info)
+        # -------------------------------
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        noise_ratio = (labels == -1).sum() / len(labels)
+
+        st.sidebar.info(f"Clusters: {n_clusters} | Noise: {noise_ratio:.2%}")
+
+
+        # -------------------------------
+        # Guardar resultados (común)
+        # -------------------------------
+        selected_df["cluster"] = labels
+
+        # Convertir a string para visualización
+        selected_df["cluster_str"] = selected_df["cluster"].astype(str)
+
+        # Manejar ruido de HDBSCAN (-1)
+        selected_df["cluster_str"] = selected_df["cluster_str"].replace("-1", "Noise")
+
+        # Tamaño por grupo
+        cluster_sizes = selected_df.groupby("cluster_str")["id"].transform("size")
+
+        selected_df["group_label"] = (
+            "Cluster " +
+            selected_df["cluster_str"] +
+            " (n=" +
+            cluster_sizes.astype(str) +
+            ")"
+        )
+
+        color_col = "group_label"
+
+#--------------------------------------
+#   Efficiency based Ratio
+#-------------------------------------
+
+elif mode == "Efficiency-Ratio":
+
+    st.sidebar.markdown("### Efficiency (Benefit/Cost)")
+
+    benefit = st.sidebar.selectbox(
+        "Benefit (maximize)", 
+        available_qual, 
+        key="eff_benefit"
+    )
+
+    cost = st.sidebar.selectbox(
+        "Cost (minimize)", 
+        available_metrics, 
+        key="eff_cost"
+    )
+
+    # protección
+    if benefit == cost:
+        st.warning("Benefit and Cost must be different metrics")
+        st.stop()
+
+    # slider primero
+
+    n = st.sidebar.slider(
+        "Top N efficient solutions",
+        1,
+        len(selected_df),
+        min(10, len(selected_df)),
+        key="eff_topn"
+    )
+
+    # calcular score
+    selected_df = selected_df.copy()
+
+    cost_safe = selected_df[cost].replace(0, 1e-9)
+    selected_df["efficiency_score"] = selected_df[benefit] / cost_safe
+
+    # ordenar
+    selected_df = selected_df.sort_values("efficiency_score", ascending=False).head(n)
+
+    color_col = "efficiency_score"
+
+# --------------------------------------------
+# RANKING BASED (count SIN NORMALIZAR)
+# --------------------------------------------
+
+
+elif mode == "Ranking-based":
+    sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
+    n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
+
+    if sel_metrics:
+        ranks = []
+        goals = {}
+
+        for m in sel_metrics:
+            goal = st.sidebar.selectbox(
+                f"Goal for {m}",
+                ["Maximize", "Minimize"],
+                key=f"g_{m}"
+            )
+            goals[m] = goal
+            ranks.append(
+                filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top)
+            )
+
+        counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
+
+        # Mantener todo el subconjunto actual y marcar count=0 si no aparece en ningún top-N
+        selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
+        selected_df["count"] = selected_df["count"].astype(int)
+
+        # Etiqueta base sin conteo agregado todavía
+        selected_df["group_base"] = selected_df["count"].apply(
+            lambda c: "No match" if c == 0 else f"Matches = {c}"
+        )
+
+        # Añadir el n de cada grupo para que salga en la leyenda
+        group_sizes = selected_df["group_base"].value_counts().to_dict()
+        selected_df["group_label"] = selected_df["group_base"].apply(
+            lambda g: f"{g} (n={group_sizes[g]})"
+        )
+
+        color_col = "group_label"
+        threshold = max(1, len(sel_metrics) - 1)
+
+
+# --------------------------------------------
+# NONE
+# --------------------------------------------
+else:
+    color_col = None
+
+# Guardar explícitamente el subconjunto actual derivado de la lente ROI
+roi_df = selected_df.copy()
+
+# --------------------------------------------
+# HIGHLIGHT + LABELS
+# --------------------------------------------
+
+# Guardamos explícitamente el subconjunto actual derivado del framing + lens.
+# Esto representa la ROI/subset estructural actual antes de aplicar foco manual.
+roi_df = selected_df.copy()
+
+selected_ids = st.multiselect(
+    " 👆 Highlight candidate solutions",
+    options=roi_df["id"].tolist(),
+    default=st.session_state.selected_ids,
+    key="selected_ids",
+    help="Manually mark solutions for visual tracking or focused analysis."
+)
+
+roi_df["highlight"] = roi_df["id"].isin(selected_ids)
+
+if show_ids:
+    if mode == "Ranking-based":
+        roi_df["label"] = roi_df.apply(
+            lambda r: str(int(r["id"])) if (r["highlight"] or int(r.get("count", 0)) >= threshold) else "",
+            axis=1
+        )
+    else:
+        roi_df["label"] = roi_df["id"].astype(str)
+else:
+    roi_df["label"] = ""
+
+# --------------------------------------------
+# SOI FOCUS + COMPARATIVE SUPPORT
+# --------------------------------------------
+
+
+st.sidebar.markdown("## 🎯 Candidate Solution Set focus and Comparison")
+
+focus_mode = st.sidebar.checkbox(
+    "Focus on highlighted solutions",
+    help="Keep candidates highlighted in context, or restrict analysis to them.",
+    key="focus_mode"
+)
+
+st.sidebar.checkbox(
+    "Open detailed comparison",
+    key="show_comparison"
+)
+
+
+# ----------------------------------
+# Focus mode → filtrar datos reales
+# ----------------------------------
+selected_df = roi_df.copy()
+
+if focus_mode and roi_df["highlight"].any():
+    selected_df = roi_df[roi_df["highlight"]].copy()
+
+if focus_mode:
+    st.sidebar.caption(f"{len(selected_df)} solutions in focus")
+
+# --------------------------------------------
+# GRÁFICOS
+# --------------------------------------------
+
+for i, group in enumerate(st.session_state.groups):
+    st.subheader(f"Decision-Space Map {i+1}")
+    
+    others = [m for idx, g in enumerate(st.session_state.groups) if idx != i for m in g if m]
+    available_here = [m for m in available_metrics if m not in others]
+
+    if len(available_here) < 2:
+        st.warning("No more metrics available for this group.")
+        continue
+
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        curr_x = group[0] if group[0] in available_here else available_here[0]
+        x = st.selectbox(
+            f"X Axis {i}",
+            available_here,
+            index=available_here.index(curr_x),
+            key=f"x_{i}"
+        )
+    
+    with col2:
+        y_opts = [m for m in available_here if m != x]
+        curr_y = group[1] if group[1] in y_opts else y_opts[0]
+        y = st.selectbox(
+            f"Y Axis {i}",
+            y_opts,
+            index=y_opts.index(curr_y),
+            key=f"y_{i}"
+        )
+    
+    with col3:
+        s_opts = [None] + [m for m in available_here if m not in [x, y]]
+        curr_s = group[2] if group[2] in s_opts else None
+        size = st.selectbox(
+            f"Size {i}",
+            s_opts,
+            index=s_opts.index(curr_s),
+            key=f"s_{i}"
+        )
+
+    st.session_state.groups[i] = [x, y, size]
+
+    df_plot = selected_df.copy()
+
+    cA, cB = st.columns(2)
+    with cA:
+        render_scatter_plot(df_plot, x, y, None, color_col, show_ids, key=f"p1_{i}")
+    with cB:
+        if size:
+            render_scatter_plot(df_plot, x, size, y, color_col, show_ids, key=f"p2_{i}")
+        else:
+            st.info("Select a metric in 'Size' to enable comparison.")
+
+# --------------------------------------------
+# RADAR / DETAILED COMPARISON
+# --------------------------------------------
+
+if st.session_state.show_comparison:
+
+    st.markdown("### 🆚 Detailed comparison")
+
+    # Si el usuario ha activado focus y hay highlights,
+    if focus_mode and roi_df["highlight"].any():
+        df_compare_base = selected_df.copy()
+        st.caption("Comparison source: focused candidate set")
+
+    else:
+        compare_options = ["Current subset"]
+
+        if roi_df["highlight"].any():
+            compare_options.append("Highlighted candidates")
+
+        compare_source = st.radio(
+            "Comparison source",
+            compare_options,
+            horizontal=True,
+            key="comparison_source"
+        )
+
+        if compare_source == "Highlighted candidates":
+            df_compare_base = roi_df[roi_df["highlight"] == True].copy()
+        else:
+            df_compare_base = roi_df.copy()
+
+    # Detectar columna de agrupación (cluster o count)
+    group_col = None
+
+    if "cluster_str" in df_compare_base.columns:
+        group_col = "cluster_str"
+    elif "cluster" in df_compare_base.columns:
+        group_col = "cluster"
+
+    if group_col is None:
+        if "count_str" in df_compare_base.columns:
+            group_col = "count_str"
+        elif "count" in df_compare_base.columns:
+            group_col = "count"
+
+    plot_radar(df_compare_base, available_metrics, group_col=group_col)
+
+# --------------------------------------------
+# CURRENT DECISION SUBSET + EXPORT
+# --------------------------------------------
+
+col_titulo, col_btn = st.columns([3, 1], vertical_alignment="center")
+
+with col_titulo:
+    st.markdown("📋 Current decision subset")
+
+csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
+
+with col_btn:
+    st.download_button(
+        label="⬇️ Export current subset",
+        data=csv_data.to_csv(index=False),
+        file_name="current_subset.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
+# --------------------------------------------
+# PREVIEW
+# --------------------------------------------
+with st.expander("Preview", expanded=False):
+    df_preview = selected_df.copy()
+    
+    # 1. Si "id" existe, lo ponemos como índice antes de borrar las demás columnas
+    if "id" in df_preview.columns:
+        df_preview = df_preview.set_index("id")
+        
+    # 2. Ocultamos el resto de columnas de control (quitamos "id" de esta lista)
+    columnas_a_ocultar = ["highlight", "highlight_label", "label"]
+    df_preview = df_preview.drop(
+        columns=[col for col in columnas_a_ocultar if col in df_preview.columns]
+    )
+    
+    st.dataframe(df_preview.head(100), use_container_width=True)
+
+
+# ----------------------------------
+# 🥇 Top solutions (non-intrusive)
+# ----------------------------------
+#if mode in ["MCDM", "Efficiency-Ratio"] and len(selected_df) >= 1:
+#    top_n = min(3, len(selected_df))
+#    top_ids = selected_df.head(top_n)["id"].astype(int).tolist()
+#    st.caption("### 🥇 Top solutions (current method)")
+#    st.caption(", ".join([f"ID {i}" for i in top_ids]))
+
+# ----------------------------------
+# 📊 Quick insights (non-intrusive)
+# ----------------------------------
+#if len(selected_df) >= 2:
+#    numeric_cols = selected_df.select_dtypes(include="number").columns.tolist()
+#    exclude_cols = ["id"]
+#    numeric_cols = [c for c in numeric_cols if c not in exclude_cols]
+#    if numeric_cols:
+#        means = selected_df[numeric_cols].mean()
+#        top_metrics = means.sort_values(ascending=False).head(3)
+#        items = [f"**{m}**: {v:.3f}" for m, v in top_metrics.items()]
+#        st.markdown("📊 Quick insights:  "+" | ".join(items))
+_________________________________________________________________
+ui_plots.py
+__________________________________________________________________
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
+
+def render_scatter_plot(df, x, y, size, color_col, show_ids, key):
+    import numpy as np
+    import pandas as pd
+    import plotly.express as px
+
+    df = df.copy()
+
+    # -----------------------------
+    # Hover dinámico
+    # -----------------------------
+    hover_data = {}
+    if "score" in df.columns:
+        hover_data["score"] = ':.3f'
+    if "score_topsis" in df.columns:
+        hover_data["score_topsis"] = ':.3f'
+    if "count" in df.columns:
+        hover_data["count"] = True
+    if "cluster" in df.columns:
+        hover_data["cluster"] = True
+
+    # -----------------------------
+    # Detectar discreto / continuo
+    # -----------------------------
+    is_discrete = False
+
+    if color_col and color_col in df.columns:
+        if color_col == "group_label":
+            is_discrete = True
+            df[color_col] = df[color_col].astype(str)
+
+        elif pd.api.types.is_object_dtype(df[color_col]):
+            is_discrete = True
+            df[color_col] = df[color_col].astype(str)
+
+    # ======================================================
+    # ✅ CASO 1: CONTINUO (Weighted, TOPSIS, etc.)
+    # ======================================================
+    if not is_discrete:
+
+        fig = px.scatter(
+            df,
+            x=x,
+            y=y,
+            size=size,
+            color=color_col,
+            color_continuous_scale=px.colors.sequential.Viridis,
+            text="label" if show_ids else None,
+            hover_data=hover_data
+        )
+
+        # ✅ aplicar opacidad si hay selección
+        if "highlight" in df.columns and df["highlight"].any():
+            opacity_vals = np.where(df["highlight"], 1.0, 0.25)
+            fig.update_traces(marker=dict(opacity=opacity_vals))
+
+        fig.update_layout(
+            legend_title_text=color_col if color_col else ""
+        )
+
+    # ======================================================
+    # ✅ CASO 2: DISCRETO (Clustering, Ranking)
+    # ======================================================
+    else:
+
+
+
+
+        unique_vals = sorted(df[color_col].dropna().unique().tolist())
+        palette = px.colors.qualitative.Plotly
+        color_map = {}
+
+        palette_idx = 0
+        for v in unique_vals:
+            if str(v).startswith("No match"):
+                color_map[v] = "#b0b0b0"   # gris para las no coincidencias
+            else:
+                color_map[v] = palette[palette_idx % len(palette)]
+                palette_idx += 1
+
+        fig = px.scatter(
+            df,
+            x=x,
+            y=y,
+            size=size,
+            color=color_col,
+            text="label" if show_ids else None,
+            hover_data=hover_data,
+            color_discrete_map=color_map
+        )
+
+        # ✅ aplicar opacidad también aquí
+        if "highlight" in df.columns and df["highlight"].any():
+            opacity_vals = np.where(df["highlight"], 1.0, 0.25)
+            fig.update_traces(marker=dict(opacity=opacity_vals))
+
+        fig.update_layout(legend_title_text="Groups")
+
+    # -----------------------------
+    # Estética
+    # -----------------------------
+    fig.update_traces(
+        textposition="top right",
+        textfont=dict(size=10),
+        marker=dict(size=10),
+        mode='markers+text' if show_ids else 'markers'
+    )
+
+    st.plotly_chart(fig, use_container_width=True, key=key)
+
+def plot_radar(selected_df, available_metrics, group_col=None):
+    st.markdown("---")
+
+    df_for_compare = selected_df
+
+    # -------------------------------
+    # NUEVO: capa extra -> seleccionar GRUPO (cluster o count)
+    # -------------------------------
+    if group_col is not None and group_col in df_for_compare.columns:
+
+        groups = sorted(df_for_compare[group_col].dropna().astype(str).unique().tolist())
+        group_options = ["All"] + groups
+
+        chosen_group = st.selectbox(
+            "Group to analyze (cluster / ranking-group)",
+            group_options,
+            index=0,
+            key="cmp_group_select"
+        )
+
+        if chosen_group != "All":
+            df_for_compare = df_for_compare[df_for_compare[group_col].astype(str) == str(chosen_group)]
+
+    # -------------------------------
+    # Selección de IDs SOLO dentro del grupo elegido
+    # -------------------------------
+    opciones_id = df_for_compare["id"].unique()
+    compare_ids = st.multiselect("👆 Pick solutions to compare", opciones_id)
+
+    if len(compare_ids) < 2:
+        st.info("Select at least 2 solutions to compare")
+        return
+
+    compare_df = df_for_compare[df_for_compare["id"].isin(compare_ids)].copy()
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📊 Comparative Profile",
+        "👥 Stakeholder Impact",
+        "📋 Requirement Composition",
+        "🤝 Stakeholder–Requirement Alignment"
+    ])
+
+    # ---------- PERFORMANCE ----------
+    with tab1:
+        st.subheader("Custom Trade-off Comparison")
+        
+        numeric_cols = [m for m in available_metrics if pd.api.types.is_numeric_dtype(selected_df[m])]
+        selected_radar_metrics = st.multiselect(
+            "Select metrics (at least 3)", 
+            numeric_cols,
+            default=numeric_cols[:3] if len(numeric_cols) >= 3 else None,
+            key="perf_metrics"
+        )
+
+        if len(selected_radar_metrics) >= 3:
+            metric_goals = {}
+            cols = st.columns(len(selected_radar_metrics))
+            
+            for idx, m in enumerate(selected_radar_metrics):
+                with cols[idx]:
+                    goal = st.selectbox(f"Goal {m}", ["Maximize", "Minimize"], key=f"radar_g_{m}")
+                    metric_goals[m] = goal
+
+            radar_df = compare_df.copy()
+            low, high = 0.1, 0.9
+
+            for m in selected_radar_metrics:
+                mi, ma = radar_df[m].min(), radar_df[m].max()
+                if ma > mi:
+                    norm = (radar_df[m] - mi) / (ma - mi)
+                    if metric_goals[m] == "Minimize":
+                        norm = 1.0 - norm
+                    radar_df[m] = low + (norm * (high - low))
+                else:
+                    radar_df[m] = 0.5
+
+            fig_perf = go.Figure()
+            for _, row in radar_df.iterrows():
+                val = row[selected_radar_metrics].tolist()
+                val.append(val[0])
+                fig_perf.add_trace(go.Scatterpolar(
+                    r=val,
+                    theta=selected_radar_metrics + [selected_radar_metrics[0]],
+                    fill=None,
+                    mode='lines+markers',
+                    name=f"ID {int(row['id'])}"
+                ))
+
+            fig_perf.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                showlegend=True
+            )
+            st.plotly_chart(fig_perf, use_container_width=True)
+
+        else:
+            st.warning("Select at least 3 metrics.")
+
+ # ---------- STAKEHOLDER ----------
+    with tab2:
+        st.subheader("Coverage per Stakeholder")
+        
+        stcov_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
+
+        # ----------------------------------
+        # ✅ No hay stakeholders
+        # ----------------------------------
+        if not stcov_cols:
+            st.info("No stakeholder coverage columns (stcov_...) found in dataset.")
+
+        else:
+
+            # ----------------------------------
+            # ✅ ordenar por relevancia
+            # ----------------------------------
+            stcov_cols = sorted(
+                stcov_cols,
+                key=lambda c: selected_df[c].mean(),
+                reverse=True
+            )
+
+            # ----------------------------------
+            # ✅ selección manual (clave)
+            # ----------------------------------
+            selected_st = st.multiselect(
+                "👆 Select stakeholders to display",
+                stcov_cols,
+                default=stcov_cols[:min(6, len(stcov_cols))]
+            )
+
+            # ✅ aplicar selección
+            if selected_st:
+                stcov_cols = selected_st
+            else:
+                stcov_cols = []
+
+            st.caption(f"Showing {len(stcov_cols)} stakeholders")
+
+            # ----------------------------------
+            # ⚠️ asegurar mínimo
+            # ----------------------------------
+            if len(stcov_cols) < 3:
+                st.warning("Need at least 3 stakeholders to create a radar chart.")
+            else:
+                cov_df = compare_df.copy()
+                low, high = 0.1, 0.9
+
+                for c in stcov_cols:
+                    mi, ma = cov_df[c].min(), cov_df[c].max()
+                    if ma > mi:
+                        norm = (cov_df[c] - mi) / (ma - mi)
+                        cov_df[c] = low + (norm * (high - low))
+                    else:
+                        cov_df[c] = 0.5
+
+                fig_cov = go.Figure()
+
+                for _, row in cov_df.iterrows():
+                    val = row[stcov_cols].tolist()
+                    val.append(val[0])
+
+                    fig_cov.add_trace(go.Scatterpolar(
+                        r=val,
+                        theta=stcov_cols + [stcov_cols[0]],
+                        fill=None,
+                        mode='lines+markers',
+                        name=f"ID {int(row['id'])}"
+                    ))
+
+                fig_cov.update_layout(
+                    polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                    showlegend=True
+                )
+
+                st.plotly_chart(fig_cov, use_container_width=True)
+# ---------- NUEVA PESTAÑA: REQUISITOS ----------
+    with tab3:
+        st.subheader("Requirements Included in Selected Solutions")
+        
+        # Detectamos dinámicamente cualquier columna que empiece por "req_"
+        req_cols = [c for c in selected_df.columns if c.startswith("req_")]
+        
+        if not req_cols:
+            st.info("No requirement columns (req_...) found in dataset.")
+        else:
+            # Preparamos los datos: Filas como IDs de solución y columnas como Requisitos
+            req_df = compare_df.set_index("id")[req_cols].copy()
+            
+            # Convertimos el ID a string para el eje Y
+            req_df.index = [f"ID {int(i)}" for i in req_df.index]
+            
+            # MAPA DE COLOR CON CONTRASTE ALTO:
+            fig_req = px.imshow(
+                req_df,
+                labels=dict(x="Requirements", y="Solutions", color="Status"),
+                x=req_cols,
+                y=req_df.index,
+                color_continuous_scale=[[0, "#e0e0e0"], [1, "#00e676"]] # Gris Claro vs Verde Brillante Puro
+            )
+            
+            # Configuramos el diseño del gráfico de forma correcta
+            fig_req.update_layout(
+                template="plotly_white", # Fondo blanco limpio
+                coloraxis_showscale=False, # Ocultamos la barra lateral de colores
+                xaxis=dict(
+                    tickangle=-45, 
+                    showgrid=False, # Quitamos líneas de cuadrícula del fondo
+                    tickfont=dict(size=11, color="black") # ¡CORREGIDO AQUÍ! (Era tickfont, no textfont)
+                ),
+                yaxis=dict(
+                    autorange="reversed", 
+                    showgrid=False,
+                    tickfont=dict(size=11, color="black") # ¡CORREGIDO AQUÍ! (Era tickfont, no textfont)
+                ),
+                margin=dict(l=50, r=50, t=30, b=50) # Ajustamos márgenes
+            )
+            
+            # Añadimos bordes blancos muy marcados para separar las celdas claramente
+            fig_req.update_traces(
+                xgap=3, 
+                ygap=3,
+                hovertemplate="<b>%{y}</b><br>Requirement: %{x}<br>Status: %{z} (1=Included, 0=Excluded)<extra></extra>"
+            )
+            
+            st.plotly_chart(fig_req, use_container_width=True)
+
+
+# ---------- NUEVA PESTAÑA: ALINEACIÓN STAKEHOLDERS + FILA RESUMEN ----------
+    with tab4:
+        st.subheader("Stakeholder-Requirement Alignment Matrix")
+        st.write("Visualizing which requirements satisfy each stakeholder's specific interests and their final release status.")
+
+        # 1. Identificar columnas
+        req_cols = [c for c in selected_df.columns if c.startswith("req_")]
+        st_cols = [c for c in selected_df.columns if c.startswith("stcov_")]
+
+        # Desplegable para analizar una solución concreta
+        focus_id = st.selectbox("Select Solution to analyze alignment", compare_df["id"].unique(), key="align_sel")
+        row_focus = compare_df[compare_df["id"] == focus_id].iloc[0]
+
+        if not req_cols or not st_cols:
+            st.info("Required data columns (req_ or stcov_) missing.")
+        else:
+          
+            alignment_data = []
+            # Generamos las filas de los Stakeholders normales
+            for st_name in st_cols:
+                row_values = []
+                for req_name in req_cols:
+                    # Simulación: Aquí decides si el Stakeholder propuso el requisito
+                    proposed_by_stake = (hash(st_name + req_name) % 3 == 0) 
+                    is_included = row_focus[req_name] == 1
+                    
+                    if proposed_by_stake and is_included:
+                        val = 2  # Solicitado e incluido (Verde brillante)
+                    elif proposed_by_stake and not is_included:
+                        val = 1  # Solicitado pero fuera (Gris medio)
+                    else:
+                        val = 0  # No solicitado (Gris muy claro)
+                    row_values.append(val)
+                alignment_data.append(row_values)
+
+            # --- LA FILA RESUMEN (RIZANDO MÁS EL RIZO) ---
+            # Añadimos la fila final que mira directamente si el req está en la solución (1) o no (0)
+            summary_row = []
+            for req_name in req_cols:
+                if row_focus[req_name] == 1:
+                    summary_row.append(3) # Incluido en el release (Verde Oscuro)
+                else:
+                    summary_row.append(1) # Fuera del release (Gris Medio)
+            alignment_data.append(summary_row)
+
+            # Creamos la lista de nombres para el eje Y incluyendo nuestro resumen
+            y_labels = [s.replace("stcov_", "Stakeholder ") for s in st_cols] + ["📦 RELEASE STATUS"]
+
+            # Crear DataFrame para el Heatmap
+            align_df = pd.DataFrame(alignment_data, index=y_labels, columns=req_cols)
+
+            # 2. Construir el Heatmap con Escala de 4 colores discretos
+            fig_align = px.imshow(
+                align_df,
+                labels=dict(x="Requirements", y="Alignment Status", color="Status"),
+                x=req_cols,
+                y=y_labels,
+                # Definimos los cortes exactos de color para 0, 1, 2 y 3
+                color_continuous_scale=[
+                    [0.0, "#f8f9fa"],   # 0: Sin interés (Blanco/Gris suave)
+                    [0.33, "#adb5bd"],  # 1: Fuera del Release / Deuda (Gris medio)
+                    [0.66, "#00e676"],  # 2: Solicitado e Incluido (Verde brillante)
+                    [1.0, "#00695c"]    # 3: Fila Resumen - ¡En el Release! (Verde Oscuro Azulado)
+                ]
+            )
+
+            # Diseño limpio del gráfico
+            fig_align.update_layout(
+                template="plotly_white",
+                coloraxis_showscale=False, # Ocultamos barra de escala continua
+                xaxis=dict(tickangle=-45, tickfont=dict(size=11, color="black")),
+                yaxis=dict(tickfont=dict(size=11, color="black")),
+                height=450
+            )
+
+            # Espaciado de celdas y caja de información al pasar el ratón (Hover)
+            fig_align.update_traces(
+                xgap=3, ygap=3,
+                hovertemplate="<b>%{y}</b><br>Requirement: %{x}<extra></extra>"
+            )
+
+            st.plotly_chart(fig_align, use_container_width=True)
+            
+            # Leyenda explicativa interactiva en columnas abajo del gráfico
+            c1, c2, c3, c4 = st.columns(4)
+            c1.markdown("⚪ **Not requested**")
+            c2.markdown("🔘 **Requested (Not included) / Excluded from the Release**")
+            c3.markdown("🟢 **Requested and Included (Stakeholder)**")
+            c4.markdown("🌲 **Included in the Final Release (Summary Row)**")
+
+# --------------------------------------------
+____________________________________________________________
+requirements.txt
+____________________________________________________________
+pandas>=2.1.0
+numpy>=1.26.4,<2.0.0
+plotly>=5.18.0
+streamlit>=1.30.0
+watchdog>=4.0.0
+
+scikit-learn>=1.3.0,<1.4.0
+scikit-learn-extra==0.3.0
+____________________________________________________________
