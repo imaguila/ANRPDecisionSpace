@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
-import hdbscan
+#import hdbscan
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import silhouette_score
+from sklearn.cluster import HDBSCAN
 
 from input_panel import render_input_panel
 from metrics_catalog import get_metric_sets
