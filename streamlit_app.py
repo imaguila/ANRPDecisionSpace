@@ -423,7 +423,7 @@ elif mode == "Clustering":
                     max(2, int(0.1 * N))
                 )
 
-            model = hdbscan.HDBSCAN(
+            model = HDBSCAN(
                 min_cluster_size=min_cluster_size
             )
 
