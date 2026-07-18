@@ -3,6 +3,7 @@ import pandas as pd
 import hdbscan
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import silhouette_score
 
 from input_panel import render_input_panel
@@ -356,7 +357,7 @@ elif mode == "Clustering":
 
                 for k_test in range(2, min(10, len(X_scaled))):
                     try:
-                        model = KMeans(
+                        model = KMedoids(
                             n_clusters=k_test,
                             method='pam',
                             random_state=123
@@ -375,7 +376,7 @@ elif mode == "Clustering":
                 k = best_k
                 st.sidebar.info(f"Suggested k : {k}")
 
-            model = KMeans(
+            model = KMedoids(
                 n_clusters=k,
                 method='pam',
                 random_state=123
