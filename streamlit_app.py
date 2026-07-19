@@ -190,6 +190,9 @@ mode_map = {
 
 mode = mode_map[mode_label]
 
+# selected_df es siempre el subconjunto sobre el que trabaja la lente activa.
+# Se inicializa como copia EXACTA del framing (filtered_df): ninguna lente
+# debe leer nunca de df ni saltarse filtered_df.
 selected_df = filtered_df.copy()
 threshold = 0
 
@@ -516,7 +519,7 @@ elif mode == "Efficiency-Ratio":
 
 elif mode == "Ranking-based":
     sel_metrics = st.sidebar.multiselect("Quality metrics", available_qual)
-    n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(filtered_df)), 10)
+    n_top = st.sidebar.slider("Top N per metric", 1, min(50, len(selected_df)), 10)
 
     if sel_metrics:
         ranks = []
@@ -529,14 +532,17 @@ elif mode == "Ranking-based":
                 key=f"g_{m}"
             )
             goals[m] = goal
+            # ✅ usa selected_df (= framing actual), no filtered_df directamente,
+            # para que esta lente nunca pueda "ver" nada fuera del framing
+            # aunque el orden del código cambie en el futuro.
             ranks.append(
-                filtered_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top)
+                selected_df.sort_values(m, ascending=(goal == "Minimize")).head(n_top)
             )
 
         counts = pd.concat(ranks).groupby("id").size().reset_index(name="count")
 
         # Mantener todo el subconjunto actual y marcar count=0 si no aparece en ningún top-N
-        selected_df = filtered_df.merge(counts, on="id", how="left").fillna(0)
+        selected_df = selected_df.merge(counts, on="id", how="left").fillna(0)
         selected_df["count"] = selected_df["count"].astype(int)
 
         # Etiqueta base sin conteo agregado todavía
@@ -571,10 +577,38 @@ roi_df = selected_df.copy()
 # Esto representa la ROI/subset estructural actual antes de aplicar foco manual.
 roi_df = selected_df.copy()
 
+# --------------------------------------------
+# ⚠️ SANEAR HIGHLIGHT ANTES DE CREAR EL WIDGET
+# --------------------------------------------
+# Cada cambio de framing o de lens puede reducir/cambiar roi_df. Si algún ID
+# marcado anteriormente ya no existe en la ROI actual, el valor persistido en
+# st.session_state["selected_ids"] queda "huérfano" respecto a las nuevas
+# `options` del multiselect, y Streamlit puede fallar o comportarse de forma
+# inconsistente al re-renderizar el widget con la misma key.
+#
+# Por definición del workflow (CSS ⊆ SOI), un candidato resaltado que ya no
+# pertenece a la SOI actual deja de tener sentido como highlight: lo quitamos
+# de forma explícita ANTES de instanciar el widget, y avisamos al usuario.
+valid_roi_ids = roi_df["id"].tolist()
+previous_selected_ids = st.session_state.get("selected_ids", [])
+dropped_ids = [sid for sid in previous_selected_ids if sid not in valid_roi_ids]
+
+if dropped_ids:
+    st.session_state.selected_ids = [
+        sid for sid in previous_selected_ids if sid in valid_roi_ids
+    ]
+    st.sidebar.warning(
+        f"{len(dropped_ids)} previously highlighted solution(s) fell outside "
+        "the current framing/lens and were unhighlighted: "
+        f"{', '.join(str(int(i)) for i in dropped_ids)}"
+    )
+
+# Nota: NO pasamos `default=` aquí a propósito. Cuando se usa `key=`, el
+# valor de session_state ya gobierna el widget; combinar `default=` y `key=`
+# con un valor que puede quedar fuera de `options` es la causa raíz del bug.
 selected_ids = st.multiselect(
     " 👆 Highlight candidate solutions",
-    options=roi_df["id"].tolist(),
-    default=st.session_state.selected_ids,
+    options=valid_roi_ids,
     key="selected_ids",
     help="Manually mark solutions for visual tracking or focused analysis."
 )
@@ -616,11 +650,18 @@ st.sidebar.checkbox(
 # ----------------------------------
 selected_df = roi_df.copy()
 
-if focus_mode and roi_df["highlight"].any():
-    selected_df = roi_df[roi_df["highlight"]].copy()
-
 if focus_mode:
-    st.sidebar.caption(f"{len(selected_df)} solutions in focus")
+    if roi_df["highlight"].any():
+        selected_df = roi_df[roi_df["highlight"]].copy()
+        st.sidebar.caption(f"{len(selected_df)} solutions in focus")
+    else:
+        # Antes esto fallaba silenciosamente: el checkbox seguía marcado
+        # pero no restringía nada, sin avisar al usuario del motivo.
+        st.sidebar.warning(
+            "Focus mode is on, but no highlighted solutions are valid in the "
+            "current framing/lens. Showing the full current subset instead — "
+            "highlight at least one solution to restrict the view."
+        )
 
 # --------------------------------------------
 # GRÁFICOS
@@ -698,6 +739,15 @@ if st.session_state.show_comparison:
 
         if roi_df["highlight"].any():
             compare_options.append("Highlighted candidates")
+
+        # ⚠️ Mismo problema que con selected_ids: si la opción elegida
+        # anteriormente ("Highlighted candidates") ya no está disponible
+        # (p. ej. porque el highlight se vació al cambiar el framing/lens),
+        # el valor persistido en session_state["comparison_source"] queda
+        # huérfano respecto a las nuevas `compare_options`. Lo saneamos
+        # antes de crear el widget.
+        if st.session_state.get("comparison_source") not in compare_options:
+            st.session_state["comparison_source"] = compare_options[0]
 
         compare_source = st.radio(
             "Comparison source",
