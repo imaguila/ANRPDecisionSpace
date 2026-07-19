@@ -352,19 +352,41 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         focus_id = st.selectbox("Select Solution to analyze alignment", compare_df["id"].unique(), key="align_sel")
         row_focus = compare_df[compare_df["id"] == focus_id].iloc[0]
 
+        # Matriz real (requisitos x stakeholders) calculada a partir del
+        # dataset del problema (vij) en problem.py::calcular_matriz_solicitud,
+        # y guardada en session_state por input_panel.py. Sustituye al
+        # antiguo mapeo simulado basado en hash(st_name + req_name).
+        matriz_solicitud = st.session_state.get("matriz_solicitud")
+
         if not req_cols or not st_cols:
             st.info("Required data columns (req_ or stcov_) missing.")
+        elif matriz_solicitud is None:
+            st.info(
+                "No stakeholder-request data available for this dataset "
+                "(e.g. no problem file was loaded, or you are using an "
+                "uploaded CSV). Alignment cannot be computed."
+            )
         else:
-          
+
             alignment_data = []
             # Generamos las filas de los Stakeholders normales
             for st_name in st_cols:
+                # "stcov_cv1" -> "cv1", para indexar en matriz_solicitud
+                cliente = st_name.replace("stcov_", "")
+
+                if cliente not in matriz_solicitud.columns:
+                    # Por seguridad, si no encontramos el stakeholder en la
+                    # matriz real, lo tratamos como "no solicitado" en vez
+                    # de simularlo.
+                    row_values = [0] * len(req_cols)
+                    alignment_data.append(row_values)
+                    continue
+
                 row_values = []
-                for req_name in req_cols:
-                    # Simulación: Aquí decides si el Stakeholder propuso el requisito
-                    proposed_by_stake = (hash(st_name + req_name) % 3 == 0) 
+                for j, req_name in enumerate(req_cols):
+                    proposed_by_stake = bool(matriz_solicitud.iloc[j][cliente])
                     is_included = row_focus[req_name] == 1
-                    
+
                     if proposed_by_stake and is_included:
                         val = 2  # Solicitado e incluido (Verde brillante)
                     elif proposed_by_stake and not is_included:
@@ -374,7 +396,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
                     row_values.append(val)
                 alignment_data.append(row_values)
 
-            # --- LA FILA RESUMEN (RIZANDO MÁS EL RIZO) ---
+            # --- LA FILA RESUMEN ---
             # Añadimos la fila final que mira directamente si el req está en la solución (1) o no (0)
             summary_row = []
             for req_name in req_cols:

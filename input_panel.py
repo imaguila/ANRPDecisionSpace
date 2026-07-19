@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from config import PROBLEMAS
@@ -68,6 +67,10 @@ def render_input_panel():
         else:
             st.sidebar.info("No derived indicators can be computed from the uploaded data.")
 
+        # No hay un dataset "problema" (path_prob) asociado a un CSV externo,
+        # así que no existe matriz de solicitud real disponible en este modo.
+        st.session_state["matriz_solicitud"] = None
+
         return df
 
     # ============================================
@@ -119,7 +122,14 @@ def render_input_panel():
     def build_df(problem_name, selected_indicators):
         return run_pipeline(problem_name, selected_indicators)
 
-    df = build_df(problem_name, selected_indicators)
+    df, matriz_solicitud = build_df(problem_name, selected_indicators)
+
+    # Guardamos la matriz real stakeholder-requisito para que la pestaña
+    # "Stakeholder–Requirement Alignment" (ui_plots.py) pueda usarla en vez
+    # de un mapeo simulado.
+    st.session_state["matriz_solicitud"] = matriz_solicitud
+    st.session_state["matriz_solicitud_prefix"] = config["stakeholders_prefix"]
+
     st.sidebar.success(f"{len(df)} solutions enriched")
 
     return df

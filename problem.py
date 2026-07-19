@@ -55,7 +55,7 @@ INDICADORES = {
         ),
     "usage_efficiency": lambda df:
         (df["prevalence"] / df["cost"].replace(0, np.nan)).fillna(0),
-    
+
     "scope": lambda df:
         df.filter(like="req_").sum(axis=1) /
         np.maximum(len(df.filter(like="req_").columns), EPS)
@@ -73,10 +73,10 @@ REQUISITOS = {
     "annoyance": ["dissatisfaction", "satisfaction"],
     "stickiness": ["prevalence", "effort"],
     "robustness": ["satisfaction", "inestability"],
-    "fragility": ["prevalence", "inestability", "effort"],    
+    "fragility": ["prevalence", "inestability", "effort"],
     "response": ["time", "effort"],
     "opportunity": ["satisfaction", "time"],
-    "usage_efficiency": ["prevalence","cost"],
+    "usage_efficiency": ["prevalence", "cost"],
     "scope": [],
     "squandering": ["effort"]
 }
@@ -162,6 +162,27 @@ def calcular_stakeholders(df, problema, prefix):
     return df
 
 
+def calcular_matriz_solicitud(problema, prefix, threshold=0):
+    """
+    Matriz real (no simulada) de solicitud stakeholder-requisito.
+
+    Devuelve un DataFrame booleano de tamaño (num_requisitos x num_stakeholders):
+    True si ese stakeholder asignó a ese requisito un valor > threshold en la
+    elicitación (vij), es decir, si realmente lo solicitó/valoró.
+
+    El orden de las filas coincide con el orden de columnas_req usado en
+    leer_soluciones/calcular_stakeholders, así que la fila j corresponde
+    siempre a req_{j+1}.
+    """
+    if problema is None or prefix is None:
+        return None
+
+    clientes = [c for c in problema.columns if c.startswith(prefix)]
+    matriz_val = problema[clientes].apply(pd.to_numeric, errors='coerce').values
+
+    solicitado = matriz_val > threshold
+    return pd.DataFrame(solicitado, columns=clientes)
+
 
 def calcular_indicadores(df, indicadores_a_usar):
     nuevas = {}
@@ -195,4 +216,6 @@ def run_pipeline(nombre_problema, indicadores):
     df = calcular_indicadores(df, indicadores)
     df = calcular_stakeholders(df, problema, config["stakeholders_prefix"])
 
-    return df
+    matriz_solicitud = calcular_matriz_solicitud(problema, config["stakeholders_prefix"])
+
+    return df, matriz_solicitud
