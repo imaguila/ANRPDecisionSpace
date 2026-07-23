@@ -786,8 +786,25 @@ col_titulo, col_btn = st.columns([3, 1], vertical_alignment="center")
 with col_titulo:
     st.markdown("📋 Current decision subset")
 
-csv_data = selected_df.drop(columns=["highlight", "label"], errors="ignore")
+export_df = selected_df.copy()
 
+selected_group = st.session_state.get(
+    "selected_cluster_export",
+    "All"
+)
+
+if (
+    selected_group != "All"
+    and "cluster_str" in export_df.columns
+):
+    export_df = export_df[
+        export_df["cluster_str"].astype(str) == str(selected_group)
+    ]
+
+csv_data = export_df.drop(
+    columns=["highlight", "label"],
+    errors="ignore"
+)
 with col_btn:
     st.download_button(
         label="⬇️ Export current subset",
