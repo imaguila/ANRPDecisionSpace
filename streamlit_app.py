@@ -801,8 +801,13 @@ if st.session_state.focus_locked:
 
         for soi in st.session_state.saved_sois:
 
+            size = soi.get(
+                "size",
+                len(soi.get("ids", []))
+            )
+
             st.sidebar.caption(
-                f"• {soi['name']} [{soi['size']} solutions]"
+                f"• {soi['name']} [{size} solutions]"
             )
 
 st.sidebar.checkbox(
