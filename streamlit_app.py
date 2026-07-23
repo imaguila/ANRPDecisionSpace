@@ -664,6 +664,14 @@ if st.session_state.focus_locked:
     st.sidebar.success(
         "🔒 Current lens selection is locked"
     )
+
+
+st.sidebar.checkbox(
+    "Open detailed comparison",
+    key="show_comparison"
+)
+
+
 # ----------------------------------
 # Focus mode → filtrar datos reales
 # ----------------------------------
