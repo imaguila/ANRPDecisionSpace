@@ -786,7 +786,8 @@ if st.session_state.focus_locked:
         st.session_state.saved_sois.append(
             {
                 "name": soi_name,
-                "ids": selected_df["id"].tolist()
+                "ids": selected_df["id"].tolist(),
+                "size": len(selected_df)
             }
         )
 
@@ -801,7 +802,7 @@ if st.session_state.focus_locked:
         for soi in st.session_state.saved_sois:
 
             st.sidebar.caption(
-                f"{soi['name']} ({len(soi['ids'])})"
+                f"• {soi['name']} [{soi['size']} solutions]"
             )
 
 st.sidebar.checkbox(
@@ -871,21 +872,7 @@ if focus_mode:
         f"Focused subset size: {len(selected_df)} solutions"
     )
 
-#    if st.button(
-#        "💾 Save current SOI",
-#        disabled=len(st.session_state.saved_sois) >= 10
-#    ):
 
-#        st.session_state.saved_sois.append(
-#            {
-#                "name": (
-#                    focus_group
-#                    if focus_group != "All"
-#                    else f"SOI {len(st.session_state.saved_sois)+1}"
-#                ),
-#                "ids": selected_df["id"].tolist()
-#            }
-#        )
 
 # --------------------------------------------
 # GRÁFICOS
