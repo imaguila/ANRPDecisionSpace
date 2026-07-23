@@ -734,7 +734,6 @@ if focus_mode:
 
 
 
-
 if st.session_state.focus_locked:
 
     st.sidebar.success(
@@ -756,21 +755,41 @@ if st.session_state.focus_locked:
         st.sidebar.caption(
             f"Focused group: {focus_group}"
         )
-    if st.sidebar.button(
-        "💾 Save current SOI",
-        disabled=len(st.session_state.saved_sois) >= 10
-    ):
+
+    default_soi_name = (
+        focus_group
+        if focus_group != "All"
+        else f"SOI {len(st.session_state.saved_sois)+1}"
+    )
+
+    col_name, col_save = st.sidebar.columns([0.75, 0.25])
+
+    with col_name:
+
+        soi_name = st.text_input(
+            "SOI name",
+            value=default_soi_name,
+            label_visibility="collapsed",
+            key="soi_name_input"
+        )
+
+    with col_save:
+
+        save_soi = st.button(
+            "💾",
+            disabled=len(st.session_state.saved_sois) >= 10,
+            use_container_width=True
+        )
+
+    if save_soi:
 
         st.session_state.saved_sois.append(
             {
-                "name": (
-                    focus_group
-                    if focus_group != "All"
-                    else f"SOI {len(st.session_state.saved_sois)+1}"
-                ),
+                "name": soi_name,
                 "ids": selected_df["id"].tolist()
             }
         )
+
     # ----------------------------------
     # Saved SOIs
     # ----------------------------------
@@ -789,8 +808,6 @@ st.sidebar.checkbox(
     "Open detailed comparison",
     key="show_comparison"
 )
-
-
 
 
 
