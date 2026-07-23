@@ -631,23 +631,35 @@ if st.session_state.saved_sois:
         for soi in st.session_state.saved_sois
     ]
 
+    # Evitar que Streamlit conserve una selección inválida
+    if (
+        st.session_state.get("active_soi")
+        not in ["None"] + soi_names
+    ):
+        st.session_state["active_soi"] = "None"
+
     active_soi = st.selectbox(
         "📚 Load saved SOI",
         ["None"] + soi_names,
         key="active_soi"
     )
 
-if active_soi != "None":
+if active_soi and active_soi != "None":
 
-    soi_ids = next(
-        soi["ids"]
-        for soi in st.session_state.saved_sois
-        if soi["name"] == active_soi
+    soi_match = next(
+        (
+            soi
+            for soi in st.session_state.saved_sois
+            if soi["name"] == active_soi
+        ),
+        None
     )
 
-    roi_df = roi_df[
-        roi_df["id"].isin(soi_ids)
-    ].copy()
+    if soi_match is not None:
+
+        roi_df = roi_df[
+            roi_df["id"].isin(soi_match["ids"])
+        ].copy()
 
 # Nota: NO pasamos `default=` aquí a propósito. Cuando se usa `key=`, el
 # valor de session_state ya gobierna el widget; combinar `default=` y `key=`
