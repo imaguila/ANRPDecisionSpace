@@ -655,16 +655,52 @@ focus_mode = st.sidebar.checkbox(
     key="focus_mode"
 )
 
+
 if focus_mode:
     st.session_state.focus_locked = True
 else:
     st.session_state.focus_locked = False
 
+focus_group = "All"
+
+if focus_mode:
+
+    grouping_col = None
+
+    if "cluster_str" in roi_df.columns:
+        grouping_col = "cluster_str"
+
+    elif "group_label" in roi_df.columns:
+        grouping_col = "group_label"
+
+    if grouping_col is not None:
+
+        groups = sorted(
+            roi_df[grouping_col]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        focus_group = st.sidebar.selectbox(
+            "Focus group",
+            ["All"] + groups,
+            key="focus_group"
+        )
+
+
+
+
+
 if st.session_state.focus_locked:
     st.sidebar.success(
         "🔒 Current lens selection is locked"
     )
-
+if focus_mode:
+    st.sidebar.caption(
+        f"Focused subset: {len(selected_df)} solutions"
+    )
 
 st.sidebar.checkbox(
     "Open detailed comparison",
@@ -678,17 +714,50 @@ st.sidebar.checkbox(
 selected_df = roi_df.copy()
 
 if focus_mode:
-    if roi_df["highlight"].any():
-        selected_df = roi_df[roi_df["highlight"]].copy()
-        st.sidebar.caption(f"{len(selected_df)} solutions in focus")
-    else:
-        # Antes esto fallaba silenciosamente: el checkbox seguía marcado
-        # pero no restringía nada, sin avisar al usuario del motivo.
-        st.sidebar.warning(
-            "Focus mode is on, but no highlighted solutions are valid in the "
-            "current framing/lens. Showing the full current subset instead — "
-            "highlight at least one solution to restrict the view."
+
+    # ----------------------------------
+    # 1. Focus group (cluster / ranking)
+    # ----------------------------------
+
+    if "cluster_str" in roi_df.columns:
+
+        if focus_group != "All":
+
+            selected_df = roi_df[
+                roi_df["cluster_str"].astype(str)
+                == str(focus_group)
+            ].copy()
+
+    elif "group_label" in roi_df.columns:
+
+        if focus_group != "All":
+
+            selected_df = roi_df[
+                roi_df["group_label"].astype(str)
+                == str(focus_group)
+            ].copy()
+
+    # ----------------------------------
+    # 2. Highlight manual (refinamiento)
+    # ----------------------------------
+
+    if selected_df["highlight"].any():
+
+        selected_df = selected_df[
+            selected_df["highlight"]
+        ].copy()
+
+        st.sidebar.caption(
+            f"{len(selected_df)} solutions in focus"
         )
+
+    else:
+
+        st.sidebar.warning(
+            "Focus is active, but no highlighted solutions "
+            "were selected inside the focused subset."
+        )
+
 
 # --------------------------------------------
 # GRÁFICOS
