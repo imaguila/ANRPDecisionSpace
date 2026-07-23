@@ -775,10 +775,11 @@ if st.button(
                 focus_group
                 if focus_group != "All"
                 else f"SOI {len(st.session_state.saved_sois)+1}"
-            )
+            ),
             "ids": selected_df["id"].tolist()
         }
     )
+
 
 
 # ----------------------------------
