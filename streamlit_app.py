@@ -785,16 +785,22 @@ if st.session_state.focus_locked:
         )
 
     if save_soi:
+
+        current_ids = st.session_state.get(
+            "current_soi_ids",
+            selected_df["id"].tolist()
+        )
+
         st.sidebar.write(
             "Saving:",
-            len(selected_df)
+            len(current_ids)
         )
 
         st.session_state.saved_sois.append(
             {
                 "name": soi_name,
-                "ids": selected_df["id"].tolist(),
-                "size": len(selected_df)
+                "ids": current_ids,
+                "size": len(current_ids)
             }
         )
 
@@ -853,7 +859,9 @@ if focus_mode:
                 == str(focus_group)
             ].copy()
 
-
+st.session_state["current_soi_ids"] = (
+    selected_df["id"].tolist()
+)
 
 
     # ----------------------------------
