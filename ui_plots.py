@@ -129,6 +129,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
         st.info("Select at least 2 solutions to compare")
         return
 
+
     compare_df = df_for_compare[df_for_compare["id"].isin(compare_ids)].copy()
 
     tab1, tab2, tab3, tab4 = st.tabs([
