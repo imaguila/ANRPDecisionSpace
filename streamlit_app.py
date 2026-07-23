@@ -622,6 +622,54 @@ if dropped_ids:
         f"{', '.join(str(int(i)) for i in dropped_ids)}"
     )
 
+# --------------------------------------------
+# SOI FOCUS + COMPARATIVE SUPPORT
+# --------------------------------------------
+
+
+st.sidebar.markdown("## 🎯 Candidate Solution Set focus and Comparison")
+
+focus_mode = st.sidebar.checkbox(
+    "Lock current candidate set",
+    help="Keep candidates highlighted in context, or restrict analysis to them.",
+    key="focus_mode"
+)
+
+
+if focus_mode:
+    st.session_state.focus_locked = True
+else:
+    st.session_state.focus_locked = False
+
+focus_group = "All"
+
+if focus_mode:
+
+    grouping_col = None
+
+    if "cluster_str" in roi_df.columns:
+        grouping_col = "cluster_str"
+
+    elif "group_label" in roi_df.columns:
+        grouping_col = "group_label"
+
+    if grouping_col is not None:
+
+        groups = sorted(
+            roi_df[grouping_col]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        focus_group = st.sidebar.selectbox(
+            "Focus group",
+            ["All"] + groups,
+            key="focus_group"
+        )
+
+
 active_soi = None
 
 
@@ -697,54 +745,6 @@ if show_ids:
         roi_df["label"] = roi_df["id"].astype(str)
 else:
     roi_df["label"] = ""
-
-# --------------------------------------------
-# SOI FOCUS + COMPARATIVE SUPPORT
-# --------------------------------------------
-
-
-st.sidebar.markdown("## 🎯 Candidate Solution Set focus and Comparison")
-
-focus_mode = st.sidebar.checkbox(
-    "Lock current candidate set",
-    help="Keep candidates highlighted in context, or restrict analysis to them.",
-    key="focus_mode"
-)
-
-
-if focus_mode:
-    st.session_state.focus_locked = True
-else:
-    st.session_state.focus_locked = False
-
-focus_group = "All"
-
-if focus_mode:
-
-    grouping_col = None
-
-    if "cluster_str" in roi_df.columns:
-        grouping_col = "cluster_str"
-
-    elif "group_label" in roi_df.columns:
-        grouping_col = "group_label"
-
-    if grouping_col is not None:
-
-        groups = sorted(
-            roi_df[grouping_col]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        focus_group = st.sidebar.selectbox(
-            "Focus group",
-            ["All"] + groups,
-            key="focus_group"
-        )
-
 
 
 
