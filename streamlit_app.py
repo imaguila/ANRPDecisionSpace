@@ -650,7 +650,7 @@ else:
 st.sidebar.markdown("## 🎯 Candidate Solution Set focus and Comparison")
 
 focus_mode = st.sidebar.checkbox(
-    "Focus on highlighted solutions",
+    "Lock current candidate set",
     help="Keep candidates highlighted in context, or restrict analysis to them.",
     key="focus_mode"
 )
@@ -694,13 +694,26 @@ if focus_mode:
 
 
 if st.session_state.focus_locked:
+
     st.sidebar.success(
-        "🔒 Current lens selection is locked"
+        "🔒 Candidate set locked"
     )
-if focus_mode:
-    st.sidebar.caption(
-        f"Focused subset: {len(selected_df)} solutions"
-    )
+
+    if (
+        "cluster_str" in roi_df.columns
+        and focus_group != "All"
+    ):
+        st.sidebar.caption(
+            f"Focused cluster: {focus_group}"
+        )
+
+    elif (
+        "group_label" in roi_df.columns
+        and focus_group != "All"
+    ):
+        st.sidebar.caption(
+            f"Focused group: {focus_group}"
+        )
 
 st.sidebar.checkbox(
     "Open detailed comparison",
@@ -748,16 +761,22 @@ if focus_mode:
         ].copy()
 
         st.sidebar.caption(
-            f"{len(selected_df)} solutions in focus"
+            "Manual refinement applied"
         )
 
     else:
 
-        st.sidebar.warning(
-            "Focus is active, but no highlighted solutions "
-            "were selected inside the focused subset."
+        st.sidebar.caption(
+            "No manual refinement applied"
         )
 
+    # ----------------------------------
+    # 3. Tamaño final del subconjunto
+    # ----------------------------------
+
+    st.sidebar.info(
+        f"Focused subset size: {len(selected_df)} solutions"
+    )
 
 # --------------------------------------------
 # GRÁFICOS
