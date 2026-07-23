@@ -35,6 +35,9 @@ available_opt, available_qual, available_metrics = get_metric_sets(df, DATA_PATH
 if "groups" not in st.session_state:
     st.session_state.groups = []
 
+if "saved_sois" not in st.session_state:
+    st.session_state.saved_sois = []
+
 if "show_comparison" not in st.session_state:
     st.session_state.show_comparison = False
 
@@ -619,6 +622,33 @@ if dropped_ids:
         f"{', '.join(str(int(i)) for i in dropped_ids)}"
     )
 
+active_soi = None
+
+if st.session_state.saved_sois:
+
+    soi_names = [
+        soi["name"]
+        for soi in st.session_state.saved_sois
+    ]
+
+    active_soi = st.selectbox(
+        "📚 Load saved SOI",
+        ["None"] + soi_names,
+        key="active_soi"
+    )
+
+if active_soi != "None":
+
+    soi_ids = next(
+        soi["ids"]
+        for soi in st.session_state.saved_sois
+        if soi["name"] == active_soi
+    )
+
+    roi_df = roi_df[
+        roi_df["id"].isin(soi_ids)
+    ].copy()
+
 # Nota: NO pasamos `default=` aquí a propósito. Cuando se usa `key=`, el
 # valor de session_state ya gobierna el widget; combinar `default=` y `key=`
 # con un valor que puede quedar fuera de `options` es la causa raíz del bug.
@@ -715,10 +745,40 @@ if st.session_state.focus_locked:
             f"Focused group: {focus_group}"
         )
 
+    # ----------------------------------
+    # Saved SOIs
+    # ----------------------------------
+
+    if st.session_state.saved_sois:
+
+        st.sidebar.markdown("### 📚 Saved SOIs")
+
+        for soi in st.session_state.saved_sois:
+
+            st.sidebar.caption(
+                f"{soi['name']} ({len(soi['ids'])})"
+            )
+
 st.sidebar.checkbox(
     "Open detailed comparison",
     key="show_comparison"
 )
+
+if st.button(
+    "💾 Save current SOI",
+    disabled=len(st.session_state.saved_sois) >= 10
+):
+
+    st.session_state.saved_sois.append(
+        {
+            "name": (
+                focus_group
+                if focus_group != "All"
+                else f"SOI {len(st.session_state.saved_sois)+1}"
+            )
+            "ids": selected_df["id"].tolist()
+        }
+    )
 
 
 # ----------------------------------
@@ -749,6 +809,9 @@ if focus_mode:
                 roi_df["group_label"].astype(str)
                 == str(focus_group)
             ].copy()
+
+
+
 
     # ----------------------------------
     # 2. Highlight manual (refinamiento)
