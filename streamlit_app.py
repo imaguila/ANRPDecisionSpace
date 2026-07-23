@@ -656,7 +656,10 @@ if active_soi and active_soi != "None":
     )
 
     if soi_match is not None:
-
+        st.write(
+            "Loaded SOI size:",
+            len(soi_match["ids"])
+        )
         roi_df = roi_df[
             roi_df["id"].isin(soi_match["ids"])
         ].copy()
@@ -782,6 +785,10 @@ if st.session_state.focus_locked:
         )
 
     if save_soi:
+        st.sidebar.write(
+            "Saving:",
+            len(selected_df)
+        )
 
         st.session_state.saved_sois.append(
             {
