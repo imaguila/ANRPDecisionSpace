@@ -118,26 +118,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
 
     df_for_compare = selected_df
 
-    # -------------------------------
-    # NUEVO: capa extra -> seleccionar GRUPO (cluster o count)
-    # -------------------------------
-    if group_col is not None and group_col in df_for_compare.columns:
-
-        groups = sorted(df_for_compare[group_col].dropna().astype(str).unique().tolist())
-        group_options = ["All"] + groups
-
-        chosen_group = st.selectbox(
-            "Group to analyze (cluster / ranking-group)",
-            group_options,
-            index=0,
-            key="cmp_group_select"
-        )
-        
-        st.session_state["selected_group_export"] = chosen_group
-        st.session_state["selected_group_column"] = group_col
-        if chosen_group != "All":
-            df_for_compare = df_for_compare[df_for_compare[group_col].astype(str) == str(chosen_group)]
-
+    
     # -------------------------------
     # Selección de IDs SOLO dentro del grupo elegido
     # -------------------------------
