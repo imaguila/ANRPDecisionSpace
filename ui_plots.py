@@ -133,6 +133,7 @@ def plot_radar(selected_df, available_metrics, group_col=None):
             key="cmp_group_select"
         )
         st.session_state["selected_cluster_export"] = chosen_group
+        st.session_state["selected_group_column"] = group_col
         if chosen_group != "All":
             df_for_compare = df_for_compare[df_for_compare[group_col].astype(str) == str(chosen_group)]
 

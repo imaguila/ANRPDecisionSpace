@@ -777,6 +777,17 @@ if st.session_state.show_comparison:
 
     plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
+
+if not st.session_state.show_comparison:
+    st.session_state.pop(
+        "selected_group_export",
+        None
+    )
+
+    st.session_state.pop(
+        "selected_group_column",
+        None
+    )
 # --------------------------------------------
 # CURRENT DECISION SUBSET + EXPORT
 # --------------------------------------------
@@ -789,22 +800,35 @@ with col_titulo:
 export_df = selected_df.copy()
 
 selected_group = st.session_state.get(
-    "selected_cluster_export",
+    "selected_group_export",
     "All"
+)
+
+selected_group_col = st.session_state.get(
+    "selected_group_column"
 )
 
 if (
     selected_group != "All"
-    and "cluster_str" in export_df.columns
+    and selected_group_col is not None
+    and selected_group_col in export_df.columns
 ):
     export_df = export_df[
-        export_df["cluster_str"].astype(str) == str(selected_group)
+        export_df[selected_group_col].astype(str)
+        == str(selected_group)
     ]
 
 csv_data = export_df.drop(
     columns=["highlight", "label"],
     errors="ignore"
 )
+
+
+
+
+
+
+
 with col_btn:
     st.download_button(
         label="⬇️ Export current subset",
@@ -818,7 +842,7 @@ with col_btn:
 # PREVIEW
 # --------------------------------------------
 with st.expander("Preview", expanded=False):
-    df_preview = selected_df.copy()
+    df_preview = export_df.copy()
     
     # 1. Si "id" existe, lo ponemos como índice antes de borrar las demás columnas
     if "id" in df_preview.columns:
