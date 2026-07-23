@@ -776,21 +776,7 @@ st.sidebar.checkbox(
     key="show_comparison"
 )
 
-if st.button(
-    "💾 Save current SOI",
-    disabled=len(st.session_state.saved_sois) >= 10
-):
 
-    st.session_state.saved_sois.append(
-        {
-            "name": (
-                focus_group
-                if focus_group != "All"
-                else f"SOI {len(st.session_state.saved_sois)+1}"
-            ),
-            "ids": selected_df["id"].tolist()
-        }
-    )
 
 
 
@@ -853,6 +839,22 @@ if focus_mode:
     st.sidebar.info(
         f"Focused subset size: {len(selected_df)} solutions"
     )
+
+    if st.button(
+        "💾 Save current SOI",
+        disabled=len(st.session_state.saved_sois) >= 10
+    ):
+
+        st.session_state.saved_sois.append(
+            {
+                "name": (
+                    focus_group
+                    if focus_group != "All"
+                    else f"SOI {len(st.session_state.saved_sois)+1}"
+                ),
+                "ids": selected_df["id"].tolist()
+            }
+        )
 
 # --------------------------------------------
 # GRÁFICOS
