@@ -44,6 +44,10 @@ if "selected_ids" not in st.session_state:
 if "focus_mode" not in st.session_state:
     st.session_state.focus_mode = False
 
+
+if "focus_locked" not in st.session_state:   # para highlight
+    st.session_state.focus_locked = False
+
 # --------------------------------------------
 # VISUAL WORKSPACE
 # --------------------------------------------
@@ -190,6 +194,11 @@ mode_map = {
 
 mode = mode_map[mode_label]
 
+lens_locked = st.session_state.get(
+    "focus_locked",
+    False
+)
+
 # selected_df es siempre el subconjunto sobre el que trabaja la lente activa.
 # Se inicializa como copia EXACTA del framing (filtered_df): ninguna lente
 # debe leer nunca de df ni saltarse filtered_df.
@@ -211,16 +220,22 @@ if mode == "MCDM":
     # -------------------------------
     method = st.sidebar.radio(
         "Method",
-        ["Weighted Sum", "TOPSIS"]
+        ["Weighted Sum", "TOPSIS"],
+        disabled=lens_locked
     )
 
     # -------------------------------
     # Selección de criterios
     # -------------------------------
-    m_max = st.sidebar.multiselect("Maximize", available_qual)
+    m_max = st.sidebar.multiselect(
+        "Maximize",
+        available_qual,
+        disabled=lens_locked
+    )
     m_min = st.sidebar.multiselect(
         "Minimize",
-        [m for m in available_qual if m not in m_max]
+        [m for m in available_qual if m not in m_max],
+        disabled=lens_locked
     )
 
     criteria = m_max + m_min
@@ -298,7 +313,8 @@ if mode == "MCDM":
             "Top N",
             1,
             len(df_temp),
-            min(10, len(df_temp))
+            min(10, len(df_temp)),
+            disabled=lens_locked
         )
 
         selected_df = df_temp.sort_values(score_col, ascending=False).head(n)
@@ -639,12 +655,15 @@ focus_mode = st.sidebar.checkbox(
     key="focus_mode"
 )
 
-st.sidebar.checkbox(
-    "Open detailed comparison",
-    key="show_comparison"
-)
+if focus_mode:
+    st.session_state.focus_locked = True
+else:
+    st.session_state.focus_locked = False
 
-
+if st.session_state.focus_locked:
+    st.sidebar.success(
+        "🔒 Current lens selection is locked"
+    )
 # ----------------------------------
 # Focus mode → filtrar datos reales
 # ----------------------------------
