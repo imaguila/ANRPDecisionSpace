@@ -859,9 +859,9 @@ if focus_mode:
                 == str(focus_group)
             ].copy()
 
-st.session_state["current_soi_ids"] = (
-    selected_df["id"].tolist()
-)
+    st.session_state["current_soi_ids"] = (
+        selected_df["id"].tolist()
+    )
 
 
     # ----------------------------------
