@@ -770,10 +770,13 @@ if st.session_state.show_comparison:
         group_col = "cluster"
 
     if group_col is None:
-        if "count_str" in df_compare_base.columns:
-            group_col = "count_str"
+
+        if "group_label" in df_compare_base.columns:
+            group_col = "group_label"
+
         elif "count" in df_compare_base.columns:
             group_col = "count"
+
 
     plot_radar(df_compare_base, available_metrics, group_col=group_col)
 
@@ -817,6 +820,10 @@ if (
         export_df[selected_group_col].astype(str)
         == str(selected_group)
     ]
+
+st.write("selected_group =", selected_group)
+st.write("selected_group_col =", selected_group_col)
+st.write("rows export =", len(export_df))
 
 csv_data = export_df.drop(
     columns=["highlight", "label"],
