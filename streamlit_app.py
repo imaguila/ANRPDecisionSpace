@@ -756,7 +756,21 @@ if st.session_state.focus_locked:
         st.sidebar.caption(
             f"Focused group: {focus_group}"
         )
+    if st.sidebar.button(
+        "💾 Save current SOI",
+        disabled=len(st.session_state.saved_sois) >= 10
+    ):
 
+        st.session_state.saved_sois.append(
+            {
+                "name": (
+                    focus_group
+                    if focus_group != "All"
+                    else f"SOI {len(st.session_state.saved_sois)+1}"
+                ),
+                "ids": selected_df["id"].tolist()
+            }
+        )
     # ----------------------------------
     # Saved SOIs
     # ----------------------------------
@@ -840,21 +854,21 @@ if focus_mode:
         f"Focused subset size: {len(selected_df)} solutions"
     )
 
-    if st.button(
-        "💾 Save current SOI",
-        disabled=len(st.session_state.saved_sois) >= 10
-    ):
+#    if st.button(
+#        "💾 Save current SOI",
+#        disabled=len(st.session_state.saved_sois) >= 10
+#    ):
 
-        st.session_state.saved_sois.append(
-            {
-                "name": (
-                    focus_group
-                    if focus_group != "All"
-                    else f"SOI {len(st.session_state.saved_sois)+1}"
-                ),
-                "ids": selected_df["id"].tolist()
-            }
-        )
+#        st.session_state.saved_sois.append(
+#            {
+#                "name": (
+#                    focus_group
+#                    if focus_group != "All"
+#                    else f"SOI {len(st.session_state.saved_sois)+1}"
+#                ),
+#                "ids": selected_df["id"].tolist()
+#            }
+#        )
 
 # --------------------------------------------
 # GRÁFICOS
