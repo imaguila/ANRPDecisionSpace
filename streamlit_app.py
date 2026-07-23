@@ -821,9 +821,9 @@ if (
         == str(selected_group)
     ]
 
-st.write("selected_group =", selected_group)
-st.write("selected_group_col =", selected_group_col)
-st.write("rows export =", len(export_df))
+#st.write("selected_group =", selected_group)
+#st.write("selected_group_col =", selected_group_col)
+#st.write("rows export =", len(export_df))
 
 csv_data = export_df.drop(
     columns=["highlight", "label"],
