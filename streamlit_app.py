@@ -624,25 +624,36 @@ if dropped_ids:
 
 active_soi = None
 
-if st.session_state.saved_sois:
 
-    soi_names = [
-        soi["name"]
-        for soi in st.session_state.saved_sois
-    ]
+if focus_mode:
 
-    # Evitar que Streamlit conserve una selección inválida
-    if (
-        st.session_state.get("active_soi")
-        not in ["None"] + soi_names
-    ):
-        st.session_state["active_soi"] = "None"
-
-    active_soi = st.selectbox(
-        "📚 Load saved SOI",
-        ["None"] + soi_names,
-        key="active_soi"
+    st.caption(
+        "📚 Load saved SOI disabled while focus is active"
     )
+
+    st.session_state["active_soi"] = "None"
+
+else:
+
+    if st.session_state.saved_sois:
+
+        soi_names = [
+            soi["name"]
+            for soi in st.session_state.saved_sois
+        ]
+
+        # Evitar que Streamlit conserve una selección inválida
+        if (
+            st.session_state.get("active_soi")
+            not in ["None"] + soi_names
+        ):
+            st.session_state["active_soi"] = "None"
+
+        active_soi = st.selectbox(
+            "📚 Load saved SOI",
+            ["None"] + soi_names,
+            key="active_soi"
+        )
 
 if active_soi and active_soi != "None":
 
